@@ -18,17 +18,22 @@
     </header>
 
     {{-- Form --}}
-    <form id="loginForm" class="mx-auto space-y-2 mt-4 max-w-4xl ">
+    <form id="loginForm"
+          method="POST"
+          action="{{ route('login') }}"
+          class="mx-auto space-y-2 mt-4 max-w-4xl">
+      @csrf
 
       {{-- Nomor Handphone --}}
       <div>
         <label for="phone" class="block text-sm text-gray-600">Nomor Handphone</label>
         <input
           type="tel"
-          name="phone"
+          name="phone_number"
           id="phone"
-          placeholder="08xxxx"
+          placeholder="08xxxxxxxxxx"
           class="w-full px-4 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 bg-gray-200"
+          value="{{ old('phone_number') }}"
           required
         >
         <p id="phoneError" class="text-sm text-orange-500 mt-1 hidden">Nomor telepon tidak valid.</p>
@@ -51,20 +56,33 @@
       {{-- Tombol Login --}}
       <div class="text-center">
         <button type="submit"
-        class="w-1/2 mx-auto px-4 py-2 mt-4 bg-sky-600 text-white font-bold rounded-full hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
-        Login
+                class="w-full sm:w-1/2 mx-auto px-4 py-2 mt-4 bg-sky-600
+                      text-white font-bold rounded-full hover:bg-sky-700
+                      focus:outline-none focus:ring-2 focus:ring-sky-500">
+            Login
         </button>
       </div>
 
+      {{-- Error backend --}}
+      @if ($errors->any())
+        <p class="text-red-500 text-center text-sm mt-3">
+           {{ $errors->first() }}
+        </p>
+      @endif
+
       {{-- Footer --}}
       <div class="mt-4 text-center text-sm text-gray-600">
-        Belum Memiliki Akun? 
-        <a href="{{ route('register') }}" class="text-sky-600 hover:text-sky-700">Daftar</a>
+      Belum punya akun orang&nbsp;tua?
+      <a href="{{ route('parent.register') }}" class="text-sky-600 hover:text-sky-700">
+          Daftar di sini
+      </a>
+
       </div>
     </form>
 
 </div>
 
+{{-- VALIDASI & normalisasi JS --}}
 <script>
   const form = document.getElementById('loginForm');
   const phoneInput = document.getElementById('phone');
@@ -80,30 +98,34 @@
   }
 
   form.addEventListener('submit', function (e) {
-    e.preventDefault();
     resetErrorStyles();
 
-    let isValid = true;
+    /* --- Normalisasi awalan Indonesia --- */
+    phoneInput.value = phoneInput.value
+        .replace(/^\s+|\s+$/g, '')    // trim
+        .replace(/^\+?62/, '0')       // +62 / 62 → 0
+        .replace(/\D/g, '');          // buang non-digit
 
-    // Validasi nomor telepon
-    const phoneRegex = /^08\d{8,10}$/;
+    /* --- Regex valid 08 + 8-11 digit (total 10-13) --- */
+    const phoneRegex = /^08\d{8,11}$/;
+
+    let ok = true;
+
     if (!phoneRegex.test(phoneInput.value)) {
+      e.preventDefault();
       phoneInput.classList.add('border-orange-500');
       phoneError.classList.remove('hidden');
-      isValid = false;
+      ok = false;
     }
 
-    // Validasi password
     if (passwordInput.value.trim() === '') {
+      e.preventDefault();
       passwordInput.classList.add('border-orange-500');
       passwordError.classList.remove('hidden');
-      isValid = false;
+      ok = false;
     }
 
-    if (isValid) {
-      alert('Login berhasil (validasi lulus)');
-      // form.submit(); // aktifkan ini jika nanti backend sudah siap
-    }
+    /* kalau valid → biarkan form submit ke backend */
   });
 </script>
 

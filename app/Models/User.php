@@ -2,47 +2,48 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-    ];
+    /* -------------------------------------------------
+     |  Mass assignment
+     * ------------------------------------------------*/
+    protected $guarded = [];   // sudah terbuka semua
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    /* -------------------------------------------------
+     |  Hidden & Cast
+     * ------------------------------------------------*/
+    protected $hidden = ['password', 'remember_token'];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'password'          => 'hashed',
         ];
+    }
+
+    /* -------------------------------------------------
+     |  Relasi profil
+     * ------------------------------------------------*/
+    public function teacherProfile() { return $this->hasOne(TeacherProfile::class); }
+    public function parentProfile()  { return $this->hasOne(ParentProfile::class); }
+
+    /* -------------------------------------------------
+     |  Relasi siswa ↔ orang-tua (pivot student_parent)
+     * ------------------------------------------------*/
+    public function students()
+    {
+        return $this->belongsToMany(
+            Student::class,      // model target
+            'student_parent',    // nama tabel pivot
+            'user_id',           // FK pivot → users
+            'student_id'         // FK pivot → students
+        );
     }
 }

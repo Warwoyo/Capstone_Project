@@ -12,10 +12,11 @@ return new class extends Migration {
             $table->string('name', 100);
             $table->date('birth_date');
             $table->enum('gender', ['male','female']);
+            $table->string('photo')->nullable();
+            $table->string('group')->nullable();  // mis. kelas/kelompok PAUD
             $table->timestamps();
         });
     }
-
     public function down(): void
     {
         Schema::dropIfExists('students');

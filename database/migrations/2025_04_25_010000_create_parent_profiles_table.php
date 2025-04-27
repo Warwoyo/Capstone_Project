@@ -4,27 +4,19 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
+return new class extends Migration {
     public function up(): void
     {
-        Schema::create('teacher_profiles', function (Blueprint $table) {
+        Schema::create('parent_profiles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->unique()
-                  ->constrained('users')
-                  ->cascadeOnDelete();
-            $table->string('nip', 20)->nullable();
+                  ->constrained('users')->cascadeOnDelete();
             $table->text('address')->nullable();
             $table->timestamps();
         });
     }
-    
     public function down(): void
     {
-        Schema::dropIfExists('teacher_profiles');
+        Schema::dropIfExists('parent_profiles');
     }
-    
 };

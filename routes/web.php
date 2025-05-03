@@ -1,8 +1,10 @@
 <?php
-
-use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ClassroomController;
+use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\StudentController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AdminController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,21 +22,23 @@ Route::middleware('guest')->group(function () {
     Route::post('/parent/register', [AuthController::class, 'parentRegister']);
 });
 
+Route::get('/classroom/11', function () {
+    return view('Classroom.classroom-detail');
+})->name('classroom-detail');
 
-Route::post('/students', [StudentController::class,'store'])
-         ->middleware('role:admin,teacher')
-         ->name('students.store');
+Route::get('/classroom/{class}/{tab}', [ClassroomController::class, 'showClassroomDetail'])->name('classroom.tab');
+// Route::get('/classroom/schedule', [ScheduleController::class, 'index'])->name('schedule');
+Route::get('/classroom/{class}/{tab}/{id}', [ClassroomController::class, 'showClassroomDetail'])->name('classroom.tabs-detail');
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
 
-         
-Route::middleware('auth')->group(function () {
-    // Dashboard
-    Route::get('/dashboard', fn() => view('dashboard'))->name('dashboard');
 
-    // Simpan data siswa — hanya admin & guru
-    Route::post('/students', [StudentController::class, 'store'])
-         ->middleware('role:admin,teacher')
-         ->name('students.store');
+// Route::get('/classroom/{class}/{tab}/create', [ClassroomController::class, 'showClassroomDetail'])->name('classroom.tabs-schedule-create');
 
-    // Logout
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-});
+Route::get('/testing', function () {
+    return view('index22');
+})->name('index-test');
+
+
+Route::get('/classroom/{class}/{tab}/peserta/{selectedStudentId}', [ClassroomController::class, 'showClassroomDetail'])->name('classroom.student-detail');
+
+Route::get('/admin/orangtua', [AdminController::class, 'fetchParentList'])->name('Admin.index');

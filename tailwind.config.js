@@ -1,4 +1,3 @@
-// tailwind.config.js
 module.exports = {
     content: [
       "./resources/**/*.blade.php",
@@ -8,7 +7,7 @@ module.exports = {
     theme: {
       extend: {
         fontFamily: {
-          poppins: ['Poppins', 'sans-serif'],
+          sans: ['Poppins', 'Instrument Sans', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         },
       },
     },

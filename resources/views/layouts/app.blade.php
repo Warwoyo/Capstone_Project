@@ -11,6 +11,7 @@
   
 {{-- Tailwind CSS via Vite --}}
   @vite('resources/css/app.css')
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-white text-gray-800 min-h-screen flex flex-col">
 

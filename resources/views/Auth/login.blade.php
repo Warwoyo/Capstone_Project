@@ -2,6 +2,7 @@
 
 @section('title', 'Login')
 
+
 @section('content')
 <div class="max-w-2xl mx-auto mt-2 p-6 bg-white rounded-lg">
 
@@ -13,7 +14,7 @@
         class="object-contain self-center max-w-full aspect-[1.38] w-[120px]"
       />
       <h1 class="mt-0 text-2xl font-bold text-center text-sky-600 max-md:max-w-full ">
-        Login Akun
+        Masuk ke KANA
       </h1>
     </header>
 

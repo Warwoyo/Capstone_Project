@@ -10,6 +10,19 @@ class DashboardController extends Controller
     {
         $AnnouncementController = new AnnouncementController();
         $announcementList = $AnnouncementController->fetchAnnouncementList();
-        return view('Dashboard.index', compact('announcementList'));
+        $user = auth()->user();
+
+        switch ($user->role) {
+            case 'admin':
+            case 'teacher':
+                return view('Dashboard.index', compact('announcementList')); // tampilan dashboard umum untuk admin/guru
+            case 'parent':
+                return view('Dashboard.parent', compact('user')); // dashboard khusus orang tua
+            default:
+                abort(403);
+        }
+
+        
+        
     }
 }

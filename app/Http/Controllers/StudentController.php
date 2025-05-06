@@ -2,128 +2,149 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Student;
+use App\Models\ParentModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Storage;
 
 class StudentController extends Controller
 {
-    public function getStudentList()
-    { return [
-        [
-            'id' => 1,
-            'nama' => 'Anita Silalahi',
-            'tanggal_lahir' => '2013-05-29',
-            'jenis_kelamin' => 'Perempuan',
-            'alamat' => 'Kota Malang',
-            'nama_orang_tua' => 'Jansen Silalahi',
-            'nomor_hp_orang_tua' => '08123456789',
-            'alergi' => 'Alergi Kacang',
-            'foto' => 'anita.jpg',
-        ],
-        [
-            'id' => 2,
-            'nama' => 'Raka Permana',
-            'tanggal_lahir' => '2012-02-12',
-            'jenis_kelamin' => 'Laki-laki',
-            'alamat' => 'Surabaya',
-            'nama_orang_tua' => 'Dian Permana',
-            'nomor_hp_orang_tua' => '082198765432',
-            'alergi' => 'Tidak ada',
-            'foto' => 'raka.jpg',
-        ],
-        [
-            'id' => 3,
-            'nama' => 'Siti Nurhaliza',
-            'tanggal_lahir' => '2013-08-08',
-            'jenis_kelamin' => 'Perempuan',
-            'alamat' => 'Bandung',
-            'nama_orang_tua' => 'Asep Nurhalim',
-            'nomor_hp_orang_tua' => '081277788899',
-            'alergi' => 'Debu',
-            'foto' => 'siti.jpg',
-        ],
-        [
-            'id' => 4,
-            'nama' => 'Bima Pradipta',
-            'tanggal_lahir' => '2014-03-17',
-            'jenis_kelamin' => 'Laki-laki',
-            'alamat' => 'Jakarta Selatan',
-            'nama_orang_tua' => 'Rina Pradipta',
-            'nomor_hp_orang_tua' => '083112223333',
-            'alergi' => 'Laktosa',
-            'foto' => 'bima.jpg',
-        ],
-        [
-            'id' => 5,
-            'nama' => 'Lestari Ayuningtyas',
-            'tanggal_lahir' => '2013-01-05',
-            'jenis_kelamin' => 'Perempuan',
-            'alamat' => 'Yogyakarta',
-            'nama_orang_tua' => 'Suryo Ayuningtyas',
-            'nomor_hp_orang_tua' => '081355566677',
-            'alergi' => 'Tidak ada',
-            'foto' => 'lestari.jpg',
-        ],
-        [
-            'id' => 6,
-            'nama' => 'Fikri Ramadhan',
-            'tanggal_lahir' => '2012-04-20',
-            'jenis_kelamin' => 'Laki-laki',
-            'alamat' => 'Bekasi',
-            'nama_orang_tua' => 'Wahyudi Ramadhan',
-            'nomor_hp_orang_tua' => '082122233344',
-            'alergi' => 'Alergi Udang',
-            'foto' => 'fikri.jpg',
-        ],
-        [
-            'id' => 7,
-            'nama' => 'Tania Salsabila',
-            'tanggal_lahir' => '2013-11-02',
-            'jenis_kelamin' => 'Perempuan',
-            'alamat' => 'Depok',
-            'nama_orang_tua' => 'Rizky Salsabila',
-            'nomor_hp_orang_tua' => '081234567812',
-            'alergi' => 'Alergi Telur',
-            'foto' => 'tania.jpg',
-        ],
-        [
-            'id' => 8,
-            'nama' => 'Andra Putra',
-            'tanggal_lahir' => '2014-06-15',
-            'jenis_kelamin' => 'Laki-laki',
-            'alamat' => 'Tangerang',
-            'nama_orang_tua' => 'Putri Andayani',
-            'nomor_hp_orang_tua' => '082122111444',
-            'alergi' => 'Tidak ada',
-            'foto' => 'andra.jpg',
-        ],
-        [
-            'id' => 9,
-            'nama' => 'Clarissa Dwi',
-            'tanggal_lahir' => '2012-09-30',
-            'jenis_kelamin' => 'Perempuan',
-            'alamat' => 'Bogor',
-            'nama_orang_tua' => 'Dwi Kartika',
-            'nomor_hp_orang_tua' => '081266655544',
-            'alergi' => 'Debu dan serbuk sari',
-            'foto' => 'clarissa.jpg',
-        ],
-        [
-            'id' => 10,
-            'nama' => 'Zaki Ahmad',
-            'tanggal_lahir' => '2013-03-10',
-            'jenis_kelamin' => 'Laki-laki',
-            'alamat' => 'Cimahi',
-            'nama_orang_tua' => 'Ahmad Yusuf',
-            'nomor_hp_orang_tua' => '083344455566',
-            'alergi' => 'Alergi gluten',
-            'foto' => 'zaki.jpg',
-        ],
-    ];
-}
+    public function index()
+    {
+        $students = Student::with(['mother', 'father'])->get();
+        return view('components.menu.student-menu', [
+            'mode' => 'view',
+            'studentList' => $students
+        ]);
+    }
 
-public function fetchStudentList()
-{
-    return $this->getStudentList();
-}
+    public function store(Request $request)
+    {
+        $data = $this->validateData($request);
 
+        // Simpan data siswa
+        $student = Student::create(Arr::only($data, [
+            'name', 'nik', 'birth_date', 'gender', 'address', 'medical_history', 'group'
+        ]));
+
+        if ($request->hasFile('photo')) {
+            $student->update([
+                'photo' => $request->file('photo')->store('student_photos', 'public')
+            ]);
+        }
+
+        // Simpan data orang tua
+        $student->parents()->createMany([
+            [
+                'relation' => 'mother',
+                'name' => $data['mother_name'],
+                'nik' => $data['mother_nik'] ?? null,
+                'phone' => $data['mother_phone'],
+                'email' => $data['mother_email'],
+                'address' => $data['mother_address'],
+                'occupation' => $data['mother_job'],
+            ],
+            [
+                'relation' => 'father',
+                'name' => $data['father_name'],
+                'nik' => $data['father_nik'] ?? null,
+                'phone' => $data['father_phone'],
+                'email' => $data['father_email'],
+                'address' => $data['father_address'],
+                'occupation' => $data['father_job'],
+            ],
+        ]);
+
+        return redirect()->route('students.index')->with('success', 'Data siswa berhasil ditambahkan.');
+    }
+
+    public function edit(Student $student)
+    {
+        $student->load(['mother', 'father']);
+        $students = Student::with(['mother', 'father'])->get();
+
+        return view('components.menu.student-menu', [
+            'mode' => 'edit',
+            'studentList' => $students,
+            'student' => $student
+        ]);
+    }
+
+    public function update(Request $request, Student $student)
+    {
+        $data = $this->validateData($request);
+
+        // Update data siswa
+        $student->update(Arr::only($data, [
+            'name', 'nik', 'birth_date', 'gender', 'address', 'medical_history', 'group'
+        ]));
+
+        if ($request->hasFile('photo')) {
+            if ($student->photo) {
+                Storage::disk('public')->delete($student->photo);
+            }
+            $student->update([
+                'photo' => $request->file('photo')->store('student_photos', 'public')
+            ]);
+        }
+
+        // Update atau buat data orang tua
+        foreach (['mother', 'father'] as $relation) {
+            $student->parents()->updateOrCreate(
+                ['relation' => $relation],
+                [
+                    'name' => $data["{$relation}_name"],
+                    'nik' => $data["{$relation}_nik"] ?? null,
+                    'phone' => $data["{$relation}_phone"],
+                    'email' => $data["{$relation}_email"],
+                    'address' => $data["{$relation}_address"],
+                    'occupation' => $data["{$relation}_job"],
+                ]
+            );
+        }
+
+        return redirect()->route('students.index')->with('success', 'Data siswa berhasil diperbarui.');
+    }
+
+    public function destroy(Student $student)
+    {
+        if ($student->photo) {
+            Storage::disk('public')->delete($student->photo);
+        }
+
+        $student->delete();
+        return redirect()->route('students.index')->with('success', 'Data siswa berhasil dihapus.');
+    }
+
+    private function validateData(Request $request): array
+    {
+        return $request->validate([
+            // Data anak
+            'name' => 'required|string|max:100',
+            'nik' => 'required|string|max:20',
+            'birth_date' => 'required|date',
+            'gender' => 'required|in:male,female',
+            'address' => 'nullable|string',
+            'medical_history' => 'nullable|string',
+            'group' => 'nullable|string|max:100',
+            'photo' => 'nullable|image|max:2048',
+
+            // Ibu
+            'mother_name' => 'required|string|max:100',
+            'mother_nik' => 'nullable|string|max:20',
+            'mother_phone' => 'nullable|string|max:20',
+            'mother_email' => 'nullable|email|max:100',
+            'mother_address' => 'nullable|string',
+            'mother_job' => 'nullable|string|max:100',
+
+            // Ayah
+            'father_name' => 'required|string|max:100',
+            'father_nik' => 'nullable|string|max:20',
+            'father_phone' => 'nullable|string|max:20',
+            'father_email' => 'nullable|email|max:100',
+            'father_address' => 'nullable|string',
+            'father_job' => 'nullable|string|max:100',
+        ]);
+    }
 }

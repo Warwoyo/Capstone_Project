@@ -7,6 +7,7 @@ use App\Http\Controllers\StudentController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 
+use App\Http\Controllers\ObservatianController;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,6 +22,15 @@ Route::middleware('guest')->group(function () {
     Route::get('/parent/register',  [AuthController::class, 'showParentRegister'])->name('parent.register');
     Route::post('/parent/register', [AuthController::class, 'parentRegister']);
 });
+// Route::middleware('guest')->group(function () {
+//     // Login
+//     Route::get('/login',  [AuthController::class, 'showLogin'])->name('login');
+//     Route::post('/login', [AuthController::class, 'login']);
+
+//     // Register Orang Tua
+//     Route::get('/parent/register',  [AuthController::class, 'showParentRegister'])->name('parent.register');
+//     Route::post('/parent/register', [AuthController::class, 'parentRegister']);
+// });
 
 // AUTH - Sudah login
 Route::middleware('auth')->group(function () {
@@ -107,3 +117,6 @@ Route::middleware(['auth','role:admin,teacher,parent'])->group(function () {
     Route::get('/classrooms', [ClassroomController::class, 'index'])
         ->name('classrooms.index');
 });
+Route::get('/admin/orangtua', [AdminController::class, 'fetchParentList'])->name('Admin.index');
+
+Route::get('/classroom', [ClassroomController::class, 'index'])->name('Classroom.index');

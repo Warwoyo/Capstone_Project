@@ -5,7 +5,8 @@
     'schedule' => null,
     'mode' => null,
     'announcement' => null,
-    'student' => null
+    'student' => null,
+    'observation' => null
 ])
 
 <!-- Kontainer global Alpine -->
@@ -79,6 +80,15 @@
             :component="'menu.' . $englishTab . '-menu'" 
             :studentList="$student" 
             :class="$class" 
+            :label="ucfirst($tab)" 
+           
+        />
+        @elseif (strtolower($tab) === 'observasi')
+        <x-dynamic-component 
+            :component="'menu.' . $englishTab . '-menu'" 
+            :studentList="$student" 
+            :class="$class" 
+            :observationList="$observation"
             :label="ucfirst($tab)" 
            
         />

@@ -54,6 +54,7 @@
         :student="$studentList"
         :announcement="$announcementList"
         x-bind:mode="mode"
+        :observation="$observationList"
 
     />
 

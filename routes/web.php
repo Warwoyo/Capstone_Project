@@ -5,6 +5,7 @@ use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\ObservatianController;
 
 /*
 |--------------------------------------------------------------------------
@@ -12,15 +13,15 @@ use App\Http\Controllers\AdminController;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('guest')->group(function () {
-    // Login
-    Route::get('/login',  [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
+// Route::middleware('guest')->group(function () {
+//     // Login
+//     Route::get('/login',  [AuthController::class, 'showLogin'])->name('login');
+//     Route::post('/login', [AuthController::class, 'login']);
 
-    // Register Orang Tua
-    Route::get('/parent/register',  [AuthController::class, 'showParentRegister'])->name('parent.register');
-    Route::post('/parent/register', [AuthController::class, 'parentRegister']);
-});
+//     // Register Orang Tua
+//     Route::get('/parent/register',  [AuthController::class, 'showParentRegister'])->name('parent.register');
+//     Route::post('/parent/register', [AuthController::class, 'parentRegister']);
+// });
 
 Route::get('/classroom/11', function () {
     return view('Classroom.classroom-detail');
@@ -42,3 +43,5 @@ Route::get('/testing', function () {
 Route::get('/classroom/{class}/{tab}/peserta/{selectedStudentId}', [ClassroomController::class, 'showClassroomDetail'])->name('classroom.student-detail');
 
 Route::get('/admin/orangtua', [AdminController::class, 'fetchParentList'])->name('Admin.index');
+
+Route::get('/classroom', [ClassroomController::class, 'index'])->name('Classroom.index');

@@ -1,306 +1,200 @@
-@props(['mode', 'studentList', 'student' => null])
+{{--  resources/views/components/menu/student-menu.blade.php  --}}
+@props(['student','class'])
 
-<div x-data="{ mode: @entangle('mode') }" class="flex-1 w-full">
-<<<<<<< HEAD
-  <!-- ========================= VIEW MODE ========================= -->
-  <div x-show="mode === 'view'" class="flex-1 w-full">
-    @if($studentList->isEmpty())
-      <div class="py-8 text-center text-slate-500">kelas masih kosong</div>
-    @else
-      <div class="overflow-y-auto hide-scrollbar max-h-[43vh] md:max-h-[42vh]">
-        <!-- Header -->
-        <div class="pl-2 flex items-center bg-sky-200 h-[43px] rounded-t-lg">
-          @foreach(['Nama Lengkap', 'Kelompok', 'Token', 'Pilihan'] as $header)
-            <h3 class="flex-1 text-sm font-medium text-center text-slate-600">{{ $header }}</h3>
-          @endforeach
-=======
-<!-- View Data -->
-<div x-show="mode === 'view'" class="flex-1 w-full">
-  <div class="overflow-y-auto hide-scrollbar max-h-[43vh] md:max-h-[42vh]">
+<div x-data="{ mode:'view', editId:null }" class="flex-1 w-full">
 
-    <!-- Header -->
-    <div class="pl-2 flex items-center bg-sky-200 h-[43px] rounded-t-lg">
-      @foreach (['Nama Lengkap', 'Nama Kelompok', 'Token', 'Pilihan'] as $header)
-        <h3 class="flex-1 text-sm font-medium text-center text-slate-600 max-md:text-sm max-sm:text-xs">
-          {{ $header }}
-        </h3>
-      @endforeach
-    </div>
-
-    <!-- Data Rows -->
-    @foreach ($studentList as $student)
-      <div class="flex items-center px-3 py-1 border border-gray-200">
-        <div class="flex-1 text-sm text-center text-slate-600">{{ $student['nama'] }}</div>
-        <div class="flex-1 text-sm text-center text-slate-600">{{ $student['kelompok'] ?? '-' }}</div>
-        <div class="flex-1 text-sm text-center text-slate-600">{{ $student['token'] ?? '-' }}</div>
-        <div class="flex-1 text-sm text-center text-slate-600">
-          <div class="flex flex-col gap-1 items-center">
-            <button
-              class="w-20 text-xs font-medium bg-transparent rounded-lg border border-sky-300 text-slate-600 h-[25px]"
-              @click="mode = 'edit'"
-            >
-              Edit
-            </button>
-            <button
-              class="w-20 text-xs font-medium text-white bg-sky-300 rounded-lg border border-sky-300 h-[25px]"
-              @click="mode = 'detail'"
-            >
-              Detail
-            </button>
-          </div>
->>>>>>> origin/king/frontend/dahsboard_2
-        </div>
-
-        <!-- Rows -->
-        @foreach ($studentList as $child)
-          <div class="flex items-center px-3 py-1 border border-gray-200">
-            <div class="flex-1 text-sm text-center">{{ $child->name }}</div>
-            <div class="flex-1 text-sm text-center">{{ $child->group ?? '-' }}</div>
-            <div class="flex-1 text-sm text-center">{{ $child->id }}</div>
-            <div class="flex-1 text-sm text-center">
-              <div class="flex flex-col gap-1 items-center">
-                <button @click="$wire.call('editStudent', {{ $child->id }})" class="w-20 text-xs border border-sky-300 text-slate-600 rounded-lg h-[25px]">Edit</button>
-                <form method="POST" action="{{ route('students.destroy', $child) }}" onsubmit="return confirm('Hapus data?')">
-                  @csrf @method('DELETE')
-                  <button class="w-20 text-xs bg-red-500 text-white rounded-lg h-[25px]">Hapus</button>
-                </form>
-              </div>
+    {{-- ========== VIEW LIST ========== --}}
+    <div x-show="mode==='view'" class="flex-1 w-full">
+        <div class="overflow-y-auto hide-scrollbar max-h-[60vh]">
+            {{-- Header --}}
+            <div class="pl-2 flex items-center bg-sky-200 h-10 rounded-t-lg">
+                @foreach (['Nama','Kelas','Token','Aksi'] as $h)
+                    <h3 class="flex-1 text-xs text-center font-semibold text-slate-700">{{ $h }}</h3>
+                @endforeach
             </div>
-          </div>
-        @endforeach
-      </div>
-    @endif
-  </div>
 
-  <!-- ========================= ADD MODE ========================= -->
-  <div x-show="mode === 'add'" class="flex-1 w-full">
-    <form method="POST" action="{{ route('students.store') }}" enctype="multipart/form-data">
-      @csrf
-      <article class="grid lg:grid-cols-3 md:grid-cols-2 gap-6 p-6 bg-white border rounded-lg">
-        <!-- Anak -->
-        <div class="flex flex-col gap-2">
-          <h2 class="font-semibold text-slate-700 mb-1">Data Anak</h2>
-          <x-field.profile-field label="Nama Lengkap"    name="name"          value="{{ old('name') }}" editable="true" />
-          <x-field.profile-field label="NIK"             name="nik"           value="{{ old('nik') }}"  editable="true" />
-          <x-field.profile-field label="Tanggal Lahir"  name="birth_date"    type="date" value="{{ old('birth_date') }}" editable="true" />
-          <x-field.profile-field label="Jenis Kelamin"  name="gender"        value="{{ old('gender') }}" editable="true" />
-          <x-field.profile-field label="Alamat"         name="address"       value="{{ old('address') }}" editable="true" />
-          <x-field.profile-field label="Riwayat Kesehatan" name="medical_history" value="{{ old('medical_history') }}" editable="true" />
-          <x-field.profile-field label="Foto"           name="photo"         type="file" editable="true" />
-          <x-field.profile-field label="Kelompok"       name="group"         value="{{ old('group') }}" editable="true" />
+            {{-- Rows --}}
+            @forelse ($student as $stu)
+                <div class="flex items-center px-3 py-1 border border-gray-200">
+                    <div class="flex-1 text-sm text-center">{{ $stu->name }}</div>
+                    <div class="flex-1 text-sm text-center">{{ $class->name ?? $stu->classroom_id }}</div>
+                    <div class="flex-1 text-sm text-center">
+                        {{ $stu->registrationTokens->pluck('token')->implode('/') ?: '-' }}
+                    </div>
+                    <div class="flex-1 text-center">
+                        <button class="w-20 text-xs border border-sky-300 rounded-lg"
+                                @click="mode='edit'; editId={{ $stu->id }}">Edit</button>
+                        <form method="POST" action="{{ route('students.destroy',[$class->id,$stu->id]) }}"
+                              class="inline" onsubmit="return confirm('Hapus siswa?')">
+                            @csrf @method('DELETE')
+                            <button class="w-20 text-xs bg-red-500 text-white rounded-lg mt-1">Hapus</button>
+                        </form>
+                    </div>
+                </div>
+            @empty
+                <div class="text-center py-4 text-gray-400">Belum ada data siswa.</div>
+            @endforelse
         </div>
 
-        <!-- Ibu -->
-        <div class="flex flex-col gap-2">
-          <h2 class="font-semibold text-slate-700 mb-1">Data Ibu</h2>
-          <x-field.profile-field label="Nama Ibu"       name="mother_name"   value="{{ old('mother_name') }}" editable="true" />
-          <x-field.profile-field label="NIK Ibu"        name="mother_nik"    value="{{ old('mother_nik') }}" editable="true" />
-          <x-field.profile-field label="Telp Ibu"       name="mother_phone"  value="{{ old('mother_phone') }}" editable="true" />
-          <x-field.profile-field label="Email Ibu"      name="mother_email"  value="{{ old('mother_email') }}" editable="true" />
-          <x-field.profile-field label="Alamat Ibu"     name="mother_address" value="{{ old('mother_address') }}" editable="true" />
-          <x-field.profile-field label="Pekerjaan Ibu"  name="mother_job"    value="{{ old('mother_job') }}" editable="true" />
+        {{-- tombol tambah --}}
+        <div class="mt-4 text-center">
+            <button @click="mode='add'"
+                    class="bg-sky-600 text-white px-6 py-2 rounded-full">
+                + Tambah Siswa
+            </button>
         </div>
-
-<<<<<<< HEAD
-        <!-- Ayah -->
-        <div class="flex flex-col gap-2">
-          <h2 class="font-semibold text-slate-700 mb-1">Data Ayah</h2>
-          <x-field.profile-field label="Nama Ayah"       name="father_name"   value="{{ old('father_name') }}" editable="true" />
-          <x-field.profile-field label="NIK Ayah"        name="father_nik"    value="{{ old('father_nik') }}" editable="true" />
-          <x-field.profile-field label="Telp Ayah"       name="father_phone"  value="{{ old('father_phone') }}" editable="true" />
-          <x-field.profile-field label="Email Ayah"      name="father_email"  value="{{ old('father_email') }}" editable="true" />
-          <x-field.profile-field label="Alamat Ayah"     name="father_address" value="{{ old('father_address') }}" editable="true" />
-          <x-field.profile-field label="Pekerjaan Ayah"  name="father_job"    value="{{ old('father_job') }}" editable="true" />
-        </div>
-      </article>
-      <div class="mt-4"><x-button.submit-button /></div>
-    </form>
-=======
-<div x-show="mode === 'add'" class="flex-1 w-full">
-  <article class="grid grid-cols-2 gap-6 mx-auto w-full bg-white p-6 rounded-lg border border-gray-200 max-w-[1241px] max-md:grid-cols-1">
-        
-    <div class="flex flex-col gap-2">
-      <x-field.profile-field label="Nama Lengkap" name="nama_lengkap" value="{{ old('nama_lengkap') }}" editable="true" />
-      <x-field.profile-field label="NIK" name="nik_siswa" value="{{ old('nik_siswa') }}" editable="true" />
-      <x-field.profile-field label="Tanggal Lahir" name="tanggal_lahir" value="{{ old('tanggal_lahir') }}" editable="true" type="date" id="tanggal" />
-      <x-field.profile-field label="Jenis Kelamin" name="jenis_kelamin" value="{{ old('jenis_kelamin') }}" editable="true" />
-      
     </div>
 
-    <div class="flex flex-col gap-2">
-    <x-field.profile-field label="Alamat" name="alamat" value="{{ old('alamat') }}" editable="true" />
-      <x-field.profile-field label="Riwayat Kesehatan Anak" name="riwayat_kesehatan" value="{{ old('riwayat_kesehatan') }}" editable="true" />
-      <x-field.profile-field label="Photo" name="photo" value="{{ old('photo') }}" editable="true" type="file" />
+    {{-- ========== ADD FORM (BARU) ========== --}}
+    <div x-show="mode==='add'" class="flex-1" x-data="{ modeOrtu:'ortu' }">
+        <form method="POST"
+              action="{{ route('students.store',['class'=>$class->id]) }}"
+              enctype="multipart/form-data"
+              class="p-4 bg-white rounded-lg border space-y-6">
+            @csrf
+
+            {{-- ===== DATA SISWA ===== --}}
+            <h3 class="font-semibold text-slate-700">Data Siswa</h3>
+            <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm mb-1 text-gray-600">Nomor Induk</label>
+                    <input name="student_number" required
+                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-gray-600">Nama Lengkap</label>
+                    <input name="name" required
+                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-gray-600">Tanggal Lahir</label>
+                    <input type="date" name="birth_date" required
+                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-gray-600">Jenis Kelamin</label>
+                    <select name="gender" required
+                            class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                        <option value="male">Laki-laki</option>
+                        <option value="female">Perempuan</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm mb-1 text-gray-600">Foto (opsional)</label>
+                    <input type="file" name="photo"
+                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm mb-1 text-gray-600">Riwayat Medis</label>
+                    <textarea name="medical_history" rows="2"
+                              class="w-full border rounded px-2 py-1 focus:ring-sky-500"></textarea>
+                </div>
+            </div>
+
+            {{-- ===== TOGGLE TIPE KELUARGA ===== --}}
+            <h3 class="font-semibold text-slate-700">Tipe Data Keluarga</h3>
+            <div class="flex gap-6 text-sm text-gray-700">
+                <label class="inline-flex items-center">
+                    <input type="radio" value="ortu" x-model="modeOrtu" name="tipe_data"
+                           class="form-radio text-sky-600" checked>
+                    <span class="ml-2">Kedua Orang Tua</span>
+                </label>
+                <label class="inline-flex items-center">
+                    <input type="radio" value="wali" x-model="modeOrtu" name="tipe_data"
+                           class="form-radio text-sky-600">
+                    <span class="ml-2">Wali Saja</span>
+                </label>
+            </div>
+
+            {{-- ===== DATA ORANG TUA ===== --}}
+            <div x-show="modeOrtu==='ortu'" class="grid md:grid-cols-2 gap-4">
+                @foreach (['father'=>'Ayah','mother'=>'Ibu'] as $pfx=>$lbl)
+                    <div>
+                        <label class="block text-sm mb-1 text-gray-600">Nama {{ $lbl }}</label>
+                        <input :disabled="modeOrtu!=='ortu'" :required="modeOrtu==='ortu'"
+                               name="{{ $pfx }}_name"
+                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1 text-gray-600">NIK {{ $lbl }}</label>
+                        <input :disabled="modeOrtu!=='ortu'" name="{{ $pfx }}_nik"
+                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1 text-gray-600">Pekerjaan {{ $lbl }}</label>
+                        <input :disabled="modeOrtu!=='ortu'" name="{{ $pfx }}_occupation"
+                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1 text-gray-600">Telp {{ $lbl }}</label>
+                        <input :disabled="modeOrtu!=='ortu'" name="{{ $pfx }}_phone"
+                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm mb-1 text-gray-600">Email {{ $lbl }}</label>
+                        <input type="email" :disabled="modeOrtu!=='ortu'" name="{{ $pfx }}_email"
+                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm mb-1 text-gray-600">Alamat {{ $lbl }}</label>
+                        <textarea :disabled="modeOrtu!=='ortu'" name="{{ $pfx }}_address" rows="2"
+                                  class="w-full border rounded px-2 py-1 focus:ring-sky-500"></textarea>
+                    </div>
+                @endforeach
+            </div>
+
+            {{-- ===== DATA WALI ===== --}}
+            <div x-show="modeOrtu==='wali'" class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm mb-1 text-gray-600">Nama Wali</label>
+                    <input :disabled="modeOrtu!=='wali'" :required="modeOrtu==='wali'"
+                           name="guardian_name"
+                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-gray-600">NIK Wali</label>
+                    <input :disabled="modeOrtu!=='wali'" name="guardian_nik"
+                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-gray-600">Pekerjaan Wali</label>
+                    <input :disabled="modeOrtu!=='wali'" name="guardian_occupation"
+                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-gray-600">Telp Wali</label>
+                    <input :disabled="modeOrtu!=='wali'" name="guardian_phone"
+                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-gray-600">Email Wali</label>
+                    <input type="email" :disabled="modeOrtu!=='wali'" name="guardian_email"
+                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm mb-1 text-gray-600">Alamat Wali</label>
+                    <textarea :disabled="modeOrtu!=='wali'" name="guardian_address" rows="2"
+                              class="w-full border rounded px-2 py-1 focus:ring-sky-500"></textarea>
+                </div>
+            </div>
+
+            {{-- ===== AKSI ===== --}}
+            <div class="flex gap-3">
+                <button type="submit"
+                        class="px-6 py-2 bg-sky-600 text-white rounded-full hover:bg-sky-700">
+                    Simpan
+                </button>
+                <button type="button" @click="mode='view'"
+                        class="px-6 py-2 bg-gray-200 rounded-full">
+                    Batal
+                </button>
+            </div>
+        </form>
     </div>
 
-  </article>
-
-  <article class="grid grid-cols-2 gap-6 mx-auto w-full bg-white p-6 mt-6 rounded-lg border border-gray-200 max-w-[1241px] max-md:grid-cols-1">
-    <!-- Data Ayah -->
-    <div class="flex flex-col gap-2">
-      <h2 class="text-lg font-semibold mb-2">Data Ayah</h2>
-      <x-field.profile-field label="Nama Ayah" name="nama_ayah" value="{{ old('nama_ayah') }}" editable="true" />
-      <x-field.profile-field label="NIK Ayah" name="nik_ayah" value="{{ old('nik_ayah') }}" editable="true" />
-      <x-field.profile-field label="Email Ayah" name="email_ayah" value="{{ old('email_ayah') }}" editable="true" type="email" />
-      <x-field.profile-field label="Nomor Telepon Ayah" name="telepon_ayah" value="{{ old('telepon_ayah') }}" editable="true" />
-      <x-field.profile-field label="Alamat Ayah" name="alamat_ayah" value="{{ old('alamat_ayah') }}" editable="true" />
-      <x-field.profile-field label="Pekerjaan Ayah" name="pekerjaan_ayah" value="{{ old('pekerjaan_ayah') }}" editable="true" />
+    {{-- ========== EDIT FORM (tetap) ========== --}}
+    <div x-show="mode==='edit'" x-cloak class="flex-1">
+        {{-- …form edit yang sudah Anda miliki… --}}
     </div>
 
-    <!-- Data Ibu -->
-    <div class="flex flex-col gap-2">
-      <h2 class="text-lg font-semibold mb-2">Data Ibu</h2>
-      <x-field.profile-field label="Nama Ibu" name="nama_ibu" value="{{ old('nama_ibu') }}" editable="true" />
-      <x-field.profile-field label="NIK Ibu" name="nik_ibu" value="{{ old('nik_ibu') }}" editable="true" />
-      <x-field.profile-field label="Email Ibu" name="email_ibu" value="{{ old('email_ibu') }}" editable="true" type="email" />
-      <x-field.profile-field label="Nomor Telepon Ibu" name="telepon_ibu" value="{{ old('telepon_ibu') }}" editable="true" />
-      <x-field.profile-field label="Alamat Ibu" name="alamat_ibu" value="{{ old('alamat_ibu') }}" editable="true" />
-      <x-field.profile-field label="Pekerjaan Ibu" name="pekerjaan_ibu" value="{{ old('pekerjaan_ibu') }}" editable="true" />
-    </div>
-  </article>
-  <div class="mt-4">
-    <x-button.submit-button />
->>>>>>> origin/king/frontend/dahsboard_2
-  </div>
-
-  <!-- ========================= EDIT MODE ========================= -->
-  <div x-show="mode === 'edit'" class="flex-1 w-full">
-    <form method="POST" action="{{ route('students.update', $student?->id) }}" enctype="multipart/form-data">
-      @csrf @method('PUT')
-      <article class="grid lg:grid-cols-3 md:grid-cols-2 gap-6 p-6 bg-white border rounded-lg">
-        <!-- Anak -->
-        <div class="flex flex-col gap-2">
-          <h2 class="font-semibold text-slate-700 mb-1">Data Anak</h2>
-          <x-field.profile-field label="Nama Lengkap"    name="name"          value="{{ old('name', $student?->name) }}" editable="true" />
-          <x-field.profile-field label="NIK"             name="nik"           value="{{ old('nik', $student?->nik) }}" editable="true" />
-          <x-field.profile-field label="Tanggal Lahir"  name="birth_date"    type="date" value="{{ old('birth_date', $student?->birth_date) }}" editable="true" />
-          <x-field.profile-field label="Jenis Kelamin"  name="gender"        value="{{ old('gender', $student?->gender) }}" editable="true" />
-          <x-field.profile-field label="Alamat"         name="address"       value="{{ old('address', $student?->address) }}" editable="true" />
-          <x-field.profile-field label="Riwayat Kesehatan" name="medical_history" value="{{ old('medical_history', $student?->medical_history) }}" editable="true" />
-          <x-field.profile-field label="Foto"           name="photo"         type="file" editable="true" />
-          <x-field.profile-field label="Kelompok"       name="group"         value="{{ old('group', $student?->group) }}" editable="true" />
-        </div>
-
-<<<<<<< HEAD
-        <!-- Ibu -->
-        <div class="flex flex-col gap-2">
-          <h2 class="font-semibold text-slate-700 mb-1">Data Ibu</h2>
-          <x-field.profile-field label="Nama Ibu"       name="mother_name"   value="{{ old('mother_name', $student?->mother?->name) }}" editable="true" />
-          <x-field.profile-field label="NIK Ibu"        name="mother_nik"    value="{{ old('mother_nik', $student?->mother?->nik) }}" editable="true" />
-          <x-field.profile-field label="Telp Ibu"       name="mother_phone"  value="{{ old('mother_phone', $student?->mother?->phone) }}" editable="true" />
-          <x-field.profile-field label="Email Ibu"      name="mother_email"  value="{{ old('mother_email', $student?->mother?->email) }}" editable="true" />
-          <x-field.profile-field label="Alamat Ibu"     name="mother_address" value="{{ old('mother_address', $student?->mother?->address) }}" editable="true" />
-          <x-field.profile-field label="Pekerjaan Ibu"  name="mother_job"    value="{{ old('mother_job', $student?->mother?->occupation) }}" editable="true" />
-        </div>
-
-        <!-- Ayah -->
-        <div class="flex flex-col gap-2">
-          <h2 class="font-semibold text-slate-700 mb-1">Data Ayah</h2>
-          <x-field.profile-field label="Nama Ayah"       name="father_name"   value="{{ old('father_name', $student?->father?->name) }}" editable="true" />
-          <x-field.profile-field label="NIK Ayah"        name="father_nik"    value="{{ old('father_nik', $student?->father?->nik) }}" editable="true" />
-          <x-field.profile-field label="Telp Ayah"       name="father_phone"  value="{{ old('father_phone', $student?->father?->phone) }}" editable="true" />
-          <x-field.profile-field label="Email Ayah"      name="father_email"  value="{{ old('father_email', $student?->father?->email) }}" editable="true" />
-          <x-field.profile-field label="Alamat Ayah"     name="father_address" value="{{ old('father_address', $student?->father?->address) }}" editable="true" />
-          <x-field.profile-field label="Pekerjaan Ayah"  name="father_job"    value="{{ old('father_job', $student?->father?->occupation) }}" editable="true" />
-        </div>
-      </article>
-      <div class="mt-4"><x-button.submit-button /></div>
-    </form>
-  </div>
 </div>
-=======
-
-<div x-show="mode === 'edit'" class="flex-1 w-full">
-  <article class="grid grid-cols-2 gap-6 mx-auto w-full bg-white p-6 rounded-lg border border-gray-200 max-w-[1241px] max-md:grid-cols-1">
-    
-    <div class="flex flex-col gap-2">
-      <x-field.profile-field label="Nama Lengkap" name="nama_lengkap" value="{{ old('nama_lengkap') }}" editable="true" />
-      <x-field.profile-field label="NIK" name="nik_siswa" value="{{ old('nik_siswa') }}" editable="true" />
-      <x-field.profile-field label="Tanggal Lahir" name="tanggal_lahir" value="{{ old('tanggal_lahir') }}" editable="true" type="date" id="tanggal" />
-      <x-field.profile-field label="Jenis Kelamin" name="jenis_kelamin" value="{{ old('jenis_kelamin') }}" editable="true" />
-      
-    </div>
-
-    <div class="flex flex-col gap-2">
-    <x-field.profile-field label="Alamat" name="alamat" value="{{ old('alamat') }}" editable="true" />
-      <x-field.profile-field label="Riwayat Kesehatan Anak" name="riwayat_kesehatan" value="{{ old('riwayat_kesehatan') }}" editable="true" />
-      <x-field.profile-field label="Photo" name="photo" value="{{ old('photo') }}" editable="true" type="file" />
-    </div>
-
-  </article>
-
-  <article class="grid grid-cols-2 gap-6 mx-auto w-full bg-white p-6 mt-6 rounded-lg border border-gray-200 max-w-[1241px] max-md:grid-cols-1">
-    <!-- Data Ayah -->
-    <div class="flex flex-col gap-2">
-      <h2 class="text-lg font-semibold mb-2">Data Ayah</h2>
-      <x-field.profile-field label="Nama Ayah" name="nama_ayah" value="{{ old('nama_ayah') }}" editable="true" />
-      <x-field.profile-field label="NIK Ayah" name="nik_ayah" value="{{ old('nik_ayah') }}" editable="true" />
-      <x-field.profile-field label="Email Ayah" name="email_ayah" value="{{ old('email_ayah') }}" editable="true" type="email" />
-      <x-field.profile-field label="Nomor Telepon Ayah" name="telepon_ayah" value="{{ old('telepon_ayah') }}" editable="true" />
-      <x-field.profile-field label="Alamat Ayah" name="alamat_ayah" value="{{ old('alamat_ayah') }}" editable="true" />
-      <x-field.profile-field label="Pekerjaan Ayah" name="pekerjaan_ayah" value="{{ old('pekerjaan_ayah') }}" editable="true" />
-    </div>
-
-    <!-- Data Ibu -->
-    <div class="flex flex-col gap-2">
-      <h2 class="text-lg font-semibold mb-2">Data Ibu</h2>
-      <x-field.profile-field label="Nama Ibu" name="nama_ibu" value="{{ old('nama_ibu') }}" editable="true" />
-      <x-field.profile-field label="NIK Ibu" name="nik_ibu" value="{{ old('nik_ibu') }}" editable="true" />
-      <x-field.profile-field label="Email Ibu" name="email_ibu" value="{{ old('email_ibu') }}" editable="true" type="email" />
-      <x-field.profile-field label="Nomor Telepon Ibu" name="telepon_ibu" value="{{ old('telepon_ibu') }}" editable="true" />
-      <x-field.profile-field label="Alamat Ibu" name="alamat_ibu" value="{{ old('alamat_ibu') }}" editable="true" />
-      <x-field.profile-field label="Pekerjaan Ibu" name="pekerjaan_ibu" value="{{ old('pekerjaan_ibu') }}" editable="true" />
-    </div>
-  </article>
-  <div class="mt-4">
-    <x-button.submit-button />
-  </div>
-</div>
-
-
-<div x-show="mode === 'detail'" class="flex-1 w-full">
-  <article class="grid grid-cols-2 gap-6 mx-auto w-full bg-white p-6 rounded-lg border border-gray-200 max-w-[1241px] max-md:grid-cols-1">
-    
-    <div class="flex flex-col gap-2">
-      <x-field.profile-field label="Nama Lengkap" name="nama_lengkap" value="{{ old('nama_lengkap') }}" editable="false" />
-      <x-field.profile-field label="NIK" name="nik_siswa" value="{{ old('nik_siswa') }}" editable="false" />
-      <x-field.profile-field label="Tanggal Lahir" name="tanggal_lahir" value="{{ old('tanggal_lahir') }}" editable="false" type="date" id="tanggal" />
-      <x-field.profile-field label="Jenis Kelamin" name="jenis_kelamin" value="{{ old('jenis_kelamin') }}" editable="false" />
-      
-    </div>
-
-    <div class="flex flex-col gap-2">
-    <x-field.profile-field label="Alamat" name="alamat" value="{{ old('alamat') }}" editable="false" />
-      <x-field.profile-field label="Riwayat Kesehatan Anak" name="riwayat_kesehatan" value="{{ old('riwayat_kesehatan') }}" editable="false" />
-      <x-field.profile-field label="Photo" name="photo" value="{{ old('photo') }}" editable="false" type="file" />
-    </div>
-
-  </article>
-
-  <article class="grid grid-cols-2 gap-6 mx-auto w-full bg-white p-6 mt-6 rounded-lg border border-gray-200 max-w-[1241px] max-md:grid-cols-1">
-    <!-- Data Ayah -->
-    <div class="flex flex-col gap-2">
-      <h2 class="text-lg font-semibold mb-2">Data Ayah</h2>
-      <x-field.profile-field label="Nama Ayah" name="nama_ayah" value="{{ old('nama_ayah') }}" editable="false" />
-      <x-field.profile-field label="NIK Ayah" name="nik_ayah" value="{{ old('nik_ayah') }}" editable="false" />
-      <x-field.profile-field label="Email Ayah" name="email_ayah" value="{{ old('email_ayah') }}" editable="false" type="email" />
-      <x-field.profile-field label="Nomor Telepon Ayah" name="telepon_ayah" value="{{ old('telepon_ayah') }}" editable="false" />
-      <x-field.profile-field label="Alamat Ayah" name="alamat_ayah" value="{{ old('alamat_ayah') }}" editable="false" />
-      <x-field.profile-field label="Pekerjaan Ayah" name="pekerjaan_ayah" value="{{ old('pekerjaan_ayah') }}" editable="false" />
-    </div>
-
-    <!-- Data Ibu -->
-    <div class="flex flex-col gap-2">
-      <h2 class="text-lg font-semibold mb-2">Data Ibu</h2>
-      <x-field.profile-field label="Nama Ibu" name="nama_ibu" value="{{ old('nama_ibu') }}" editable="false" />
-      <x-field.profile-field label="NIK Ibu" name="nik_ibu" value="{{ old('nik_ibu') }}" editable="false" />
-      <x-field.profile-field label="Email Ibu" name="email_ibu" value="{{ old('email_ibu') }}" editable="false" type="email" />
-      <x-field.profile-field label="Nomor Telepon Ibu" name="telepon_ibu" value="{{ old('telepon_ibu') }}" editable="false" />
-      <x-field.profile-field label="Alamat Ibu" name="alamat_ibu" value="{{ old('alamat_ibu') }}" editable="false" />
-      <x-field.profile-field label="Pekerjaan Ibu" name="pekerjaan_ibu" value="{{ old('pekerjaan_ibu') }}" editable="false" />
-    </div>
-  </article>
-
-
-        </div>
->>>>>>> origin/king/frontend/dahsboard_2

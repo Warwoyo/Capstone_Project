@@ -1,150 +1,127 @@
 <?php
-
+// app/Http/Controllers/StudentController.php
 namespace App\Http\Controllers;
+use Illuminate\Support\Facades\DB;          // ← untuk DB::transaction
+use Illuminate\Support\Str;                 // ← untuk Str::random
+use Illuminate\Support\Facades\Log;
 
-use App\Models\Student;
-use App\Models\ParentModel;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Storage;
+use App\Models\{Student, Classroom, User, RegistrationToken, UserContact, ParentProfile};
 
 class StudentController extends Controller
 {
-    public function index()
+    
+    public function store(Request $r, Classroom $class)
     {
-        $students = Student::with(['mother', 'father'])->get();
-        return view('components.menu.student-menu', [
-            'mode' => 'view',
-            'studentList' => $students
+        // dd($r->all());
+        /* 1. Validasi */
+        $r->validate([
+            'student_number' => 'required|max:30',
+            'name'           => 'required|max:100',
+            'birth_date'     => 'required|date',
+            'gender'         => 'required|in:male,female',
+            'father_name'     => 'required_if:tipe_data,ortu|max:100',
+            'mother_name'     => 'required_if:tipe_data,ortu|max:100',
+            'guardian_name'   => 'required_if:tipe_data,wali|max:100',
+            // … sisanya nullable …
         ]);
-    }
-
-    public function store(Request $request)
-    {
-        $data = $this->validateData($request);
-
-        // Simpan data siswa
-        $student = Student::create(Arr::only($data, [
-            'name', 'nik', 'birth_date', 'gender', 'address', 'medical_history', 'group'
-        ]));
-
-        if ($request->hasFile('photo')) {
-            $student->update([
-                'photo' => $request->file('photo')->store('student_photos', 'public')
+    
+        /* 2. Transaksi */
+        DB::beginTransaction();
+        try {
+            /* --- SIMPAN SISWA --- */
+            $student = Student::create([
+                'student_number'  => $r->student_number,
+                'name'            => $r->name,
+                'birth_date'      => $r->birth_date,
+                'gender'          => $r->gender,
+                'photo'           => $r->file('photo')?->store('students','public'),
+                'medical_history' => $r->medical_history,
             ]);
-        }
+    
+            $class->students()->attach($student->id);
+    
+            /* ───── BUILD PARENT DATA ───── */
+            $parentData = [];
 
-        // Simpan data orang tua
-        $student->parents()->createMany([
-            [
-                'relation' => 'mother',
-                'name' => $data['mother_name'],
-                'nik' => $data['mother_nik'] ?? null,
-                'phone' => $data['mother_phone'],
-                'email' => $data['mother_email'],
-                'address' => $data['mother_address'],
-                'occupation' => $data['mother_job'],
-            ],
-            [
-                'relation' => 'father',
-                'name' => $data['father_name'],
-                'nik' => $data['father_nik'] ?? null,
-                'phone' => $data['father_phone'],
-                'email' => $data['father_email'],
-                'address' => $data['father_address'],
-                'occupation' => $data['father_job'],
-            ],
-        ]);
-
-        return redirect()->route('students.index')->with('success', 'Data siswa berhasil ditambahkan.');
-    }
-
-    public function edit(Student $student)
-    {
-        $student->load(['mother', 'father']);
-        $students = Student::with(['mother', 'father'])->get();
-
-        return view('components.menu.student-menu', [
-            'mode' => 'edit',
-            'studentList' => $students,
-            'student' => $student
-        ]);
-    }
-
-    public function update(Request $request, Student $student)
-    {
-        $data = $this->validateData($request);
-
-        // Update data siswa
-        $student->update(Arr::only($data, [
-            'name', 'nik', 'birth_date', 'gender', 'address', 'medical_history', 'group'
-        ]));
-
-        if ($request->hasFile('photo')) {
-            if ($student->photo) {
-                Storage::disk('public')->delete($student->photo);
+            if ($r->input('tipe_data') === 'ortu') {
+                // AYAH
+                if (trim($r->father_name) !== '') {
+                    $parentData[] = [
+                        'name'       => $r->father_name,
+                        'relation'   => 'father',
+                        'phone'      => $r->father_phone ?: null,
+                        'email'      => $r->father_email ?: null,
+                        'nik'        => $r->father_nik ?: null,
+                        'occupation' => $r->father_occupation ?: null,
+                        'address'    => $r->father_address ?: null,
+                    ];
+                }
+                // IBU
+                if (trim($r->mother_name) !== '') {
+                    $parentData[] = [
+                        'name'       => $r->mother_name,
+                        'relation'   => 'mother',
+                        'phone'      => $r->mother_phone ?: null,
+                        'email'      => $r->mother_email ?: null,
+                        'nik'        => $r->mother_nik ?: null,
+                        'occupation' => $r->mother_occupation ?: null,
+                        'address'    => $r->mother_address ?: null,
+                    ];
+                }
             }
-            $student->update([
-                'photo' => $request->file('photo')->store('student_photos', 'public')
+
+            if ($r->input('tipe_data') === 'wali') {
+                // HANYA WALI
+                if (trim($r->guardian_name) !== '') {
+                    $parentData[] = [
+                        'name'       => $r->guardian_name,
+                        'relation'   => 'guardian',
+                        'phone'      => $r->guardian_phone ?: null,
+                        'email'      => $r->guardian_email ?: null,
+                        'nik'        => $r->guardian_nik ?: null,
+                        'occupation' => $r->guardian_occupation ?: null,
+                        'address'    => $r->guardian_address ?: null,
+                    ];
+                }
+            }
+
+            /* ─── BUANG kolom phone/email kalau kosong agar tidak kena UNIQUE NULL ─── */
+            foreach ($parentData as &$p) {
+                if (empty($p['phone'])) unset($p['phone']);
+                if (empty($p['email'])) unset($p['email']);
+            }
+            unset($p);
+
+            /* ───── SIMPAN ORANG-TUA / WALI ───── */
+            if ($parentData) {
+                $student->parents()->createMany($parentData);
+            }
+
+    
+            /* --- TOKEN --- */
+            $student->registrationTokens()->create([
+                'token'      => strtoupper(Str::random(8)),
+                'expires_at' => now()->addDays(7),
             ]);
+    
+            DB::commit();
+            Log::info('COMMIT OK', ['student_id'=>$student->id]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('ROLLBACK', ['msg'=>$e->getMessage()]);
+            return back()->withErrors('Gagal simpan: '.$e->getMessage());
         }
-
-        // Update atau buat data orang tua
-        foreach (['mother', 'father'] as $relation) {
-            $student->parents()->updateOrCreate(
-                ['relation' => $relation],
-                [
-                    'name' => $data["{$relation}_name"],
-                    'nik' => $data["{$relation}_nik"] ?? null,
-                    'phone' => $data["{$relation}_phone"],
-                    'email' => $data["{$relation}_email"],
-                    'address' => $data["{$relation}_address"],
-                    'occupation' => $data["{$relation}_job"],
-                ]
-            );
-        }
-
-        return redirect()->route('students.index')->with('success', 'Data siswa berhasil diperbarui.');
+    
+        return redirect()
+        ->route('classroom.tab', ['class' => $class->id, 'tab' => 'peserta'])
+        ->with('success', 'Data tersimpan');
     }
+    
 
     public function destroy(Student $student)
     {
-        if ($student->photo) {
-            Storage::disk('public')->delete($student->photo);
-        }
-
         $student->delete();
-        return redirect()->route('students.index')->with('success', 'Data siswa berhasil dihapus.');
-    }
-
-    private function validateData(Request $request): array
-    {
-        return $request->validate([
-            // Data anak
-            'name' => 'required|string|max:100',
-            'nik' => 'required|string|max:20',
-            'birth_date' => 'required|date',
-            'gender' => 'required|in:male,female',
-            'address' => 'nullable|string',
-            'medical_history' => 'nullable|string',
-            'group' => 'nullable|string|max:100',
-            'photo' => 'nullable|image|max:2048',
-
-            // Ibu
-            'mother_name' => 'required|string|max:100',
-            'mother_nik' => 'nullable|string|max:20',
-            'mother_phone' => 'nullable|string|max:20',
-            'mother_email' => 'nullable|email|max:100',
-            'mother_address' => 'nullable|string',
-            'mother_job' => 'nullable|string|max:100',
-
-            // Ayah
-            'father_name' => 'required|string|max:100',
-            'father_nik' => 'nullable|string|max:20',
-            'father_phone' => 'nullable|string|max:20',
-            'father_email' => 'nullable|email|max:100',
-            'father_address' => 'nullable|string',
-            'father_job' => 'nullable|string|max:100',
-        ]);
+        return back()->with('success','Siswa dihapus');
     }
 }

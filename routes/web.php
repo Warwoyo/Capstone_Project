@@ -6,9 +6,21 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
+use App\Models\Student;
+use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\ObservatianController;
+use App\Http\Controllers\ParentRegisterController;
 
+/* FORM */
+Route::get('parent/register',
+    [ParentRegisterController::class, 'create']
+)->name('parent.register.form');
+
+/* SUBMIT */
+Route::post('parent/register',
+    [ParentRegisterController::class, 'store']
+)->name('parent.register');
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -19,8 +31,10 @@ use App\Http\Controllers\ObservatianController;
 Route::middleware('guest')->group(function () {
     Route::get('/login',  [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
-    Route::get('/parent/register',  [AuthController::class, 'showParentRegister'])->name('parent.register');
-    Route::post('/parent/register', [AuthController::class, 'parentRegister']);
+    // routes/web.php
+    Route::get('parent/register', [ParentRegisterController::class,'create'])->name('parent.register');
+    Route::post('parent/register', [ParentRegisterController::class,'store'])->name('parent.register.store');
+
 });
 // Route::middleware('guest')->group(function () {
 //     // Login
@@ -108,6 +122,7 @@ Route::get('/', function () {
 
 Route::get('/classroom/{class}/{tab}/peserta/{selectedStudentId}', [ClassroomController::class, 'showClassroomDetail'])->name('classroom.student-detail');
 
+Route::post('/logout',[AuthController::class,'logout'])->name('logout');
 
 
 Route::resource('students', StudentController::class);
@@ -119,4 +134,22 @@ Route::middleware(['auth','role:admin,teacher,parent'])->group(function () {
 });
 Route::get('/admin/orangtua', [AdminController::class, 'fetchParentList'])->name('Admin.index');
 
-Route::get('/classroom', [ClassroomController::class, 'index'])->name('Classroom.index');
+Route::get('/classrooms/create', [ClassroomController::class, 'create'])->name('classroom.create');
+Route::post('/classrooms', [ClassroomController::class, 'store'])->name('classroom.store');
+// routes/web.php
+
+Route::middleware(['auth'])->group(function () {
+
+    /* tab peserta */
+    Route::get('/classrooms/{class}/peserta', 
+        [ClassroomController::class,'studentsTab'])->name('classroom.tab.peserta');
+
+    /* CRUD siswa (prefix classrooms/{class}) */
+    Route::post('/classrooms/{class}/students', 
+        [StudentController::class,'store'])->name('students.store');
+    Route::put('/students/{student}', 
+        [StudentController::class,'update'])->name('students.update');
+    Route::delete('/students/{student}', 
+        [StudentController::class,'destroy'])->name('students.destroy');
+});
+

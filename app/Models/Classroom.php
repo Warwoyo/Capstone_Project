@@ -1,25 +1,27 @@
 <?php
 
-// app/Models/Student.php
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\{Announcement,Schedule,Attendance,Observation,Report,Syllabus,Student};
 
 class Classroom extends Model
 {
-    protected $fillable = ['name','description','owner_id'];
+    use HasFactory;
 
-    /* alias biar Blade lama jalan */
-    public function getTitleAttribute(): string { return $this->name; }
+    protected $fillable = ['name', 'description', 'owner_id'];   // <── tambahkan owner_id
 
-    /* ------- RELASI ------- */
-    public function announcements() { return $this->hasMany(Announcement::class); }
-    public function schedules()     { return $this->hasMany(Schedule::class); }
-    public function attendances()   { return $this->hasMany(Attendance::class); }
-    public function observations()  { return $this->hasMany(Observation::class); }
-    public function reports()       { return $this->hasMany(Report::class); }          // rapor
-    public function syllabuses()    { return $this->hasMany(Syllabus::class); }
-    public function students()      { return $this->belongsToMany(Student::class); }
+
+    public function owner()     { return $this->belongsTo(User::class,'owner_id'); }
+    public function students()
+    {
+        return $this->belongsToMany(Student::class, 'classroom_student');
+    }
+
+
+    public function attendances(){ return $this->hasMany(Attendance::class); }
+    public function schedules() { return $this->hasMany(Schedule::class); }
+    public function announcements(){ return $this->hasMany(Announcement::class); }
+    public function observations(){ return $this->hasManyThrough(Observation::class, ScheduleDetail::class); }
 }
 

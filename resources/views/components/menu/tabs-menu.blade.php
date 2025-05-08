@@ -1,102 +1,75 @@
-
+{{-- resources/views/components/menu/tabs-menu.blade.php --}}
 @props([
-    'class' => null,
-    'tab' => null,
-    'schedule' => null,
-    'mode' => null,
-    'announcement' => null,
-    'student' => null,
-    'observation' => null
+    'classroom',
+    'tab',
+    'studentList'   => [],   {{-- koleksi siswa --}}
+    'schedule'      => [],
+    'announcement'  => [],
+    'observation'   => [],
+    'mode'          => 'view',
 ])
 
 <!-- Kontainer global Alpine -->
 <div x-data="{ mode: @entangle('mode') }" class="space-y-2"></div>
-    
-    <x-tabs 
-        :tabs="['Presensi', 'Pengumuman', 'Jadwal', 'Observasi', 'Rapor', 'Peserta', 'Silabus']" 
-        :active="ucfirst($tab)" 
-        :class-id="$class['id']" 
+
+    {{-- Navigasi tab --}}
+    <x-tabs
+        :tabs="['Presensi','Pengumuman','Jadwal','Observasi','Rapor','Peserta','Silabus']"
+        :active="ucfirst($tab)"
+        :class-id="$classroom['id']"
     />
 
+    {{-- Header / Search --}}
     <div class="flex items-center justify-between gap-5 p-1">
-    @if (in_array(strtolower($tab), ['jadwal', 'peserta']))
-        <x-search.search-search />
-    @else
-        <h2 class="text-lg font-medium text-sky-800 max-sm:text-sm">
-            {{ ucfirst($tab) }}
-        </h2>
-    @endif
+        @if (in_array(strtolower($tab), ['jadwal','peserta']))
+            <x-search.search-search />
+        @else
+            <h2 class="text-lg font-medium text-sky-800 max-sm:text-sm">
+                {{ ucfirst($tab) }}
+            </h2>
+        @endif
+    </div>
 
-    @php
-        $tabActions = ['observasi', 'jadwal', 'peserta'];
-    @endphp
-
-    @if (in_array($tab, $tabActions))
-        <x-button.add-button 
-            :label="ucfirst($tab)" 
-            :scheduleList="$schedule" 
-            :studentList="$student"
-            :class="$class"
-            @click="mode = 'add'" 
-        />
-    @endif
-</div>
-
-
+    {{-- Konten tiap tab --}}
     <div class="flex flex-col md:flex-row md:gap-6 gap-4 mt-0 md:mt-2">
-        @php
-            $tabMapping = [
-                'pengumuman' => 'announcement',
-                'presensi' => 'attendance',
-                'jadwal' => 'schedule',
-                'observasi' => 'observation',
-                'rapor' => 'report',
-                'peserta' => 'student',
-                'silabus' => 'syllabus',
-            ];
+        @switch(strtolower($tab))
+            @case('jadwal')
+                <x-menu.schedule-menu
+                    :scheduleList="$schedule"
+                    :class="$classroom"
+                    :label="ucfirst($tab)"
+                    x-bind:mode="mode"
+                />
+                @break
 
-            $englishTab = $tabMapping[strtolower($tab)] ?? null;
-        @endphp
+            @case('pengumuman')
+                <x-menu.announcement-menu
+                    :announcementList="$announcement"
+                    :class="$classroom"
+                    :label="ucfirst($tab)"
+                />
+                @break
 
-        @if ($englishTab)
-    @if (strtolower($tab) === 'jadwal')
-        <x-dynamic-component 
-            :component="'menu.' . $englishTab . '-menu'" 
-            :scheduleList="$schedule" 
-            :class="$class" 
-            :label="ucfirst($tab)" 
-            x-bind:mode="mode" 
-        />
-    @elseif (strtolower($tab) === 'pengumuman')
-        <x-dynamic-component 
-            :component="'menu.' . $englishTab . '-menu'" 
-            :announcementList="$announcement" 
-            :class="$class" 
-            :label="ucfirst($tab)" 
-           
-        />
-        @elseif (strtolower($tab) === 'peserta')
-        <x-dynamic-component 
-            :component="'menu.' . $englishTab . '-menu'" 
-            :studentList="$student" 
-            :class="$class" 
-            :label="ucfirst($tab)" 
-           
-        />
-        @elseif (strtolower($tab) === 'observasi')
-        <x-dynamic-component 
-            :component="'menu.' . $englishTab . '-menu'" 
-            :studentList="$student" 
-            :class="$class" 
-            :observationList="$observation"
-            :label="ucfirst($tab)" 
-           
-        />
-    @else
-        <x-dynamic-component 
-            :component="'menu.' . $englishTab . '-menu'" 
-        />
-    @endif
-@endif
+            {{-- ✔︎ FIX: pass koleksi siswa langsung, TANPA foreach  --}}
+            @case('peserta')
+                <x-menu.student-menu
+                    :student="$studentList"
+                    :class="$classroom"
+                    :label="ucfirst($tab)"
+                />
+                @break
+
+            @case('observasi')
+                <x-menu.observation-menu
+                    :studentList="$studentList"
+                    :class="$classroom"
+                    :observationList="$observation"
+                    :label="ucfirst($tab)"
+                />
+                @break
+
+            @default
+                {{-- tab lain (rapor, silabus, dll) --}}
+        @endswitch
     </div>
 </div>

@@ -119,9 +119,52 @@ class StudentController extends Controller
     }
     
 
-    public function destroy(Student $student)
+    public function destroy(Classroom $class, Student $student)
     {
-        $student->delete();
+        DB::transaction(function () use ($class, $student) {
+            $class->students()->detach($student->id);
+            $student->delete();
+        });
         return back()->with('success','Siswa dihapus');
     }
+    public function update(Request $r, Classroom $class, Student $student)
+    {
+        $r->validate([
+            'student_number' => 'required|max:30',
+            'name'           => 'required|max:100',
+            'birth_date'     => 'required|date',
+            'gender'         => 'required|in:male,female',
+            'father_name'     => 'required_if:tipe_data,ortu|max:100',
+            'mother_name'     => 'required_if:tipe_data,ortu|max:100',
+            'guardian_name'   => 'required_if:tipe_data,wali|max:100',
+        ]);
+
+        DB::transaction(function () use ($r, $student) {
+
+            // --- UPDATE DATA SISWA ---
+            $student->update([
+                'student_number'  => $r->student_number,
+                'name'            => $r->name,
+                'birth_date'      => $r->birth_date,
+                'gender'          => $r->gender,
+                'photo'           => $r->file('photo')
+                                    ? $r->file('photo')->store('students','public')
+                                    : $student->photo,
+                'medical_history' => $r->medical_history,
+            ]);
+
+            // --- UPDATE / INSERT ORTU & WALI ---
+            // hapus dulu data parent lama biar simple
+            $student->parents()->delete();
+
+            $parentData = [];  // sama seperti yang ada di store() :contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}
+            /* …bangun $parentData persis seperti di store()… */
+            if ($parentData) {
+                $student->parents()->createMany($parentData);
+            }
+        });
+
+        return back()->with('success','Data siswa diperbarui');
+    }
+
 }

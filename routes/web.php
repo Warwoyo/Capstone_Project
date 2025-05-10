@@ -78,7 +78,13 @@ Route::middleware('auth')->group(function () {
     Route::resource('students', StudentController::class)->only(['index', 'create', 'show', 'edit']);
     Route::post('/students', [StudentController::class, 'store'])->name('students.store');
     Route::put('/students/{student}', [StudentController::class, 'update'])->name('students.update');
-    Route::delete('/students/{student}', [StudentController::class, 'destroy'])->name('students.destroy');
+    Route::delete('/classroom/{class}/students/{student}',
+        [StudentController::class,'destroy']
+    )->name('students.destroy');
+    Route::put(
+        '/classroom/{class}/students/{student}',
+        [\App\Http\Controllers\StudentController::class,'update']
+    )->name('students.update');
 
     // CRUD siswa spesifik dalam kelas
     Route::post('/classrooms/{class}/students', [StudentController::class, 'store'])->name('students.store');

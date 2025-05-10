@@ -82,7 +82,7 @@
     <div class="pt-2 flex flex-col md:flex-row gap-1 md:gap-6 w-full">
     <!-- Kolom Kiri -->
     <div class="w-full md:w-1/2">
-    <form method="POST" action="{{ route('classroom.store') }}" enctype="multipart/form-data" class="flex flex-col gap-3.5">
+    <form method="POST" action="{{ route('Classroom.store') }}" enctype="multipart/form-data" class="flex flex-col gap-3.5">
         @csrf
         <div class="flex flex-col gap-8 max-md:gap-5 max-sm:gap-0">
             <!-- Form Input Nama Kelas -->

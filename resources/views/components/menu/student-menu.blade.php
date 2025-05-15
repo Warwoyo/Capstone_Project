@@ -22,7 +22,7 @@
         <div class="flex-1 text-sm text-center text-slate-600">{{ $student['kelompok'] ?? '-' }}</div>
         <div class="flex-1 text-sm text-center text-slate-600">{{ $student['token'] ?? '-' }}</div>
         <div class="flex-1 text-sm text-center text-slate-600">
-          <div class="flex flex-col gap-1 items-center">
+          <div class="flex flex-col md:flex-row gap-1 items-center">
             <button
               class="w-20 text-xs font-medium bg-transparent rounded-lg border border-sky-300 text-slate-600 h-[25px]"
               @click="mode = 'edit'"
@@ -35,6 +35,7 @@
             >
               Detail
             </button>
+             <x-button.delete-button label="Peserta" />
           </div>
         </div>
       </div>

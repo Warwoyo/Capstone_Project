@@ -45,6 +45,36 @@ class ScheduleController extends Controller
                 'description' => 'Mengenal kehidupan bawah laut dan pentingnya menjaga ekosistem laut.',
                 'date' => '2 Mei - 12 Mei 2025',
             ],
+            [
+                'id' => 6,
+                'title' => 'Minggu 2 : Tumbuhan Hijau',
+                'description' => 'Mengenal beragam tumbuhan hijau, proses fotosintesis, dan perannya dalam kehidupan.',
+                'date' => '10 Maret - 15 Maret 2025',
+            ],
+            [
+                'id' => 7,
+                'title' => 'Minggu 3 : Serangga di Sekitar Kita',
+                'description' => 'Mengamati berbagai jenis serangga dan manfaatnya bagi lingkungan.',
+                'date' => '16 Maret - 23 Maret 2025',
+            ],
+            [
+                'id' => 8,
+                'title' => 'Minggu 4 : Buah dan Sayuran Sehat',
+                'description' => 'Belajar tentang jenis-jenis buah dan sayur serta manfaat kesehatannya.',
+                'date' => '10 April - 23 April 2025',
+            ],
+            [
+                'id' => 9,
+                'title' => 'Minggu 1 : Lingkungan Bersih',
+                'description' => 'Menanamkan kesadaran menjaga kebersihan lingkungan sejak dini.',
+                'date' => '24 April - 1 Mei 2025',
+            ],
+            [
+                'id' => 10,
+                'title' => 'Minggu 2 : Petualangan di Laut',
+                'description' => 'Mengenal kehidupan bawah laut dan pentingnya menjaga ekosistem laut.',
+                'date' => '2 Mei - 12 Mei 2025',
+            ],
         ];
     }
 

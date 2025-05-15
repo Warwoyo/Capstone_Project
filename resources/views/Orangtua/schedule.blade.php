@@ -1,5 +1,5 @@
 
-
+@props(['mode' => 'view', 'scheduleList' , 'class'])
 @extends('layouts.dashboard')
 
 @section('content')
@@ -28,19 +28,8 @@
 </x-header.parent-breadcrump-header>
 <div class="flex-1 w-full md:px-10 pt-2"> <!-- Padding horizontal disini -->
   
-  <!-- Search Bar -->
-  <div class="flex items-center px-4 py-0 bg-white rounded-3xl border border-sky-600 h-[36px] mb-4">
-    <div>
-      <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M7.66668 14.4999C11.1645 14.4999 14 11.6644 14 8.16659C14 4.66878 11.1645 1.83325 7.66668 1.83325C4.16887 1.83325 1.33334 4.66878 1.33334 8.16659C1.33334 11.6644 4.16887 14.4999 7.66668 14.4999Z" stroke="#0086C9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-        <path d="M14.6667 15.1666L13.3333 13.8333" stroke="#0086C9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
-    </div>
-    <input type="text" placeholder="Cari ...." class="text-base text-sky-600 bg-transparent border-none outline-none ml-2 w-full">
-  </div>
-
   <!-- List Container -->
-  <div class="overflow-y-auto hide-scrollbar max-h-[67vh] md:max-h-[100%]">
+  <div class="overflow-y-auto hide-scrollbar max-h-[73vh] md:max-h-[80vh]">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 items-start">
       @foreach ($scheduleList as $schedule)
         <!-- Card Start -->
@@ -69,18 +58,8 @@
           <!-- Detail -->
           <div id="detail-{{ $schedule['id'] }}" class="hidden mt-4 p-4 border-t border-gray-300 transition-all duration-500 ease-in-out">
             <p class="text-sm text-gray-700">
-              Detail Jadwal: {{ $schedule['description'] ?? 'Tidak ada deskripsi.' }}
+              {{ $schedule['description'] ?? 'Tidak ada deskripsi.' }}
             </p>
-            <div class="flex justify-end gap-4 mt-2">
-              <button class="flex gap-1 items-center text-xs font-medium text-sky-800">
-                <!-- Icon edit -->
-                Edit
-              </button>
-              <button class="flex gap-1 items-center text-xs font-medium text-red-500">
-                <!-- Icon hapus -->
-                Hapus
-              </button>
-            </div>
           </div>
         </article>
         <!-- Card End -->

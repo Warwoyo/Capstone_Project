@@ -101,8 +101,14 @@ class ClassroomController extends Controller
          $ObservationController = new ObservationController();
          $observationList = $ObservationController->fetchObservationList();
 
+         $ReportController = new ReportController();
+         $semesterList = $ReportController->fetchSemesterList();
+
+
+
     
-     //dd(compact('class', 'tab', 'data', 'classId', 'tabs','scheduleList','announcementList','studentList','observationList'));
-    return view('Classroom.classroom-detail', compact('class', 'tab', 'data', 'classId', 'tabs','scheduleList','announcementList','studentList','observationList'));
+     //dd(compact('class', 'tab', 'data', 'classId', 'tabs','scheduleList','announcementList','studentList','observationList','semesterList'));
+
+    return view('Classroom.classroom-detail', compact('class', 'tab', 'data', 'classId', 'tabs','scheduleList','announcementList','studentList','observationList','semesterList'));
 }
 }

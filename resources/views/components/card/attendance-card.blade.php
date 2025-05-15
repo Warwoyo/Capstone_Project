@@ -86,5 +86,8 @@
                 </article>
             @endforeach
         </section>
+         <div class="mb-4">
+        <x-button.submit-button label="Absensi"/>
+    </div>
     </div>
 </div>

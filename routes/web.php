@@ -33,6 +33,15 @@ Route::get('/classroom/{class}/{tab}/{id}', [ClassroomController::class, 'showCl
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
 
 
+Route::get('/orangtua', [DashboardController::class, 'indexParent'])->name('orangtua.index');
+Route::get('/orangtua/anak/data-anak', [DashboardController::class, 'childrenParent'])->name('orangtua.children');
+Route::get('/orangtua/anak/observasi', [DashboardController::class, 'observationParent'])->name('orangtua.observation');
+Route::get('/orangtua/anak/jadwal', [DashboardController::class, 'scheduleParent'])->name('orangtua.schedule');
+Route::get('/orangtua/anak/presensi', [DashboardController::class, 'attendanceParent'])->name('orangtua.attendance');
+Route::get('/orangtua/anak/riwayat-pengumuman', [DashboardController::class, 'announcementParent'])->name('orangtua.announcement');
+
+
+
 // Route::get('/classroom/{class}/{tab}/create', [ClassroomController::class, 'showClassroomDetail'])->name('classroom.tabs-schedule-create');
 
 Route::get('/testing', function () {
@@ -45,3 +54,5 @@ Route::get('/classroom/{class}/{tab}/peserta/{selectedStudentId}', [ClassroomCon
 Route::get('/admin/orangtua', [AdminController::class, 'fetchParentList'])->name('Admin.index');
 
 Route::get('/classroom', [ClassroomController::class, 'index'])->name('Classroom.index');
+
+

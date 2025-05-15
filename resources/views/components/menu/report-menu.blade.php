@@ -1,27 +1,27 @@
 
 
-@props(['mode' , 'observationList' , 'class' ,'studentList'])
+@props(['mode' , 'semesterList' , 'class' ,'studentList'])
 <div x-data="{ mode: @entangle('mode') }" class="flex-1 w-full">
 <!-- View Data -->
 <div x-show="mode === 'view'"class="flex-1 w-full">
 <div class="overflow-y-auto hide-scrollbar max-h-[43vh] md:max-h-[42vh]">
 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 items-start">
-    @foreach ($observationList as $observation)
+    @foreach ($semesterList as $semester)
         <article class="flex flex-col justify-between p-4 w-full bg-white border border-sky-600 rounded-2xl"
         @click="mode = 'score'">
           <div class="flex flex-col gap-1 overflow-hidden">
             <h2 class="text-base font-bold text-sky-800 truncate">
-              {{ $observation['title'] }}
+              Semester {{ $semester['semester'] }}  {{ $semester['year'] }}
             </h2>
             <p class="text-sm text-gray-500 truncate">
-              {{ $observation['date'] }}
+              {{ $semester['timeline'] }}
             </p>
           </div>
 
           <button
             type="button"
             class="flex items-center gap-1 mt-4 text-xs font-medium text-sky-800 hover:opacity-80 transition-opacity"
-            onclick="toggleDetail('detail-{{ $observation['id'] }}', this)"
+            onclick="toggleDetail('detail-{{ $semester['id'] }}', this)"
             aria-label="Lihat Detail"
           >
             <!-- Mata tertutup default -->
@@ -32,9 +32,9 @@
           </button>
 
           <!-- Div detail yang akan ditampilkan dengan transisi -->
-          <div id="detail-{{ $observation['id'] }}" class="hidden mt-4 p-4 border-t border-gray-300 transition-all duration-500 ease-in-out">
+          <div id="detail-{{ $semester['id'] }}" class="hidden mt-4 p-4 border-t border-gray-300 transition-all duration-500 ease-in-out">
             <p class="text-sm text-gray-700">
-              Detail Jadwal: {{ $observation['description'] ?? 'Tidak ada deskripsi.' }}
+              Detail Jadwal: {{ $semester['description'] ?? 'Tidak ada deskripsi.' }}
             </p>
             <div class="flex justify-end gap-4">
                     <button @click="mode = 'add'" class="flex gap-1 items-center text-xs font-medium text-sky-800">
@@ -86,7 +86,7 @@
             >
               Nilai
             </button>
-             <x-button.delete-button label="Observasi" />
+             <x-button.delete-button label="Nilai Rapor Ini" />
           </div>
         </div>
       </div>
@@ -95,44 +95,190 @@
 </div>
 </div>
 
-<div x-show="mode === 'add-score'" class="flex-1 w-full">
+
+<div x-show="mode === 'add-score'" class="flex-1 w-full ">
     <!-- Header -->
     <x-header.scoring-name-header />
 
     <!-- Kontainer dengan scroll -->
-    <div class="overflow-y-auto hide-scrollbar max-h-[43vh] md:max-h-[42vh] px-2">
+   <div class="hide-scrollbar max-h-[43vh] md:max-h-[80vh]">
+
         <!-- Grid 2 kolom di md ke atas -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-            <!-- Kartu Observasi -->
-            <x-card.observation-scoring-card
-                title="Minggu 1 - Lingkungan Keluarga"
-                content="Anita menunjukkan perkembangan yang sangat baik dalam beradaptasi di lingkungan keluarga."
-            />
+      <section class="bg-white rounded-xl shadow-md text-sm">
 
-            <x-card.observation-scoring-card
-                title="Minggu 2 - Kegiatan Rumah"
-                content="Anita mulai terlibat dalam kegiatan rumah seperti membantu orang tua dengan semangat."
-            />
+    <!-- Tabel Penilaian -->
+    <div class="border rounded-lg">
 
-            <x-card.observation-scoring-card
-                title="Minggu 3 - Sosialisasi"
-                content="Kemampuan komunikasi Anita meningkat dalam bersosialisasi dengan anggota keluarga."
-            />
+    <table class="table-auto w-full border text-xs text-gray-700">
+    <thead>
+        <tr class="bg-sky-600 text-white text-center">
+            <th class="border px-1 py-1 text-xs w-auto" rowspan="2">NO</th>
+            <th class="border px-2 py-2 w-64 max-w-xs" rowspan="2">KOMPETENSI DASAR</th>
+          <th class="border px-2 py-2 text-center" colspan="4">NILAI PERKEMBANGAN ANAK</th>
+            <th class="border px-2 py-2" rowspan="2">CATATAN GURU</th>
+        </tr>
+        <tr class="bg-sky-200 text-sky-800 text-center">
+        <th class="border px-2 py-1 w-12 text-center">BM</th>
+        <th class="border px-2 py-1 w-12 text-center">MM</th>
+        <th class="border px-2 py-1 w-12 text-center">BSH</th>
+        <th class="border px-2 py-1 w-12 text-center">BSB</th>
 
-            <x-card.observation-scoring-card
-                title="Minggu 4 - Tanggung Jawab"
-                content="Anita mulai menunjukkan rasa tanggung jawab terhadap tugas kecil yang diberikan di rumah."
-            />
-        </div>
-         <div class="mt-4">
-        <x-button.submit-button />
+        </tr>
+    </thead>
+
+    <tbody>
+        <tr class="bg-yellow-300 font-semibold">
+            <td class="border text-center px-2 py-1">1</td>
+            <td class="border px-2 py-1" colspan="6">NILAI AGAMA DAN MORAL (NAM)</td>
+        </tr>
+
+        {{-- Komponen Blade --}}
+       <x-field.report-score-field 
+    kode="1.1" 
+    kompetensi="Berdo’a sebelum dan sesudah melaksanakan kegiatan" 
+    :nilai="['BSH' => true]"
+    withCatatan="true"
+    catatanText="Ananda dalam aspek nilai agama dan moral sudah menunjukkan perkembangan yang baik"
+    catatanRowspan="12"
+/>
+
+        <x-field.report-score-field 
+            kode="1.2" 
+            kompetensi="Menyanyikan lagu-lagu keagamaan" 
+            :nilai="['BSH' => true]"
+        />
+        <x-field.report-score-field 
+            kode="1.3" 
+            kompetensi="Meniru pelaksanaan kegiatan ibadah secara sederhana" 
+            :nilai="['BSH' => true]"
+        />
+        <x-field.report-score-field 
+            kode="1.4" 
+            kompetensi="Terlibat dalam kegiatan keagamaan" 
+            :nilai="['BSH' => true]"
+        />
+        <x-field.report-score-field 
+            kode="1.5" 
+            kompetensi="Membedakan ciptaan-ciptaan Tuhan" 
+            :nilai="['BSB' => true]"
+        />
+        <x-field.report-score-field 
+            kode="1.7" 
+            kompetensi="Membiasakan memberi dan menjawab salam"
+        />
+
+        <x-field.report-score-row-field
+            kode="1.8" 
+            kompetensi="Menghafal Do’a sehari-hari"
+            hideMainCheckboxes="true"
+            :subitems="[ 
+                ['label' => '• Do’a sebelum makan', 'nilai' => ['BM' => true]],
+                ['label' => '• Do’a sesudah makan', 'nilai' => ['MM' => true]],
+                ['label' => '• Do’a sebelum tidur', 'nilai' => ['BM' => true]],
+                ['label' => '• Do’a bangun tidur', 'nilai' => ['MM' => true]],
+                ['label' => '• Do’a untuk kedua orangtua', 'nilai' => ['MM' => true]]
+            ]"
+        />
+
+        <x-field.report-score-row-field
+            kode="1.9" 
+            kompetensi="Menghafal Hadist"
+            hideMainCheckboxes="true"
+            :subitems="[ 
+                ['label' => '• Hadist kebersihan', 'nilai' => ['BM' => true]],
+                ['label' => '• Hadist tidak boleh marah-marah', 'nilai' => ['BM' => true]]
+            ]"
+        />
+
+        <x-field.report-score-row-field
+            kode="1.10" 
+            kompetensi="Menghafal surat-surat pendek"
+            hideMainCheckboxes="true"
+            :subitems="[ 
+                ['label' => '• Surat Al-Ikhlas', 'nilai' => ['BM' => true]],
+                ['label' => '• Surat An-Nas', 'nilai' => ['MM' => true]]
+            ]"
+        />
+
+        <x-field.report-score-field 
+            kode="1.11" 
+            kompetensi="Mengikuti gerakan berwudhu dan sholat" 
+            :nilai="['BSB' => true]"
+        />
+
+        <x-field.report-score-field 
+            kode="1.12" 
+            kompetensi="Menirukan bacaan sholat" 
+            :nilai="['BM' => true]"
+        />
+
+     
+    </tbody>
+</table>
+
+
+
+       
     </div>
+
+    <!-- Catatan Kesehatan -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+        <div>
+            <table class="w-full table-fixed border text-xs">
+                <tr>
+                    <td class="border px-2 py-1">Lingkar Kepala</td>
+                    <td class="border px-2 py-1">48 cm</td>
+                </tr>
+                <tr>
+                    <td class="border px-2 py-1">Tinggi Badan</td>
+                    <td class="border px-2 py-1">95 cm</td>
+                </tr>
+                <tr>
+                    <td class="border px-2 py-1">Berat Badan</td>
+                    <td class="border px-2 py-1">12.3 kg</td>
+                </tr>
+            </table>
+        </div>
+        <div>
+            <table class="w-full table-fixed border text-xs">
+                <tr>
+                    <td class="border px-2 py-1">Sakit</td>
+                    <td class="border px-2 py-1">0</td>
+                </tr>
+                <tr>
+                    <td class="border px-2 py-1">Izin</td>
+                    <td class="border px-2 py-1">0</td>
+                </tr>
+                <tr>
+                    <td class="border px-2 py-1">Alpa</td>
+                    <td class="border px-2 py-1">0</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Keterangan -->
+    <div class="mt-4 text-xs text-gray-600">
+        <p><strong>Keterangan:</strong></p>
+        <p>BM : Belum Muncul</p>
+        <p>MM : Mulai Muncul</p>
+        <p>BSH : Berkembang Sesuai Harapan</p>
+        <p>BSB : Berkembang Sangat Baik</p>
+    </div>
+
+    <!-- Tombol Simpan -->
+    <div class="mt-6 flex justify-end">
+        <button class="bg-sky-600 text-white px-6 py-2 rounded-full hover:bg-sky-700 transition">
+            Simpan
+        </button>
+    </div>
+</section>
+
     </div>
 
     <!-- Tombol Simpan -->
    
 </div>
-
 
 <!-- Add Data -->
 <div x-show="mode === 'add'" class="flex-1 w-full"> 

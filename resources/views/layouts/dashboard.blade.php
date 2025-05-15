@@ -109,6 +109,15 @@
              <!-- Content will be injected here -->
             @yield('content')
     </main>
+    
+<x-alert.confirmation-alert
+    title="Konfirmasi Aksi"
+    label="data ini"
+    action="melanjutkan aksi ini"
+    confirmText="Ya"
+    cancelText="Tidak"
+/>
+
   </div>
 
   <!-- JavaScript Toggle -->

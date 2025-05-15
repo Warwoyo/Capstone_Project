@@ -6,7 +6,8 @@
     'mode' => null,
     'announcement' => null,
     'student' => null,
-    'observation' => null
+    'observation' => null,
+    'semester'=>null
 ])
 
 <!-- Kontainer global Alpine -->
@@ -28,7 +29,7 @@
     @endif
 
     @php
-        $tabActions = ['observasi', 'jadwal', 'peserta'];
+        $tabActions = ['observasi', 'jadwal', 'peserta', 'rapor'];
     @endphp
 
     @if (in_array($tab, $tabActions))
@@ -92,10 +93,20 @@
             :label="ucfirst($tab)" 
            
         />
-    @else
+         @elseif (strtolower($tab) === 'rapor')
         <x-dynamic-component 
             :component="'menu.' . $englishTab . '-menu'" 
+            :studentList="$student" 
+            :class="$class" 
+            :semesterList="$semester"
+            :label="ucfirst($tab)" 
+           
         />
+        @elseif (strtolower($tab) === 'presensi')
+        <x-dynamic-component 
+            :component="'menu.' . $englishTab . '-menu'"  
+        />
+        
     @endif
 @endif
     </div>

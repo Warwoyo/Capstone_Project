@@ -1,4 +1,4 @@
-<header class="flex justify-between items-center px-0 py-2.5 w-full max-sm:flex-col max-sm:items-start">
+<header class="flex justify-between items-center px-0 py-2.5 w-full max-sm:flex-row max-sm:items-start">
   <div class="flex flex-col">
     <h1 class="text-base font-bold text-slate-600">Anita Silalahi</h1>
     <p class="text-sm text-slate-600">Kelas Pelangi Ceria</p>

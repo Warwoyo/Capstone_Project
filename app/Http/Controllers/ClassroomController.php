@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use App\Models\Announcement;
 use App\Models\Classroom;   // <--  tambahkan baris ini
 use Illuminate\Http\Request;
 
@@ -18,7 +18,19 @@ class ClassroomController extends Controller
 
         return view('Classroom.index', compact('classroom', 'teachers'));
     }
+    public function show($id)
+    {
+        $class = Classroom::findOrFail($id);
 
+        $announcementList = Announcement::where('classroom_id', $id)
+            ->latest()
+            ->get();
+
+        return view('Classroom.show', [
+            'class' => $class,
+            'announcementList' => $announcementList,
+        ]);
+    }
 
     public function showClassroomDetail($class, $tab)
     {

@@ -18,7 +18,7 @@
                 <!-- Bagian Konten Card -->
                 <div class="flex-1">
                     <h2 class="text-base font-bold text-sky-800 max-sm:text-sm">
-                        Kelas {{$class->name}}
+                        Kelas {{$class->name}} — {{$class->owner->name ?? 'Tidak diketahui'}}
                     </h2>
                     <p class="text-sm text-gray-500 max-sm:text-sm">
                         {{$class->description}}

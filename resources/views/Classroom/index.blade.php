@@ -33,7 +33,7 @@
           <div class="flex flex-col gap-1 justify-center items-start z-10 relative">
             
             <h2 class="text-base font-bold text-sky-800 max-md:text-base max-sm:text-sm">
-              {{ $class['name'] }}
+              Kelas {{$class->name}} — {{$class->owner->name ?? 'Tidak diketahui'}}
             </h2>
             <p class="text-sm text-gray-500 max-md:text-sm max-sm:text-xs">
               {{ $class['description'] }}
@@ -93,7 +93,7 @@
                 <input
                     type="text"
                     name="name"
-                    placeholder="Contoh: Kelas Pelangi Ceria"
+                    placeholder="Pelangi Ceria"
                     required
                     class="px-4 py-0 h-10 text-sm font-medium text-gray-400 bg-gray-50 rounded-3xl border border-sky-600 w-full"
                 />

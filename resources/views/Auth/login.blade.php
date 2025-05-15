@@ -33,7 +33,7 @@
           type="text"
           name="identifier"
           id="identifier"
-          placeholder="08xxxxxxxxxx"
+          placeholder="08... / email"
           class="w-full px-4 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 bg-gray-200"
           value="{{ old('phone_number') }}"
           required

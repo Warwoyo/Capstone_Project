@@ -1,191 +1,416 @@
+{{--  resources/views/components/menu/student-menu.blade.php  --}}
+@props(['student','class'])
 
-@props(['mode' , 'studentList' , 'class'])
+<<div
+  x-data="{
+      mode     : 'view',    // view | add | edit
+      editData : {},        // objek siswa yg sedang diedit
+      modeOrtu : 'ortu'     // toggle ortu / wali di dalam edit
+  }"
+  class="flex-1 w-full"
+>
 
-<div x-data="{ mode: @entangle('mode') }" class="flex-1 w-full">
-<!-- View Data -->
-<div x-show="mode === 'view'" class="flex-1 w-full">
-  <div class="overflow-y-auto hide-scrollbar max-h-[43vh] md:max-h-[42vh]">
+    {{-- ========== VIEW LIST ========== --}}
+    <div x-show="mode==='view'" class="flex-1 w-full">
+        <div class="overflow-y-auto hide-scrollbar max-h-[60vh]">
+            {{-- Header --}}
+            <div class="pl-2 flex items-center bg-sky-200 h-10 rounded-t-lg">
+                @foreach (['Nama','Kelas','Token','Aksi'] as $h)
+                    <h3 class="flex-1 text-xs text-center font-semibold text-slate-700">{{ $h }}</h3>
+                @endforeach
+            </div>
 
-    <!-- Header -->
-    <div class="pl-2 flex items-center bg-sky-200 h-[43px] rounded-t-lg">
-      @foreach (['Nama Lengkap', 'Nama Kelompok', 'Token', 'Pilihan'] as $header)
-        <h3 class="flex-1 text-sm font-medium text-center text-slate-600 max-md:text-sm max-sm:text-xs">
-          {{ $header }}
-        </h3>
-      @endforeach
-    </div>
+            {{-- Rows --}}
+            @forelse ($student as $stu)
+                @php
+                    // 1. mulai dari array siswa biasa
+                    $flat = $stu->toArray();
 
-    <!-- Data Rows -->
-    @foreach ($studentList as $student)
-      <div class="flex items-center px-3 py-1 border border-gray-200">
-        <div class="flex-1 text-sm text-center text-slate-600">{{ $student['nama'] }}</div>
-        <div class="flex-1 text-sm text-center text-slate-600">{{ $student['kelompok'] ?? '-' }}</div>
-        <div class="flex-1 text-sm text-center text-slate-600">{{ $student['token'] ?? '-' }}</div>
-        <div class="flex-1 text-sm text-center text-slate-600">
-          <div class="flex flex-col md:flex-row gap-1 items-center">
-            <button
-              class="w-20 text-xs font-medium bg-transparent rounded-lg border border-sky-300 text-slate-600 h-[25px]"
-              @click="mode = 'edit'"
-            >
-              Edit
-            </button>
-            <button
-              class="w-20 text-xs font-medium text-white bg-sky-300 rounded-lg border border-sky-300 h-[25px]"
-              @click="mode = 'detail'"
-            >
-              Detail
-            </button>
-             <x-button.delete-button label="Peserta" />
-          </div>
+                    // 2. ambil role parent
+                    $father   = $stu->parents->firstWhere('relation','father');
+                    $mother   = $stu->parents->firstWhere('relation','mother');
+                    $guardian = $stu->parents->firstWhere('relation','guardian');
+
+                    // 3. isi field yang dipakai form
+                    if($father){
+                        $flat['father_name']       = $father->name;
+                        $flat['father_nik']        = $father->nik;
+                        $flat['father_occupation'] = $father->occupation;
+                        $flat['father_phone']      = $father->phone;
+                        $flat['father_email']      = $father->email;
+                        $flat['father_address']    = $father->address;
+                    }
+                    if($mother){
+                        $flat['mother_name']       = $mother->name;
+                        $flat['mother_nik']        = $mother->nik;
+                        $flat['mother_occupation'] = $mother->occupation;
+                        $flat['mother_phone']      = $mother->phone;
+                        $flat['mother_email']      = $mother->email;
+                        $flat['mother_address']    = $mother->address;
+                    }
+                    if($guardian){
+                        $flat['guardian_name']       = $guardian->name;
+                        $flat['guardian_relation']   = $guardian->relation ?? '';
+                        $flat['guardian_phone']      = $guardian->phone;
+                        $flat['guardian_email']      = $guardian->email;
+                        $flat['guardian_address']    = $guardian->address;
+                    }
+
+                    // 4. tentukan tipe data utk radio
+                    $flat['tipe_data'] = $guardian ? 'wali' : 'ortu';
+
+                    // 5. URL foto lama (jika ada)
+                    $flat['photo_url'] = $stu->photo ? asset('storage/'.$stu->photo) : null;
+                @endphp
+
+                <div class="flex items-center px-3 py-1 border border-gray-200">
+                    <div class="flex-1 text-sm text-center">{{ $stu->name }}</div>
+                    <div class="flex-1 text-sm text-center">{{ $class->name ?? $stu->classroom_id }}</div>
+                    <div class="flex-1 text-sm text-center">
+                        {{ $stu->registrationTokens->pluck('token')->implode('/') ?: '-' }}
+                    </div>
+                    <div class="flex-1 text-center">
+                        <button
+                            class="w-20 text-xs border border-sky-300 rounded-lg"
+                            @click="
+                                editData = {{ json_encode($flat,JSON_UNESCAPED_UNICODE) }};
+                                mode     = 'edit';
+                                modeOrtu = editData.tipe_data;
+                            "
+                        >Edit</button>
+                        <form method="POST" action="{{ route('students.destroy',[$class->id,$stu->id]) }}"
+                              class="inline" onsubmit="return confirm('Hapus siswa?')">
+                            @csrf @method('DELETE')
+                            <button class="w-20 text-xs bg-red-500 text-white rounded-lg mt-1">Hapus</button>
+                        </form>
+                    </div>
+                </div>        
+            @empty
+                <div class="text-center py-4 text-gray-400">Belum ada data siswa.</div>
+            @endforelse
         </div>
-      </div>
-    @endforeach
 
-  </div>
-</div>
-
-
-<!-- Add Data -->
-
-<div x-show="mode === 'add'" class="flex-1 w-full">
-  <article class="grid grid-cols-2 gap-6 mx-auto w-full bg-white p-6 rounded-lg border border-gray-200 max-w-[1241px] max-md:grid-cols-1">
-        
-    <div class="flex flex-col gap-2">
-      <x-field.profile-field label="Nama Lengkap" name="nama_lengkap" value="{{ old('nama_lengkap') }}" editable="true" />
-      <x-field.profile-field label="NIK" name="nik_siswa" value="{{ old('nik_siswa') }}" editable="true" />
-      <x-field.profile-field label="Tanggal Lahir" name="tanggal_lahir" value="{{ old('tanggal_lahir') }}" editable="true" type="date" id="tanggal" />
-      <x-field.profile-field label="Jenis Kelamin" name="jenis_kelamin" value="{{ old('jenis_kelamin') }}" editable="true" />
-      
-    </div>
-
-    <div class="flex flex-col gap-2">
-    <x-field.profile-field label="Alamat" name="alamat" value="{{ old('alamat') }}" editable="true" />
-      <x-field.profile-field label="Riwayat Kesehatan Anak" name="riwayat_kesehatan" value="{{ old('riwayat_kesehatan') }}" editable="true" />
-      <x-field.profile-field label="Photo" name="photo" value="{{ old('photo') }}" editable="true" type="file" />
-    </div>
-
-  </article>
-
-  <article class="grid grid-cols-2 gap-6 mx-auto w-full bg-white p-6 mt-6 rounded-lg border border-gray-200 max-w-[1241px] max-md:grid-cols-1">
-    <!-- Data Ayah -->
-    <div class="flex flex-col gap-2">
-      <h2 class="text-lg font-semibold mb-2">Data Ayah</h2>
-      <x-field.profile-field label="Nama Ayah" name="nama_ayah" value="{{ old('nama_ayah') }}" editable="true" />
-      <x-field.profile-field label="NIK Ayah" name="nik_ayah" value="{{ old('nik_ayah') }}" editable="true" />
-      <x-field.profile-field label="Email Ayah" name="email_ayah" value="{{ old('email_ayah') }}" editable="true" type="email" />
-      <x-field.profile-field label="Nomor Telepon Ayah" name="telepon_ayah" value="{{ old('telepon_ayah') }}" editable="true" />
-      <x-field.profile-field label="Alamat Ayah" name="alamat_ayah" value="{{ old('alamat_ayah') }}" editable="true" />
-      <x-field.profile-field label="Pekerjaan Ayah" name="pekerjaan_ayah" value="{{ old('pekerjaan_ayah') }}" editable="true" />
-    </div>
-
-    <!-- Data Ibu -->
-    <div class="flex flex-col gap-2">
-      <h2 class="text-lg font-semibold mb-2">Data Ibu</h2>
-      <x-field.profile-field label="Nama Ibu" name="nama_ibu" value="{{ old('nama_ibu') }}" editable="true" />
-      <x-field.profile-field label="NIK Ibu" name="nik_ibu" value="{{ old('nik_ibu') }}" editable="true" />
-      <x-field.profile-field label="Email Ibu" name="email_ibu" value="{{ old('email_ibu') }}" editable="true" type="email" />
-      <x-field.profile-field label="Nomor Telepon Ibu" name="telepon_ibu" value="{{ old('telepon_ibu') }}" editable="true" />
-      <x-field.profile-field label="Alamat Ibu" name="alamat_ibu" value="{{ old('alamat_ibu') }}" editable="true" />
-      <x-field.profile-field label="Pekerjaan Ibu" name="pekerjaan_ibu" value="{{ old('pekerjaan_ibu') }}" editable="true" />
-    </div>
-  </article>
-  <div class="mt-4">
-    <x-button.submit-button />
-  </div>
-</div>
-
-
-
-<div x-show="mode === 'edit'" class="flex-1 w-full">
-  <article class="grid grid-cols-2 gap-6 mx-auto w-full bg-white p-6 rounded-lg border border-gray-200 max-w-[1241px] max-md:grid-cols-1">
-    
-    <div class="flex flex-col gap-2">
-      <x-field.profile-field label="Nama Lengkap" name="nama_lengkap" value="{{ old('nama_lengkap') }}" editable="true" />
-      <x-field.profile-field label="NIK" name="nik_siswa" value="{{ old('nik_siswa') }}" editable="true" />
-      <x-field.profile-field label="Tanggal Lahir" name="tanggal_lahir" value="{{ old('tanggal_lahir') }}" editable="true" type="date" id="tanggal" />
-      <x-field.profile-field label="Jenis Kelamin" name="jenis_kelamin" value="{{ old('jenis_kelamin') }}" editable="true" />
-      
-    </div>
-
-    <div class="flex flex-col gap-2">
-    <x-field.profile-field label="Alamat" name="alamat" value="{{ old('alamat') }}" editable="true" />
-      <x-field.profile-field label="Riwayat Kesehatan Anak" name="riwayat_kesehatan" value="{{ old('riwayat_kesehatan') }}" editable="true" />
-      <x-field.profile-field label="Photo" name="photo" value="{{ old('photo') }}" editable="true" type="file" />
-    </div>
-
-  </article>
-
-  <article class="grid grid-cols-2 gap-6 mx-auto w-full bg-white p-6 mt-6 rounded-lg border border-gray-200 max-w-[1241px] max-md:grid-cols-1">
-    <!-- Data Ayah -->
-    <div class="flex flex-col gap-2">
-      <h2 class="text-lg font-semibold mb-2">Data Ayah</h2>
-      <x-field.profile-field label="Nama Ayah" name="nama_ayah" value="{{ old('nama_ayah') }}" editable="true" />
-      <x-field.profile-field label="NIK Ayah" name="nik_ayah" value="{{ old('nik_ayah') }}" editable="true" />
-      <x-field.profile-field label="Email Ayah" name="email_ayah" value="{{ old('email_ayah') }}" editable="true" type="email" />
-      <x-field.profile-field label="Nomor Telepon Ayah" name="telepon_ayah" value="{{ old('telepon_ayah') }}" editable="true" />
-      <x-field.profile-field label="Alamat Ayah" name="alamat_ayah" value="{{ old('alamat_ayah') }}" editable="true" />
-      <x-field.profile-field label="Pekerjaan Ayah" name="pekerjaan_ayah" value="{{ old('pekerjaan_ayah') }}" editable="true" />
-    </div>
-
-    <!-- Data Ibu -->
-    <div class="flex flex-col gap-2">
-      <h2 class="text-lg font-semibold mb-2">Data Ibu</h2>
-      <x-field.profile-field label="Nama Ibu" name="nama_ibu" value="{{ old('nama_ibu') }}" editable="true" />
-      <x-field.profile-field label="NIK Ibu" name="nik_ibu" value="{{ old('nik_ibu') }}" editable="true" />
-      <x-field.profile-field label="Email Ibu" name="email_ibu" value="{{ old('email_ibu') }}" editable="true" type="email" />
-      <x-field.profile-field label="Nomor Telepon Ibu" name="telepon_ibu" value="{{ old('telepon_ibu') }}" editable="true" />
-      <x-field.profile-field label="Alamat Ibu" name="alamat_ibu" value="{{ old('alamat_ibu') }}" editable="true" />
-      <x-field.profile-field label="Pekerjaan Ibu" name="pekerjaan_ibu" value="{{ old('pekerjaan_ibu') }}" editable="true" />
-    </div>
-  </article>
-  <div class="mt-4">
-    <x-button.submit-button />
-  </div>
-</div>
-
-
-<div x-show="mode === 'detail'" class="flex-1 w-full">
-  <article class="grid grid-cols-2 gap-6 mx-auto w-full bg-white p-6 rounded-lg border border-gray-200 max-w-[1241px] max-md:grid-cols-1">
-    
-    <div class="flex flex-col gap-2">
-      <x-field.profile-field label="Nama Lengkap" name="nama_lengkap" value="{{ old('nama_lengkap') }}" editable="false" />
-      <x-field.profile-field label="NIK" name="nik_siswa" value="{{ old('nik_siswa') }}" editable="false" />
-      <x-field.profile-field label="Tanggal Lahir" name="tanggal_lahir" value="{{ old('tanggal_lahir') }}" editable="false" type="date" id="tanggal" />
-      <x-field.profile-field label="Jenis Kelamin" name="jenis_kelamin" value="{{ old('jenis_kelamin') }}" editable="false" />
-      
-    </div>
-
-    <div class="flex flex-col gap-2">
-    <x-field.profile-field label="Alamat" name="alamat" value="{{ old('alamat') }}" editable="false" />
-      <x-field.profile-field label="Riwayat Kesehatan Anak" name="riwayat_kesehatan" value="{{ old('riwayat_kesehatan') }}" editable="false" />
-      <x-field.profile-field label="Photo" name="photo" value="{{ old('photo') }}" editable="false" type="file" />
-    </div>
-
-  </article>
-
-  <article class="grid grid-cols-2 gap-6 mx-auto w-full bg-white p-6 mt-6 rounded-lg border border-gray-200 max-w-[1241px] max-md:grid-cols-1">
-    <!-- Data Ayah -->
-    <div class="flex flex-col gap-2">
-      <h2 class="text-lg font-semibold mb-2">Data Ayah</h2>
-      <x-field.profile-field label="Nama Ayah" name="nama_ayah" value="{{ old('nama_ayah') }}" editable="false" />
-      <x-field.profile-field label="NIK Ayah" name="nik_ayah" value="{{ old('nik_ayah') }}" editable="false" />
-      <x-field.profile-field label="Email Ayah" name="email_ayah" value="{{ old('email_ayah') }}" editable="false" type="email" />
-      <x-field.profile-field label="Nomor Telepon Ayah" name="telepon_ayah" value="{{ old('telepon_ayah') }}" editable="false" />
-      <x-field.profile-field label="Alamat Ayah" name="alamat_ayah" value="{{ old('alamat_ayah') }}" editable="false" />
-      <x-field.profile-field label="Pekerjaan Ayah" name="pekerjaan_ayah" value="{{ old('pekerjaan_ayah') }}" editable="false" />
-    </div>
-
-    <!-- Data Ibu -->
-    <div class="flex flex-col gap-2">
-      <h2 class="text-lg font-semibold mb-2">Data Ibu</h2>
-      <x-field.profile-field label="Nama Ibu" name="nama_ibu" value="{{ old('nama_ibu') }}" editable="false" />
-      <x-field.profile-field label="NIK Ibu" name="nik_ibu" value="{{ old('nik_ibu') }}" editable="false" />
-      <x-field.profile-field label="Email Ibu" name="email_ibu" value="{{ old('email_ibu') }}" editable="false" type="email" />
-      <x-field.profile-field label="Nomor Telepon Ibu" name="telepon_ibu" value="{{ old('telepon_ibu') }}" editable="false" />
-      <x-field.profile-field label="Alamat Ibu" name="alamat_ibu" value="{{ old('alamat_ibu') }}" editable="false" />
-      <x-field.profile-field label="Pekerjaan Ibu" name="pekerjaan_ibu" value="{{ old('pekerjaan_ibu') }}" editable="false" />
-    </div>
-  </article>
-
-
+        {{-- tombol tambah --}}
+        <div class="mt-4 text-center">
+            <button @click="mode='add'"
+                    class="bg-sky-600 text-white px-6 py-2 rounded-full">
+                + Tambah Siswa
+            </button>
         </div>
+    </div>
+
+    {{-- ========== ADD FORM (BARU) ========== --}}
+    <div x-show="mode==='add'" class="flex-1" x-data="{ modeOrtu:'ortu' }">
+        <form method="POST"
+              action="{{ route('students.store',['class'=>$class->id]) }}"
+              enctype="multipart/form-data"
+              class="p-4 bg-white rounded-lg border space-y-6">
+            @csrf
+
+            {{-- ===== DATA SISWA ===== --}}
+            <h3 class="font-semibold text-slate-700">Data Siswa</h3>
+            <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm mb-1 text-gray-600">Nomor Induk</label>
+                    <input name="student_number" required
+                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-gray-600">Nama Lengkap</label>
+                    <input name="name" required
+                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-gray-600">Tanggal Lahir</label>
+                    <input type="date" name="birth_date" required
+                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-gray-600">Jenis Kelamin</label>
+                    <select name="gender" required
+                            class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                        <option value="male">Laki-laki</option>
+                        <option value="female">Perempuan</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm mb-1 text-gray-600">Foto (opsional)</label>
+                    <input type="file" name="photo"
+                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm mb-1 text-gray-600">Riwayat Medis</label>
+                    <textarea name="medical_history" rows="2"
+                              class="w-full border rounded px-2 py-1 focus:ring-sky-500"></textarea>
+                </div>
+            </div>
+
+            {{-- ===== TOGGLE TIPE KELUARGA ===== --}}
+            <h3 class="font-semibold text-slate-700">Tipe Data Keluarga</h3>
+            <div class="flex gap-6 text-sm text-gray-700">
+                <label class="inline-flex items-center">
+                    <input type="radio" value="ortu" x-model="modeOrtu" name="tipe_data"
+                           class="form-radio text-sky-600" checked>
+                    <span class="ml-2">Kedua Orang Tua</span>
+                </label>
+                <label class="inline-flex items-center">
+                    <input type="radio" value="wali" x-model="modeOrtu" name="tipe_data"
+                           class="form-radio text-sky-600">
+                    <span class="ml-2">Wali Saja</span>
+                </label>
+            </div>
+
+            {{-- ===== DATA ORANG TUA ===== --}}
+            <div x-show="modeOrtu==='ortu'" class="grid md:grid-cols-2 gap-4">
+                @foreach (['father'=>'Ayah','mother'=>'Ibu'] as $pfx=>$lbl)
+                    <div>
+                        <label class="block text-sm mb-1 text-gray-600">Nama {{ $lbl }}</label>
+                        <input :disabled="modeOrtu!=='ortu'" :required="modeOrtu==='ortu'"
+                               name="{{ $pfx }}_name"
+                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1 text-gray-600">NIK {{ $lbl }}</label>
+                        <input :disabled="modeOrtu!=='ortu'" name="{{ $pfx }}_nik"
+                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1 text-gray-600">Pekerjaan {{ $lbl }}</label>
+                        <input :disabled="modeOrtu!=='ortu'" name="{{ $pfx }}_occupation"
+                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1 text-gray-600">Telp {{ $lbl }}</label>
+                        <input :disabled="modeOrtu!=='ortu'" name="{{ $pfx }}_phone"
+                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm mb-1 text-gray-600">Email {{ $lbl }}</label>
+                        <input type="email" :disabled="modeOrtu!=='ortu'" name="{{ $pfx }}_email"
+                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm mb-1 text-gray-600">Alamat {{ $lbl }}</label>
+                        <textarea :disabled="modeOrtu!=='ortu'" name="{{ $pfx }}_address" rows="2"
+                                  class="w-full border rounded px-2 py-1 focus:ring-sky-500"></textarea>
+                    </div>
+                @endforeach
+            </div>
+
+            {{-- ===== DATA WALI ===== --}}
+            <div x-show="modeOrtu==='wali'" class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm mb-1 text-gray-600">Nama Wali</label>
+                    <input :disabled="modeOrtu!=='wali'" :required="modeOrtu==='wali'"
+                           name="guardian_name"
+                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-gray-600">NIK Wali</label>
+                    <input :disabled="modeOrtu!=='wali'" name="guardian_nik"
+                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-gray-600">Pekerjaan Wali</label>
+                    <input :disabled="modeOrtu!=='wali'" name="guardian_occupation"
+                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-gray-600">Telp Wali</label>
+                    <input :disabled="modeOrtu!=='wali'" name="guardian_phone"
+                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-gray-600">Email Wali</label>
+                    <input type="email" :disabled="modeOrtu!=='wali'" name="guardian_email"
+                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm mb-1 text-gray-600">Alamat Wali</label>
+                    <textarea :disabled="modeOrtu!=='wali'" name="guardian_address" rows="2"
+                              class="w-full border rounded px-2 py-1 focus:ring-sky-500"></textarea>
+                </div>
+            </div>
+
+            {{-- ===== AKSI ===== --}}
+            <div class="flex gap-3">
+                <button type="submit"
+                        class="px-6 py-2 bg-sky-600 text-white rounded-full hover:bg-sky-700">
+                    Simpan
+                </button>
+                <button type="button" @click="mode='view'"
+                        class="px-6 py-2 bg-gray-200 rounded-full">
+                    Batal
+                </button>
+            </div>
+        </form>
+    </div>
+
+{{-- ========== FORM EDIT ========== --}}
+<div x-show="mode==='edit'" x-cloak class="flex-1">
+
+    <form
+        method="POST"
+        :action="`{{ url('/classroom/'.$class->id.'/students') }}/${editData.id}`"
+        enctype="multipart/form-data"
+        class="p-4 bg-white rounded-lg border space-y-6"
+    >
+        @csrf @method('PUT')
+
+        {{-- ===== DATA SISWA ===== --}}
+        <h3 class="font-semibold text-slate-700">Data Siswa</h3>
+        <div class="grid md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm mb-1 text-gray-600">Nomor Induk</label>
+                <input name="student_number" x-model="editData.student_number" required
+                       class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+            </div>
+            <div>
+                <label class="block text-sm mb-1 text-gray-600">Nama Lengkap</label>
+                <input name="name" x-model="editData.name" required
+                       class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+            </div>
+            <div>
+                <label class="block text-sm mb-1 text-gray-600">Tanggal Lahir</label>
+                <input type="date" name="birth_date" x-model="editData.birth_date" required
+                       class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+            </div>
+            <div>
+                <label class="block text-sm mb-1 text-gray-600">Jenis Kelamin</label>
+                <select name="gender" x-model="editData.gender"
+                        class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                    <option value="male">Laki-laki</option>
+                    <option value="female">Perempuan</option>
+                </select>
+            </div>
+            <div class="md:col-span-2">
+                <label class="block text-sm mb-1 text-gray-600">Riwayat Medis</label>
+                <textarea name="medical_history" x-model="editData.medical_history" rows="2"
+                          class="w-full border rounded px-2 py-1 focus:ring-sky-500"></textarea>
+            </div>
+            <div class="md:col-span-2">
+                <label class="block text-sm mb-1 text-gray-600">Foto (opsional)</label>
+                <input type="file" name="photo"
+                       class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+            </div>
+        </div>
+
+        {{-- ===== PILIH TIPE KELUARGA ===== --}}
+        <h3 class="font-semibold text-slate-700 mt-6">Data Keluarga</h3>
+        <label class="inline-flex items-center mr-6">
+            <input type="radio" value="ortu" x-model="editData.tipe_data" name="tipe_data"
+                   class="text-sky-600 focus:ring-sky-500">
+            <span class="ml-2">Ayah &amp; Ibu</span>
+        </label>
+        <label class="inline-flex items-center">
+            <input type="radio" value="wali" x-model="editData.tipe_data" name="tipe_data"
+                   class="text-sky-600 focus:ring-sky-500">
+            <span class="ml-2">Wali</span>
+        </label>
+
+        {{-- ===== DATA ORANG TUA ===== --}}
+        <template x-if="editData.tipe_data==='ortu'">
+            <div class="mt-4 border-t pt-4 space-y-8">
+                @foreach(['father'=>'Ayah','mother'=>'Ibu'] as $pfx=>$lbl)
+                    <div>
+                        <h4 class="font-semibold text-slate-700 mb-2">{{ $lbl }}</h4>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm mb-1 text-gray-600">Nama</label>
+                                <input name="{{ $pfx }}_name" :disabled="editData.tipe_data!=='ortu'"
+                                       x-model="editData.{{ $pfx }}_name"
+                                       class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm mb-1 text-gray-600">NIK</label>
+                                <input name="{{ $pfx }}_nik" :disabled="editData.tipe_data!=='ortu'"
+                                       x-model="editData.{{ $pfx }}_nik"
+                                       class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm mb-1 text-gray-600">Pekerjaan</label>
+                                <input name="{{ $pfx }}_occupation" :disabled="editData.tipe_data!=='ortu'"
+                                       x-model="editData.{{ $pfx }}_occupation"
+                                       class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm mb-1 text-gray-600">Telp</label>
+                                <input name="{{ $pfx }}_phone" :disabled="editData.tipe_data!=='ortu'"
+                                       x-model="editData.{{ $pfx }}_phone"
+                                       class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm mb-1 text-gray-600">Email</label>
+                                <input name="{{ $pfx }}_email" :disabled="editData.tipe_data!=='ortu'"
+                                       x-model="editData.{{ $pfx }}_email"
+                                       class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm mb-1 text-gray-600">Alamat</label>
+                                <textarea name="{{ $pfx }}_address" rows="2"
+                                          :disabled="editData.tipe_data!=='ortu'"
+                                          x-model="editData.{{ $pfx }}_address"
+                                          class="w-full border rounded px-2 py-1 focus:ring-sky-500"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </template>
+
+        {{-- ===== DATA WALI ===== --}}
+        <template x-if="editData.tipe_data==='wali'">
+            <div class="mt-4 border-t pt-4">
+                <h4 class="font-semibold text-slate-700 mb-3">Data Wali</h4>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm mb-1 text-gray-600">Nama Wali</label>
+                        <input name="guardian_name" :disabled="editData.tipe_data!=='wali'"
+                               x-model="editData.guardian_name"
+                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1 text-gray-600">Hubungan</label>
+                        <input name="guardian_relation" :disabled="editData.tipe_data!=='wali'"
+                               x-model="editData.guardian_relation"
+                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1 text-gray-600">Telp</label>
+                        <input name="guardian_phone" :disabled="editData.tipe_data!=='wali'"
+                               x-model="editData.guardian_phone"
+                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1 text-gray-600">Email</label>
+                        <input name="guardian_email" :disabled="editData.tipe_data!=='wali'"
+                               x-model="editData.guardian_email"
+                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm mb-1 text-gray-600">Alamat</label>
+                        <textarea name="guardian_address" rows="2"
+                                  :disabled="editData.tipe_data!=='wali'"
+                                  x-model="editData.guardian_address"
+                                  class="w-full border rounded px-2 py-1 focus:ring-sky-500"></textarea>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        {{-- ===== AKSI ===== --}}
+        <div class="mt-8 flex gap-3">
+            <button type="submit"
+                    class="px-6 py-2 bg-sky-600 text-white rounded-full hover:bg-sky-700">
+                Simpan Perubahan
+            </button>
+            <button type="button" @click="mode='view'"
+                    class="px-6 py-2 bg-gray-200 rounded-full">
+                Batal
+            </button>
+        </div>
+    </form>
+</div>
+
+
+</div>

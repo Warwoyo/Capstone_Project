@@ -2,113 +2,120 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Classroom;   // <--  tambahkan baris ini
 use Illuminate\Http\Request;
-use App\Models\RegistrationToken; 
 
 class ClassroomController extends Controller
 {
-
-    // Private method untuk mendapatkan daftar kelas
-    private function getClassroomList()
-    {
-        return [
-            [
-                'id' => 0,
-                'title' => 'Kelas Pelangi Ceria',
-                'description' => 'Meningkatkan kreativitas melalui seni, musik, dan permainan seru yang mengenalkan warna dan ekspresi diri',
-            ],
-            [
-                'id' => 1,
-                'title' => 'Kelas Bintang Pintar',
-                'description' => 'Mengasah keterampilan membaca, menulis, dan berhitung dasar dengan cara yang menyenangkan dan interaktif',
-            ],
-            [
-                'id' => 2,
-                'title' => 'Kelas Hutan Ceria',
-                'description' => 'Mengenalkan anak pada keajaiban alam, tumbuhan, dan binatang melalui eksplorasi serta cerita menarik',
-            ],
-            [
-                'id' => 3,
-                'title' => 'Kelas Matahari Bersinar',
-                'description' => 'Melatih rasa percaya diri dan kemandirian anak melalui kegiatan kelompok yang penuh semangat',
-            ],
-            [
-                'id' => 4,
-                'title' => 'Kelas Pelangi Ceria',
-                'description' => 'Meningkatkan kreativitas melalui seni, musik, dan permainan seru yang mengenalkan warna dan ekspresi diri',
-            ],
-            [
-                'id' => 5,
-                'title' => 'Kelas Bintang Pintar',
-                'description' => 'Mengasah keterampilan membaca, menulis, dan berhitung dasar dengan cara yang menyenangkan dan interaktif',
-            ],
-            [
-                'id' => 6,
-                'title' => 'Kelas Hutan Ceria',
-                'description' => 'Mengenalkan anak pada keajaiban alam, tumbuhan, dan binatang melalui eksplorasi serta cerita menarik',
-            ],
-        ];
-    }
-
-    // Function index untuk menampilkan semua kelas
     public function index()
     {
-        $classroom = $this->getClassroomList();
-        $tab = 'pengumuman'; // default
-        return view('Classroom.index', compact('classroom', 'tab'));
-    }
-    
+        $classroom = Classroom::with(['owner:id,name'])
+                    ->withCount('students')
+                    ->orderBy('name')
+                    ->get();
 
-    // Function detail per kelas + tab
-    public function showClassroomDetail($classId, $tab)
-{
-    
-    
-    $classroomList = $this->getClassroomList();
-    $class = collect($classroomList)->firstWhere('id', $classId);
-    
-    // dd($tab, $classId);
-    if (!$class) {
-        abort(404, 'Kelas tidak ditemukan.');
+        $teachers = \App\Models\User::where('role', 'teacher')->get(['id', 'name']);
+
+        return view('Classroom.index', compact('classroom', 'teachers'));
     }
 
-    // Tentukan tabs yang akan digunakan
-    $tabs = ['Pengumuman', 'Presensi', 'Jadwal', 'Observasi', 'Rapor', 'Peserta', 'Silabus'];
 
-    // Tentukan data untuk tab tertentu
-    $data = match ($tab) {
-        'pengumuman' => ['Pengumuman A', 'Pengumuman B'],
-        'presensi' => ['Presensi A', 'Presensi B'],
-        'observasi' => ['Observasi A', 'Observasi B'],
-        'rapor' => ['Rapor A', 'Rapor B'],
-        default => [],
-    };
+    public function showClassroomDetail($class, $tab)
+    {
+        $classroom = Classroom::with('owner:id,name')->findOrFail($class);
+        
+        $data = [
+            'class'            => $classroom,
+            'tab'              => strtolower($tab),
+            'announcementList' => collect(),
+            'scheduleList'     => collect(),
+            'attendanceList'   => collect(),
+            'observationList'  => collect(),
+            'reportList'       => collect(),
+            'syllabusList'     => collect(), 
+            'studentList'      => collect(),
+        ];
 
-    $scheduleList = [];
-    $announcementList= [];
-    $studentList= [];
+        switch ($data['tab']) {
+            case 'pengumuman':
+                $data['announcementList'] = $classroom->announcements()->latest()->get();
+                break;
 
+            case 'jadwal':
+                $data['scheduleList'] = $classroom->schedules()
+                                        ->with('details')
+                                        ->orderBy('created_at')
+                                        ->get();
+                break;
 
-         $scheduleController = new ScheduleController();
-         $scheduleList = $scheduleController->fetchScheduleList();
+            case 'presensi':
+                $today = now()->toDateString();
+                $data['attendanceList'] = $classroom->attendances()
+                                        ->whereDate('attendance_date', $today)
+                                        ->with('student')
+                                        ->get();
+                break;
 
-         $AnnouncementController = new AnnouncementController();
-         $announcementList = $AnnouncementController->fetchAnnouncementList();
+            case 'observasi':
+                $data['observationList'] = $classroom->observations()
+                                        ->with(['student', 'scheduleDetail'])
+                                        ->latest()
+                                        ->get();
+                break;
 
-         $StudentController = new StudentController();
-         $studentList = $StudentController->fetchStudentList();
+            case 'rapor':
+                $data['reportList'] = \App\Models\Report::whereIn('student_id', $classroom->students->pluck('id'))
+                                        ->with('student')
+                                        ->latest()
+                                        ->get();
+                break;
 
-         $ObservationController = new ObservationController();
-         $observationList = $ObservationController->fetchObservationList();
+            case 'peserta':
+                $data['studentList'] = $classroom->students()
+                                         ->with(['parents', 'registrationTokens'])
+                                         ->orderBy('name')
+                                         ->get();
+                break;
+                
+            
+                
+        }
 
-         $ReportController = new ReportController();
-         $semesterList = $ReportController->fetchSemesterList();
-
-
-
+        return view('Classroom.classroom-detail', $data);
+    }
+    public function create()
+    {
+        $teachers = User::where('role', 'teacher')->get();
+        return view('Classrooms.index', compact('teachers'));
+    }
+    public function store(Request $r)
+    {
+        $r->validate([
+            'name'        => 'required|string|max:50',
+            'description' => 'nullable|string',
+            'owner_id'    => 'required|exists:users,id',
+        ]);
     
-     //dd(compact('class', 'tab', 'data', 'classId', 'tabs','scheduleList','announcementList','studentList','observationList','semesterList'));
+        $classroom = \App\Models\Classroom::create([
+            'name'        => $r->name,
+            'description' => $r->description,
+            'owner_id'    => $r->owner_id,
+        ]);
+    
+        return redirect()->route('classrooms.index')->with('success', 'Kelas berhasil dibuat!');
+    }
+    
+    public function studentsTab(Classroom $class)
+    {
+        // ambil token terakhir per siswa
+        $class->load([
+            'students.registrationTokens' => fn($q) => $q->latest()->limit(1)
+        ]);
+        
+        return view('Classroom.components.tab-students', [
+            'class'        => $class,
+            'studentList'  => $class->students  // collection Student model
+        ]);
+    }
 
-    return view('Classroom.classroom-detail', compact('class', 'tab', 'data', 'classId', 'tabs','scheduleList','announcementList','studentList','observationList','semesterList'));
-}
 }

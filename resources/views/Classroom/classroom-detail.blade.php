@@ -18,10 +18,10 @@
                 <!-- Bagian Konten Card -->
                 <div class="flex-1">
                     <h2 class="text-base font-bold text-sky-800 max-sm:text-sm">
-                        Kelas Pelangi Ceria
+                        Kelas {{$class->name}}
                     </h2>
                     <p class="text-sm text-gray-500 max-sm:text-sm">
-                        Meningkatkan kreativitas melalui seni, musik, dan permainan seru yang mengenalkan warna dan ekspresi diri
+                        {{$class->description}}
                     </p>
                 </div>
 
@@ -52,12 +52,9 @@
         :observation="$observationList"
         :semester="$semesterList"
 
-    />
-
-</div>
-
-
-    </section>
+                    />
+                </div>
+            </section>
 
     <!-- Header Icons -->
     <x-header.icon-header />

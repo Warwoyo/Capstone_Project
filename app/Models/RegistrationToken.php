@@ -2,15 +2,22 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class RegistrationToken extends Model
 {
-    protected $guarded = [];
-    public $timestamps = true;  // karena tabel punya created_at/updated_at
+    // RegistrationToken.php
+    protected $fillable = ['student_id','token','expires_at','used_at'];
 
-    public function student()
+    public static function generateFor(Student $student, int $days = 7): self
     {
-        return $this->belongsTo(Student::class);
+        return self::create([
+            'student_id' => $student->id,
+            'token'      => strtoupper(Str::random(8)),
+            'expires_at' => now()->addDays($days),
+        ]);
     }
+
+    
 }

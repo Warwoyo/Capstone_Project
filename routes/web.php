@@ -1,37 +1,108 @@
 <?php
-use App\Http\Controllers\ClassroomController;
-use App\Http\Controllers\ScheduleController;
-use App\Http\Controllers\AnnouncementController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\StudentController;
-use App\Http\Controllers\AdminController;
-use App\Http\Controllers\ObservatianController;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-*/
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\{
+    AuthController,
+    AdminController,
+    StudentController,
+    ClassroomController,
+    ScheduleController,
+    AnnouncementController,
+    DashboardController,
+    ParentRegisterController
+};
 
-// Route::middleware('guest')->group(function () {
-//     // Login
-//     Route::get('/login',  [AuthController::class, 'showLogin'])->name('login');
-//     Route::post('/login', [AuthController::class, 'login']);
+// =========================
+// Public Routes
+// =========================
 
-//     // Register Orang Tua
-//     Route::get('/parent/register',  [AuthController::class, 'showParentRegister'])->name('parent.register');
-//     Route::post('/parent/register', [AuthController::class, 'parentRegister']);
-// });
+// Form registrasi orang tua
+Route::get('parent/register', [ParentRegisterController::class, 'create'])->name('parent.register.form');
+Route::post('parent/register', [ParentRegisterController::class, 'store'])->name('parent.register');
 
-Route::get('/classroom/11', function () {
-    return view('Classroom.classroom-detail');
-})->name('classroom-detail');
+// =========================
+// Guest Middleware
+// =========================
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
+});
 
-Route::get('/classroom/{class}/{tab}', [ClassroomController::class, 'showClassroomDetail'])->name('classroom.tab');
-// Route::get('/classroom/schedule', [ScheduleController::class, 'index'])->name('schedule');
-Route::get('/classroom/{class}/{tab}/{id}', [ClassroomController::class, 'showClassroomDetail'])->name('classroom.tabs-detail');
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+// =========================
+// Authenticated Middleware
+// =========================
+Route::middleware('auth')->group(function () {
 
+    // Logout
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+
+    // Role: admin, teacher
+    Route::middleware('role:admin,teacher')->group(function () {
+
+        // Classroom Resource
+        Route::resource('classrooms', ClassroomController::class)->names([
+            'index'   => 'Classroom.index',
+            'create'  => 'Classroom.create',
+            'store'   => 'Classroom.store',
+            'show'    => 'Classroom.show',
+            'edit'    => 'Classroom.edit',
+            'update'  => 'Classroom.update',
+            'destroy' => 'Classroom.destroy',
+        ]);
+
+        // Nested Resources (announcements, schedules)
+        Route::resource('classrooms.announcements', AnnouncementController::class)->shallow();
+        Route::resource('classrooms.schedules', ScheduleController::class)->shallow();
+
+        // Admin panel
+        Route::get('/admin/orangtua', [AdminController::class, 'fetchParentList'])->name('Admin.index');
+    });
+
+    // Role: admin, teacher, parent
+    Route::middleware('role:admin,teacher,parent')->group(function () {
+        Route::get('/classrooms', [ClassroomController::class, 'index'])->name('classrooms.index');
+    });
+
+    // Classroom Tab Details
+    Route::get('/classroom/{class}/{tab}', [ClassroomController::class, 'showClassroomDetail'])->name('classroom.tab');
+    Route::get('/classroom/{class}/{tab}/{id}', [ClassroomController::class, 'showClassroomDetail'])->name('classroom.tabs-detail');
+    Route::get('/classroom/{class}/{tab}/peserta/{selectedStudentId}', [ClassroomController::class, 'showClassroomDetail'])->name('classroom.student-detail');
+
+    // Tab peserta
+    Route::get('/classrooms/{class}/peserta', [ClassroomController::class, 'studentsTab'])->name('classroom.tab.peserta');
+
+    // CRUD siswa
+    Route::resource('students', StudentController::class)->only(['index', 'create', 'show', 'edit']);
+    Route::post('/students', [StudentController::class, 'store'])->name('students.store');
+    Route::put('/students/{student}', [StudentController::class, 'update'])->name('students.update');
+    Route::delete('/classroom/{class}/students/{student}',
+        [StudentController::class,'destroy']
+    )->name('students.destroy');
+    Route::put(
+        '/classroom/{class}/students/{student}',
+        [\App\Http\Controllers\StudentController::class,'update']
+    )->name('students.update');
+
+    // CRUD siswa spesifik dalam kelas
+    Route::post('/classrooms/{class}/students', [StudentController::class, 'store'])->name('students.store');
+});
+
+// =========================
+// Fallback & Testing Routes
+// =========================
+
+Route::get('/', function () {
+    return auth()->check()
+        ? redirect()->route('dashboard.index')
+        : redirect()->route('login');
+});
+
+Route::get('/testing', function () {
+    return view('index22');
+})->name('index-test');
 
 Route::get('/orangtua', [DashboardController::class, 'indexParent'])->name('orangtua.index');
 Route::get('/orangtua/anak/data-anak', [DashboardController::class, 'childrenParent'])->name('orangtua.children');
@@ -39,20 +110,3 @@ Route::get('/orangtua/anak/observasi', [DashboardController::class, 'observation
 Route::get('/orangtua/anak/jadwal', [DashboardController::class, 'scheduleParent'])->name('orangtua.schedule');
 Route::get('/orangtua/anak/presensi', [DashboardController::class, 'attendanceParent'])->name('orangtua.attendance');
 Route::get('/orangtua/anak/riwayat-pengumuman', [DashboardController::class, 'announcementParent'])->name('orangtua.announcement');
-
-
-
-// Route::get('/classroom/{class}/{tab}/create', [ClassroomController::class, 'showClassroomDetail'])->name('classroom.tabs-schedule-create');
-
-Route::get('/testing', function () {
-    return view('index22');
-})->name('index-test');
-
-
-Route::get('/classroom/{class}/{tab}/peserta/{selectedStudentId}', [ClassroomController::class, 'showClassroomDetail'])->name('classroom.student-detail');
-
-Route::get('/admin/orangtua', [AdminController::class, 'fetchParentList'])->name('Admin.index');
-
-Route::get('/classroom', [ClassroomController::class, 'index'])->name('Classroom.index');
-
-

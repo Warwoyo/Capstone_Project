@@ -1,129 +1,170 @@
 <?php
-
+// app/Http/Controllers/StudentController.php
 namespace App\Http\Controllers;
+use Illuminate\Support\Facades\DB;          // ← untuk DB::transaction
+use Illuminate\Support\Str;                 // ← untuk Str::random
+use Illuminate\Support\Facades\Log;
 
 use Illuminate\Http\Request;
+use App\Models\{Student, Classroom, User, RegistrationToken, UserContact, ParentProfile};
 
 class StudentController extends Controller
 {
-    public function getStudentList()
-    { return [
-        [
-            'id' => 1,
-            'nama' => 'Anita Silalahi',
-            'tanggal_lahir' => '2013-05-29',
-            'jenis_kelamin' => 'Perempuan',
-            'alamat' => 'Kota Malang',
-            'nama_orang_tua' => 'Jansen Silalahi',
-            'nomor_hp_orang_tua' => '08123456789',
-            'alergi' => 'Alergi Kacang',
-            'foto' => 'anita.jpg',
-        ],
-        [
-            'id' => 2,
-            'nama' => 'Raka Permana',
-            'tanggal_lahir' => '2012-02-12',
-            'jenis_kelamin' => 'Laki-laki',
-            'alamat' => 'Surabaya',
-            'nama_orang_tua' => 'Dian Permana',
-            'nomor_hp_orang_tua' => '082198765432',
-            'alergi' => 'Tidak ada',
-            'foto' => 'raka.jpg',
-        ],
-        [
-            'id' => 3,
-            'nama' => 'Siti Nurhaliza',
-            'tanggal_lahir' => '2013-08-08',
-            'jenis_kelamin' => 'Perempuan',
-            'alamat' => 'Bandung',
-            'nama_orang_tua' => 'Asep Nurhalim',
-            'nomor_hp_orang_tua' => '081277788899',
-            'alergi' => 'Debu',
-            'foto' => 'siti.jpg',
-        ],
-        [
-            'id' => 4,
-            'nama' => 'Bima Pradipta',
-            'tanggal_lahir' => '2014-03-17',
-            'jenis_kelamin' => 'Laki-laki',
-            'alamat' => 'Jakarta Selatan',
-            'nama_orang_tua' => 'Rina Pradipta',
-            'nomor_hp_orang_tua' => '083112223333',
-            'alergi' => 'Laktosa',
-            'foto' => 'bima.jpg',
-        ],
-        [
-            'id' => 5,
-            'nama' => 'Lestari Ayuningtyas',
-            'tanggal_lahir' => '2013-01-05',
-            'jenis_kelamin' => 'Perempuan',
-            'alamat' => 'Yogyakarta',
-            'nama_orang_tua' => 'Suryo Ayuningtyas',
-            'nomor_hp_orang_tua' => '081355566677',
-            'alergi' => 'Tidak ada',
-            'foto' => 'lestari.jpg',
-        ],
-        [
-            'id' => 6,
-            'nama' => 'Fikri Ramadhan',
-            'tanggal_lahir' => '2012-04-20',
-            'jenis_kelamin' => 'Laki-laki',
-            'alamat' => 'Bekasi',
-            'nama_orang_tua' => 'Wahyudi Ramadhan',
-            'nomor_hp_orang_tua' => '082122233344',
-            'alergi' => 'Alergi Udang',
-            'foto' => 'fikri.jpg',
-        ],
-        [
-            'id' => 7,
-            'nama' => 'Tania Salsabila',
-            'tanggal_lahir' => '2013-11-02',
-            'jenis_kelamin' => 'Perempuan',
-            'alamat' => 'Depok',
-            'nama_orang_tua' => 'Rizky Salsabila',
-            'nomor_hp_orang_tua' => '081234567812',
-            'alergi' => 'Alergi Telur',
-            'foto' => 'tania.jpg',
-        ],
-        [
-            'id' => 8,
-            'nama' => 'Andra Putra',
-            'tanggal_lahir' => '2014-06-15',
-            'jenis_kelamin' => 'Laki-laki',
-            'alamat' => 'Tangerang',
-            'nama_orang_tua' => 'Putri Andayani',
-            'nomor_hp_orang_tua' => '082122111444',
-            'alergi' => 'Tidak ada',
-            'foto' => 'andra.jpg',
-        ],
-        [
-            'id' => 9,
-            'nama' => 'Clarissa Dwi',
-            'tanggal_lahir' => '2012-09-30',
-            'jenis_kelamin' => 'Perempuan',
-            'alamat' => 'Bogor',
-            'nama_orang_tua' => 'Dwi Kartika',
-            'nomor_hp_orang_tua' => '081266655544',
-            'alergi' => 'Debu dan serbuk sari',
-            'foto' => 'clarissa.jpg',
-        ],
-        [
-            'id' => 10,
-            'nama' => 'Zaki Ahmad',
-            'tanggal_lahir' => '2013-03-10',
-            'jenis_kelamin' => 'Laki-laki',
-            'alamat' => 'Cimahi',
-            'nama_orang_tua' => 'Ahmad Yusuf',
-            'nomor_hp_orang_tua' => '083344455566',
-            'alergi' => 'Alergi gluten',
-            'foto' => 'zaki.jpg',
-        ],
-    ];
-}
+    
+    public function store(Request $r, Classroom $class)
+    {
+        // dd($r->all());
+        /* 1. Validasi */
+        $r->validate([
+            'student_number' => 'required|max:30',
+            'name'           => 'required|max:100',
+            'birth_date'     => 'required|date',
+            'gender'         => 'required|in:male,female',
+            'father_name'     => 'required_if:tipe_data,ortu|max:100',
+            'mother_name'     => 'required_if:tipe_data,ortu|max:100',
+            'guardian_name'   => 'required_if:tipe_data,wali|max:100',
+            // … sisanya nullable …
+        ]);
+    
+        /* 2. Transaksi */
+        DB::beginTransaction();
+        try {
+            /* --- SIMPAN SISWA --- */
+            $student = Student::create([
+                'student_number'  => $r->student_number,
+                'name'            => $r->name,
+                'birth_date'      => $r->birth_date,
+                'gender'          => $r->gender,
+                'photo'           => $r->file('photo')?->store('students','public'),
+                'medical_history' => $r->medical_history,
+            ]);
+    
+            $class->students()->attach($student->id);
+    
+            /* ───── BUILD PARENT DATA ───── */
+            $parentData = [];
 
-public function fetchStudentList()
-{
-    return $this->getStudentList();
-}
+            if ($r->input('tipe_data') === 'ortu') {
+                // AYAH
+                if (trim($r->father_name) !== '') {
+                    $parentData[] = [
+                        'name'       => $r->father_name,
+                        'relation'   => 'father',
+                        'phone'      => $r->father_phone ?: null,
+                        'email'      => $r->father_email ?: null,
+                        'nik'        => $r->father_nik ?: null,
+                        'occupation' => $r->father_occupation ?: null,
+                        'address'    => $r->father_address ?: null,
+                    ];
+                }
+                // IBU
+                if (trim($r->mother_name) !== '') {
+                    $parentData[] = [
+                        'name'       => $r->mother_name,
+                        'relation'   => 'mother',
+                        'phone'      => $r->mother_phone ?: null,
+                        'email'      => $r->mother_email ?: null,
+                        'nik'        => $r->mother_nik ?: null,
+                        'occupation' => $r->mother_occupation ?: null,
+                        'address'    => $r->mother_address ?: null,
+                    ];
+                }
+            }
+
+            if ($r->input('tipe_data') === 'wali') {
+                // HANYA WALI
+                if (trim($r->guardian_name) !== '') {
+                    $parentData[] = [
+                        'name'       => $r->guardian_name,
+                        'relation'   => 'guardian',
+                        'phone'      => $r->guardian_phone ?: null,
+                        'email'      => $r->guardian_email ?: null,
+                        'nik'        => $r->guardian_nik ?: null,
+                        'occupation' => $r->guardian_occupation ?: null,
+                        'address'    => $r->guardian_address ?: null,
+                    ];
+                }
+            }
+
+            /* ─── BUANG kolom phone/email kalau kosong agar tidak kena UNIQUE NULL ─── */
+            foreach ($parentData as &$p) {
+                if (empty($p['phone'])) unset($p['phone']);
+                if (empty($p['email'])) unset($p['email']);
+            }
+            unset($p);
+
+            /* ───── SIMPAN ORANG-TUA / WALI ───── */
+            if ($parentData) {
+                $student->parents()->createMany($parentData);
+            }
+
+    
+            /* --- TOKEN --- */
+            $student->registrationTokens()->create([
+                'token'      => strtoupper(Str::random(8)),
+                'expires_at' => now()->addDays(7),
+            ]);
+    
+            DB::commit();
+            Log::info('COMMIT OK', ['student_id'=>$student->id]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('ROLLBACK', ['msg'=>$e->getMessage()]);
+            return back()->withErrors('Gagal simpan: '.$e->getMessage());
+        }
+    
+        return redirect()
+        ->route('classroom.tab', ['class' => $class->id, 'tab' => 'peserta'])
+        ->with('success', 'Data tersimpan');
+    }
+    
+
+    public function destroy(Classroom $class, Student $student)
+    {
+        DB::transaction(function () use ($class, $student) {
+            $class->students()->detach($student->id);
+            $student->delete();
+        });
+        return back()->with('success','Siswa dihapus');
+    }
+    public function update(Request $r, Classroom $class, Student $student)
+    {
+        $r->validate([
+            'student_number' => 'required|max:30',
+            'name'           => 'required|max:100',
+            'birth_date'     => 'required|date',
+            'gender'         => 'required|in:male,female',
+            'father_name'     => 'required_if:tipe_data,ortu|max:100',
+            'mother_name'     => 'required_if:tipe_data,ortu|max:100',
+            'guardian_name'   => 'required_if:tipe_data,wali|max:100',
+        ]);
+
+        DB::transaction(function () use ($r, $student) {
+
+            // --- UPDATE DATA SISWA ---
+            $student->update([
+                'student_number'  => $r->student_number,
+                'name'            => $r->name,
+                'birth_date'      => $r->birth_date,
+                'gender'          => $r->gender,
+                'photo'           => $r->file('photo')
+                                    ? $r->file('photo')->store('students','public')
+                                    : $student->photo,
+                'medical_history' => $r->medical_history,
+            ]);
+
+            // --- UPDATE / INSERT ORTU & WALI ---
+            // hapus dulu data parent lama biar simple
+            $student->parents()->delete();
+
+            $parentData = [];  // sama seperti yang ada di store() :contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}
+            /* …bangun $parentData persis seperti di store()… */
+            if ($parentData) {
+                $student->parents()->createMany($parentData);
+            }
+        });
+
+        return back()->with('success','Data siswa diperbarui');
+    }
 
 }

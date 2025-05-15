@@ -1,4 +1,4 @@
-
+{{-- resources/views/components/menu/tabs-menu.blade.php --}}
 @props([
     'class' => null,
     'tab' => null,
@@ -6,19 +6,20 @@
     'mode' => null,
     'announcement' => null,
     'student' => null,
-    'observation' => null,
-    'semester'=>null
+    'observation' => null
 ])
 
 <!-- Kontainer global Alpine -->
 <div x-data="{ mode: @entangle('mode') }" class="space-y-2"></div>
-    
-    <x-tabs 
-        :tabs="['Presensi', 'Pengumuman', 'Jadwal', 'Observasi', 'Rapor', 'Peserta', 'Silabus']" 
-        :active="ucfirst($tab)" 
-        :class-id="$class['id']" 
+
+    {{-- Navigasi tab --}}
+    <x-tabs
+        :tabs="['Presensi','Pengumuman','Jadwal','Observasi','Rapor','Peserta','Silabus']"
+        :active="ucfirst($tab)"
+        :class-id="$classroom['id']"
     />
 
+    {{-- Header / Search --}}
     <div class="flex items-center justify-between gap-5 p-1">
     @if (in_array(strtolower($tab), ['jadwal', 'peserta']))
         <x-search.search-search />

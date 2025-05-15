@@ -2,6 +2,7 @@
 
 @section('title', 'Login')
 
+
 @section('content')
 <div class="max-w-2xl mx-auto mt-2 p-6 bg-white rounded-lg">
 
@@ -13,7 +14,7 @@
         class="object-contain self-center max-w-full aspect-[1.38] w-[120px]"
       />
       <h1 class="mt-0 text-2xl font-bold text-center text-sky-600 max-md:max-w-full ">
-        Login Akun
+        Masuk ke KANA
       </h1>
     </header>
 
@@ -26,11 +27,12 @@
 
       {{-- Nomor Handphone --}}
       <div>
-        <label for="phone" class="block text-sm text-gray-600">Nomor Handphone</label>
+        <label for="identifier" class="text-sm text-gray-600">Email / No HP</label>
+        
         <input
-          type="tel"
-          name="phone_number"
-          id="phone"
+          type="text"
+          name="identifier"
+          id="identifier"
           placeholder="08xxxxxxxxxx"
           class="w-full px-4 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 bg-gray-200"
           value="{{ old('phone_number') }}"

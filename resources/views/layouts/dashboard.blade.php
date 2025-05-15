@@ -97,6 +97,15 @@
     <main class="flex-1">
       @yield('content')
     </main>
+    
+<x-alert.confirmation-alert
+    title="Konfirmasi Aksi"
+    label="data ini"
+    action="melanjutkan aksi ini"
+    confirmText="Ya"
+    cancelText="Tidak"
+/>
+
   </div>
 
   <!-- Sidebar toggle script -->

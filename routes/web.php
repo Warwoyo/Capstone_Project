@@ -103,3 +103,10 @@ Route::get('/', function () {
 Route::get('/testing', function () {
     return view('index22');
 })->name('index-test');
+
+Route::get('/orangtua', [DashboardController::class, 'indexParent'])->name('orangtua.index');
+Route::get('/orangtua/anak/data-anak', [DashboardController::class, 'childrenParent'])->name('orangtua.children');
+Route::get('/orangtua/anak/observasi', [DashboardController::class, 'observationParent'])->name('orangtua.observation');
+Route::get('/orangtua/anak/jadwal', [DashboardController::class, 'scheduleParent'])->name('orangtua.schedule');
+Route::get('/orangtua/anak/presensi', [DashboardController::class, 'attendanceParent'])->name('orangtua.attendance');
+Route::get('/orangtua/anak/riwayat-pengumuman', [DashboardController::class, 'announcementParent'])->name('orangtua.announcement');

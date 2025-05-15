@@ -1,5 +1,5 @@
 
-
+@props(['mode' => 'view', 'scheduleList' , 'class'])
 @extends('layouts.dashboard')
 
 @section('content')
@@ -23,42 +23,19 @@
         </p>
     </div>
 </header>
- 
-    {{-- Stat Cards --}}
+<x-header.parent-breadcrump-header
+    label="Pengumuman">
+</x-header.parent-breadcrump-header>
+<div class="flex-1 w-full md:px-10 pt-2"> <!-- Padding horizontal disini -->
+  
+  <!-- List Container -->
+  <div class="overflow-y-auto hide-scrollbar">
+   {{-- Announcement Card --}}
+<x-card.announcement-card :announcementList="$announcementList" maxHeight="max-h-[80vh] md:max-h-[70vh]" />
 
-
-<div class="flex flex-col pb-1 md:pt-6 md:pl-8 md:pr-8">
-  <div class="text-lg font-semibold text-sky-700 mb-2">Anak</div>
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
- <x-card.parent-stat-card 
-    label="Data Anak" 
-   >
-    </x-card.parent-stat-card>
-
-  <x-card.parent-stat-card 
-             label="Jadwal">
-        </x-card.parent-stat-card>
-
-  <x-card.parent-stat-card
-            label="Presensi">
-          </x-card.parent-stat-card>
-
-  <x-card.parent-stat-card 
-             label="Observasi">
-        </x-card.parent-stat-card>
-
-  <x-card.parent-stat-card
-            label="Silabus">
-          </x-card.parent-stat-card>
-
-  <x-card.parent-stat-card 
-             label="Riwayat Pengumuman">
-        </x-card.parent-stat-card>
+   
 </div>
-<div>
-<x-card.announcement-card :announcementList="array_slice($announcementList, 0, 2)" />
-<div>
-</div>
+
     <!-- Header Icons -->
     <x-header.icon-header />
     

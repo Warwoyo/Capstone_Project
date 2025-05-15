@@ -27,17 +27,34 @@ class ParentRegisterController extends Controller
 
         /** 1. Cari token valid */
         $token = RegistrationToken::where('token', $r->token)
-                  ->whereNull('used_at')
-                  ->where('expires_at', '>', now())
-                  ->firstOrFail();
+            ->whereNull('used_at')
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (!$token) {
+            return back()->withErrors([
+                'token' => 'Token tidak valid atau sudah kadaluarsa. Silakan hubungi guru atau admin.',
+            ])->withInput();
+        }
 
         /** 2. Cari parent profil yg cocok */
         $parent = ParentProfile::where('student_id', $token->student_id)
-                  ->where(function ($q) use ($r) {
-                      $q->when($r->phone_number, fn ($q) => $q->where('phone', $r->phone_number))
-                        ->when($r->email, fn ($q) => $q->orWhere('email', $r->email));
-                  })
-                  ->firstOrFail();
+            ->where(function ($q) use ($r) {
+                if ($r->phone_number) {
+                    $q->where('phone', $r->phone_number);
+                } elseif ($r->email) {
+                    $q->where('email', $r->email);
+                }
+            })
+            ->first();
+
+        if (!$parent) {
+            return back()->withErrors([
+                'phone_number' => 'Data tidak ditemukan. Pastikan token dan nomor/email sesuai. Silakan hubungi guru atau admin.',
+            ])->withInput();
+        }
+
+
 
         /** 3. Bikin akun utk SEMUA parent di siswa tsb */
         DB::transaction(function () use ($parent, $r, $token) {

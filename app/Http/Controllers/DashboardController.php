@@ -13,8 +13,6 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $AnnouncementController = new AnnouncementController();
-        $announcementList = $AnnouncementController->fetchAnnouncementList();
         $user = auth()->user();
         $activeStudentCount = Student::count();
         $alumniCount = Alumni::count();

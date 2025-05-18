@@ -4,7 +4,7 @@
     'tab' => null,
     'schedule' => null,
     'mode' => null,
-    'announcement' => null,
+    'announcementList' => null,
     'student' => null,
     'observation' => null
 ])
@@ -16,7 +16,7 @@
     <x-tabs
         :tabs="['Presensi','Pengumuman','Jadwal','Observasi','Rapor','Peserta','Silabus']"
         :active="ucfirst($tab)"
-        :class-id="$classroom['id']"
+        :class-id="$class['id']"
     />
 
     {{-- Header / Search --}}
@@ -72,7 +72,7 @@
     @elseif (strtolower($tab) === 'pengumuman')
         <x-dynamic-component 
             :component="'menu.' . $englishTab . '-menu'" 
-            :announcementList="$announcement" 
+            :announcementList="$announcementList" 
             :class="$class" 
             :label="ucfirst($tab)" 
            

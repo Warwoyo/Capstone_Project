@@ -42,22 +42,15 @@
             </section>
             
 <div x-data="{ mode: 'view' }">    
-    <x-menu.tabs-menu 
-        :class="$class" 
+    <x-menu.tabs-menu
+        :class="$class"
         :tab="$tab"
-        :schedule="$scheduleList" 
+        :schedule="$scheduleList"
         :student="$studentList"
-        :announcement="$announcementList"
+        :announcementList="$announcementList" 
         x-bind:mode="mode"
         :observation="$observationList"
-        :semester="$semesterList"
-
-                    />
-                </div>
-            </section>
-
-    <!-- Header Icons -->
-    <x-header.icon-header />
+    />
 </div>
 </main>
 @endsection

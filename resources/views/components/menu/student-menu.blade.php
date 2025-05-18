@@ -1,7 +1,7 @@
 {{--  resources/views/components/menu/student-menu.blade.php  --}}
-@props(['student','class'])
+@props(['studentList','class'])
 
-<<div
+<div
   x-data="{
       mode     : 'view',    // view | add | edit
       editData : {},        // objek siswa yg sedang diedit
@@ -21,7 +21,7 @@
             </div>
 
             {{-- Rows --}}
-            @forelse ($student as $stu)
+            @forelse ($studentList as $stu)
                 @php
                     // 1. mulai dari array siswa biasa
                     $flat = $stu->toArray();

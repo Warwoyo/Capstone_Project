@@ -1,6 +1,6 @@
 @props([
     'announcementList',
-    'maxHeight' => 'max-h-[44vh] md:max-h-[50vh]' // nilai default
+    'maxHeight' => 'max-h-[44vh] md:max-h-[50vh]'
 ])
 
 <section class="mt-5 max-md:mt-2.5">
@@ -20,28 +20,26 @@
                     class="relative w-full bg-sky-200 rounded-2xl overflow-hidden shadow min-h-[100px] flex flex-col justify-between"
                 >
                     <header class="bg-sky-600 text-white text-sm font-bold text-center py-2 rounded-t-2xl">
-                        {{ $announcement['timestamp'] }}
+                        {{ \Carbon\Carbon::parse($announcement->date)->translatedFormat('d F Y') }}
                     </header>
 
                     <div class="flex flex-col gap-1 p-5 pb-5">
-                        <time datetime="{{ $announcement['date'] }}" class="text-xs italic font-light text-slate-600">
-                            {{ $announcement['date'] }}
+                        <time datetime="{{ $announcement->date }}" class="text-xs italic font-light text-slate-600">
+                            {{ \Carbon\Carbon::parse($announcement->date)->translatedFormat('d F Y') }}
                         </time>
                         <h3 class="text-sm font-medium text-sky-800">Informasi</h3>
                         <h4 class="text-xs font-bold text-black">
-                            {{ $announcement['title'] }}
+                            {{ $announcement->title }}
                         </h4>
 
-                        <!-- Deskripsi -->
                         <p 
                             x-ref="desc"
                             class="text-xs text-justify text-black transition-all duration-300 ease-in-out line-clamp-2"
                             :class="{ 'line-clamp-none': expanded }"
                         >
-                            {{ $announcement['description'] }}
+                            {{ $announcement->description }}
                         </p>
 
-                        <!-- Tombol Lihat Selengkapnya jika overflow -->
                         <button 
                             x-show="overflowed"
                             x-on:click="expanded = !expanded"
@@ -53,7 +51,6 @@
                         </button>
                     </div>
 
-                    <!-- Tombol Hapus -->
                     <button type="button" class="absolute top-12 right-3 flex items-center gap-2 group" aria-label="Hapus pengumuman">
                         <svg width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M15.0417 2.375H3.95833C3.08388 2.375 2.375 3.08388 2.375 3.95833V15.0417C2.375 15.9161 3.08388 16.625 3.95833 16.625H15.0417C15.9161 16.625 16.625 15.9161 16.625 15.0417V3.95833C16.625 3.08388 15.9161 2.375 15.0417 2.375Z" stroke="#F04438" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>

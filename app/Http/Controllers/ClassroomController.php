@@ -18,20 +18,6 @@ class ClassroomController extends Controller
 
         return view('Classroom.index', compact('classroom', 'teachers'));
     }
-    public function show($id)
-    {
-        $class = Classroom::findOrFail($id);
-
-        $announcementList = Announcement::where('classroom_id', $id)
-            ->latest()
-            ->get();
-
-        return view('Classroom.show', [
-            'class' => $class,
-            'announcementList' => $announcementList,
-        ]);
-    }
-
     public function showClassroomDetail($class, $tab)
     {
         $classroom = Classroom::with('owner:id,name')->findOrFail($class);

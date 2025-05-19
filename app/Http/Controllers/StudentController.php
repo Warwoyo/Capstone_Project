@@ -23,7 +23,12 @@ class StudentController extends Controller
             'father_name'     => 'required_if:tipe_data,ortu|max:100',
             'mother_name'     => 'required_if:tipe_data,ortu|max:100',
             'guardian_name'   => 'required_if:tipe_data,wali|max:100',
-            // … sisanya nullable …
+            'father_email'   => 'nullable|email|unique:parent_profiles,email',
+            'father_phone'   => 'nullable|unique:parent_profiles,phone',
+            'mother_email'   => 'nullable|email|unique:parent_profiles,email',
+            'mother_phone'   => 'nullable|unique:parent_profiles,phone',
+            'guardian_email'   => 'nullable|email|unique:parent_profiles,email',
+            'guardian_phone'   => 'nullable|unique:parent_profiles,phone',
         ]);
     
         /* 2. Transaksi */
@@ -134,37 +139,101 @@ class StudentController extends Controller
             'name'           => 'required|max:100',
             'birth_date'     => 'required|date',
             'gender'         => 'required|in:male,female',
-            'father_name'     => 'required_if:tipe_data,ortu|max:100',
-            'mother_name'     => 'required_if:tipe_data,ortu|max:100',
-            'guardian_name'   => 'required_if:tipe_data,wali|max:100',
+            'father_name'    => 'required_if:tipe_data,ortu|max:100',
+            'mother_name'    => 'required_if:tipe_data,ortu|max:100',
+            'guardian_name'  => 'required_if:tipe_data,wali|max:100',
+            'father_email'   => 'nullable|email|unique:parent_profiles,email,' .
+                                $student->father?->id,
+            'mother_email'   => 'nullable|email|unique:parent_profiles,email,' .
+                                $student->mother?->id,
+            'guardian_email' => 'nullable|email|unique:parent_profiles,email,' .
+                                $student->guardian?->id,
+            'father_phone'   => 'nullable|unique:parent_profiles,phone,' .
+                                $student->father?->id,
+            'mother_phone'   => 'nullable|unique:parent_profiles,phone,' .
+                                $student->mother?->id,
+            'guardian_phone' => 'nullable|unique:parent_profiles,phone,' .
+                                $student->guardian?->id,
         ]);
 
         DB::transaction(function () use ($r, $student) {
 
-            // --- UPDATE DATA SISWA ---
+            /* ---------- update tabel students ---------- */
             $student->update([
                 'student_number'  => $r->student_number,
                 'name'            => $r->name,
                 'birth_date'      => $r->birth_date,
                 'gender'          => $r->gender,
                 'photo'           => $r->file('photo')
-                                    ? $r->file('photo')->store('students','public')
-                                    : $student->photo,
+                                        ? $r->file('photo')->store('students','public')
+                                        : $student->photo,
                 'medical_history' => $r->medical_history,
             ]);
 
-            // --- UPDATE / INSERT ORTU & WALI ---
-            // hapus dulu data parent lama biar simple
-            $student->parents()->delete();
+            /* ---------- rebuild parentData ---------- */
+            $parentData = [];
 
-            $parentData = [];  // sama seperti yang ada di store() :contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}
-            /* …bangun $parentData persis seperti di store()… */
-            if ($parentData) {
-                $student->parents()->createMany($parentData);
+            if ($r->tipe_data === 'ortu') {
+                if (trim($r->father_name) !== '') {
+                    $parentData[] = [
+                        'relation'   => 'father',
+                        'name'       => $r->father_name,
+                        'phone'      => $r->father_phone ?: null,
+                        'email'      => $r->father_email ?: null,
+                        'nik'        => $r->father_nik ?: null,
+                        'occupation' => $r->father_occupation ?: null,
+                        'address'    => $r->father_address ?: null,
+                    ];
+                }
+                if (trim($r->mother_name) !== '') {
+                    $parentData[] = [
+                        'relation'   => 'mother',
+                        'name'       => $r->mother_name,
+                        'phone'      => $r->mother_phone ?: null,
+                        'email'      => $r->mother_email ?: null,
+                        'nik'        => $r->mother_nik ?: null,
+                        'occupation' => $r->mother_occupation ?: null,
+                        'address'    => $r->mother_address ?: null,
+                    ];
+                }
+            } else { // wali
+                if (trim($r->guardian_name) !== '') {
+                    $parentData[] = [
+                        'relation'   => 'guardian',
+                        'name'       => $r->guardian_name,
+                        'phone'      => $r->guardian_phone ?: null,
+                        'email'      => $r->guardian_email ?: null,
+                        'nik'        => $r->guardian_nik ?: null,
+                        'occupation' => $r->guardian_occupation ?: null,
+                        'address'    => $r->guardian_address ?: null,
+                    ];
+                }
+            }
+
+            // buang field kosong phone/email supaya tidak “duplicate NULL”
+            foreach ($parentData as &$p) {
+                if (empty($p['phone'])) unset($p['phone']);
+                if (empty($p['email'])) unset($p['email']);
+            }
+            unset($p);
+
+            /* ---------- simpan parent (UPSERT) ---------- */
+            // hapus yang tidak dipakai lagi
+            $student->parents()
+                    ->whereNotIn('relation', collect($parentData)->pluck('relation'))
+                    ->delete();
+
+            // upsert berdasarkan (student_id, relation)
+            foreach ($parentData as $data) {
+                $student->parents()->updateOrCreate(
+                    ['relation' => $data['relation']],   // key
+                    $data
+                );
             }
         });
 
         return back()->with('success','Data siswa diperbarui');
     }
+
 
 }

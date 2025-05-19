@@ -100,6 +100,7 @@ Route::middleware('auth')->group(function () {
     Route::put ('/students/{student}',            [StudentController::class,'update'])->name('students.update');
     Route::delete('/classroom/{class}/students/{student}', [StudentController::class,'destroy'])->name('students.destroy');
     Route::post  ('/classrooms/{class}/students', [StudentController::class,'store'])->name('students.store.inside');
+    Route::post  ('classroom/{class}/students', [StudentController::class, 'store'])->name('students.store');
     Route::put   ('/classroom/{class}/students/{student}', [StudentController::class,'update'])->name('students.update.inside');
 });
 

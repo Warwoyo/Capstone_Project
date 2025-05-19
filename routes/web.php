@@ -57,10 +57,9 @@ Route::middleware('auth')->group(function () {
         Route::resource('classrooms.announcements', AnnouncementController::class)
             ->only(['store','index','show'])
             ->shallow();
-        /* Alias agar form lama `route('announcements.store')` tetap jalan */
-        // Route::post('/classrooms/{class}/announcements',
-        //     [AnnouncementController::class, 'store']
-        // )->name('announcements.store');
+        Route::resource('classrooms.announcements', AnnouncementController::class)
+            ->only(['store','destroy','index','show'])
+            ->shallow();
     });
 
     /* ── CLASSROOMS ───────────────────────────────────────────────────── */

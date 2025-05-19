@@ -31,5 +31,16 @@ class AnnouncementController extends Controller
 
         return back()->with('success', 'Pengumuman berhasil disimpan');
     }
+    public function destroy(Announcement $announcement)
+    {
+        if ($announcement->image) {
+            Storage::disk('public')->delete($announcement->image);
+        }
+
+        $announcement->delete();
+
+        return back()->with('success', 'Pengumuman berhasil dihapus.');
+    }
+
 }
 

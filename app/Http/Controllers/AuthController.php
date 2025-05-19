@@ -39,7 +39,7 @@ class AuthController extends Controller
                     return redirect()->intended('/dashboard');
                 }
 
-                return back()->withErrors(['password' => 'Password salah.']);
+                return back()->withErrors(['password' => 'Email atau Password salah.']);
             }
 
             return back()->withErrors(['identifier' => 'Akun tidak ditemukan.']);
@@ -65,7 +65,7 @@ class AuthController extends Controller
                     return redirect()->intended('/dashboard');
                 }
 
-                return back()->withErrors(['password' => 'Password salah.']);
+                return back()->withErrors(['password' => 'No telpon atau Password salah..']);
             }
         }
 

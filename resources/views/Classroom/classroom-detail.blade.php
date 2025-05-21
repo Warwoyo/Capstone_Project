@@ -50,6 +50,8 @@
         :announcementList="$announcementList" 
         x-bind:mode="mode"
         :observation="$observationList"
+        :active-date="$activeDate"
+        :classroom-id="$class->id" 
     />
 </div>
 </main>

@@ -9,8 +9,10 @@ use App\Http\Controllers\{
     ScheduleController,
     AnnouncementController,
     DashboardController,
-    ParentRegisterController
+    ParentRegisterController,
+    AttendanceController
 };
+
 
 /*
 |--------------------------------------------------------------------------
@@ -85,11 +87,11 @@ Route::middleware('auth')->group(function () {
     // B. Admin, Guru, dan Orang-tua = hak lihat
     Route::middleware('role:admin,teacher,parent')->group(function () {
         Route::get('/classrooms', [ClassroomController::class, 'index'])->name('classrooms.index');
-        Route::get('/classroom/{class}/{tab}', [ClassroomController::class, 'showClassroomDetail'])->name('classroom.detail');
+
     });
 
     /* ── CLASSROOM TAB DETAIL (tetap) ─────────────────────────────────── */
-    Route::get('/classroom/{class}/{tab}', [ClassroomController::class, 'showClassroomDetail'])->name('classroom.tab');
+    Route::get('/classroom/{classroom}/{tab}', [ClassroomController::class, 'showClassroomDetail'])->name('classroom.tab');
     Route::get('/classroom/{class}/{tab}/{id}', [ClassroomController::class, 'showClassroomDetail'])->name('classroom.tabs-detail');
     Route::get('/classroom/{class}/{tab}/peserta/{selectedStudentId}', [ClassroomController::class, 'showClassroomDetail'])->name('classroom.student-detail');
     Route::get('/classrooms/{class}/peserta', [ClassroomController::class, 'studentsTab'])->name('classroom.tab.peserta');
@@ -102,6 +104,14 @@ Route::middleware('auth')->group(function () {
     Route::post  ('/classrooms/{class}/students', [StudentController::class,'store'])->name('students.store.inside');
     Route::post  ('classroom/{class}/students', [StudentController::class, 'store'])->name('students.store');
     Route::put   ('/classroom/{class}/students/{student}', [StudentController::class,'update'])->name('students.update.inside');
+    Route::get ('/attendance/{classroom}', [AttendanceController::class, 'index'])
+         ->name('attendance.index');
+    Route::post('/attendance/{classroom}', [AttendanceController::class, 'store'])
+     ->name('attendance.store');
+    Route::get('/kelas/{classroom}/presensi/ajax', [AttendanceController::class, 'ajax']);
+
+
+
 });
 
 /*

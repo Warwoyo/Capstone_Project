@@ -25,11 +25,8 @@
             aria-hidden="true"
             class="absolute -left-8 bg-sky-200 rounded-full h-[151px] top-[-38px] w-[151px] z-0"
           ></div>
-          <a 
-  href="{{ route('classroom.tab', ['class' => $class['id'], 'tab' => 'pengumuman']) }}"
-  class="block"
-  aria-label="Lihat Detail {{ $class['title'] }}"
->
+          <a href="{{ route('classroom.tab', [$class['id'], 'pengumuman']) }}"
+            class="block p-4 bg-white shadow rounded-lg">
           <div class="flex flex-col gap-1 justify-center items-start z-10 relative">
             
             <h2 class="text-base font-bold text-sky-800 max-md:text-base max-sm:text-sm">
@@ -40,10 +37,10 @@
             </p>
           </div>
 </a>
-          <a
-          href="{{ route('classroom.tab', ['class' => $class['id'], 'tab' => 'pengumuman']) }}"
-  class="absolute bottom-2 right-4 flex gap-2 items-center mt-2 hover:opacity-80 transition-opacity"
-  aria-label="Lihat Detail {{ $class['title'] }}"
+<a
+    href="{{ route('classroom.tab', ['classroom' => $class['id'], 'tab' => 'pengumuman']) }}"
+    class="absolute bottom-2 right-4 flex gap-2 items-center mt-2 hover:opacity-80 transition-opacity"
+    aria-label="Lihat Detail {{ $class['title'] }}"
 >
             <span>
               <svg

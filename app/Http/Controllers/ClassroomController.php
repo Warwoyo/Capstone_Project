@@ -1,44 +1,57 @@
 <?php
 
 namespace App\Http\Controllers;
-use App\Models\Announcement;
-use App\Models\Classroom;   // <--  tambahkan baris ini
+
 use Illuminate\Http\Request;
+use App\Models\{
+    Classroom,
+    Report,
+    User
+};
 
 class ClassroomController extends Controller
 {
+    /* ========== LIST KELAS ========== */
     public function index()
     {
-        $classroom = Classroom::with(['owner:id,name'])
-                    ->withCount('students')
-                    ->orderBy('name')
-                    ->get();
+        $classroom = Classroom::with('owner:id,name')
+                     ->withCount('students')
+                     ->orderBy('name')
+                     ->get();
 
-        $teachers = \App\Models\User::where('role', 'teacher')->get(['id', 'name']);
+        $teachers  = User::where('role', 'teacher')->get(['id','name']);
 
-        return view('Classroom.index', compact('classroom', 'teachers'));
+        return view('Classroom.index', compact('classroom','teachers'));
     }
-    public function showClassroomDetail($class, $tab)
+
+    /* ========== DETAIL KELAS ========== */
+    public function showClassroomDetail(Request $r, Classroom $classroom, string $tab)
     {
-        $classroom = Classroom::with('owner:id,name')->findOrFail($class);
-        
+        /* default data */
         $data = [
-            'class'            => $classroom,
-            'tab'              => strtolower($tab),
-            'announcementList' => collect(),
-            'scheduleList'     => collect(),
-            'attendanceList'   => collect(),
-            'observationList'  => collect(),
-            'reportList'       => collect(),
-            'syllabusList'     => collect(), 
-            'studentList'      => collect(),
+            'class'               => $classroom,
+            'tab'                 => strtolower($tab),
+
+            'announcementList'    => collect(),
+            'scheduleList'        => collect(),
+            'attendanceList'      => collect(),
+            'observationList'     => collect(),
+            'reportList'          => collect(),
+            'syllabusList'        => collect(),
+            'studentList'         => collect(),
+
+            'activeDate'          => null,
+            'selectedSchedule'    => null,
+            'selectedDescription' => null,
         ];
 
         switch ($data['tab']) {
+            /* ── PENGUMUMAN ── */
             case 'pengumuman':
                 $data['announcementList'] = $classroom->announcements()->latest()->get();
                 break;
 
+            /* ── JADWAL ── */
             case 'jadwal':
                 $data['scheduleList'] = $classroom->schedules()
                                         ->with('details')
@@ -46,74 +59,78 @@ class ClassroomController extends Controller
                                         ->get();
                 break;
 
+            /* ── PRESENSI ── */
             case 'presensi':
-                $today = now()->toDateString();
-                $data['attendanceList'] = $classroom->attendances()
-                                        ->whereDate('attendance_date', $today)
-                                        ->with('student')
-                                        ->get();
+                $activeDate = $r->query('date', now()->toDateString());
+                $attDay     = $classroom->attendances()
+                               ->whereDate('attendance_date', $activeDate)
+                               ->get();
+
+                $attendanceMap         = $attDay->pluck('status','student_id');
+                $data['selectedSchedule']    = $attDay->first()->schedule_id ?? null;
+                $data['selectedDescription'] = $attDay->first()->description  ?? null;
+                $data['activeDate']          = $activeDate;
+
+                $totalSessions = $classroom->attendances()
+                                 ->distinct('attendance_date')
+                                 ->count('attendance_date');
+
+                $data['studentList'] = $classroom->students()
+                    ->withCount([
+                        'attendances as total_present' => fn($q) =>
+                            $q->where('classroom_id', $classroom->id)
+                              ->where('status','hadir'),
+                    ])
+                    ->orderBy('name')
+                    ->get()
+                    ->map(fn($s) => [
+                        'id'           => $s->id,
+                        'name'         => $s->name,
+                        'totalPresent' => $s->total_present,
+                        'percentage'   => $totalSessions
+                                           ? round($s->total_present / max($totalSessions,1) * 100).' %'
+                                           : '0 %',
+                        'statusToday'  => $attendanceMap[$s->id] ?? null,
+                    ]);
+
+                $data['scheduleList'] = $classroom->schedules()
+                                       ->orderBy('title')
+                                       ->get(['id','title']);
                 break;
 
+            /* ── OBSERVASI ── */
             case 'observasi':
                 $data['observationList'] = $classroom->observations()
-                                        ->with(['student', 'scheduleDetail'])
-                                        ->latest()
-                                        ->get();
+                                            ->with(['student','scheduleDetail'])
+                                            ->latest()
+                                            ->get();
                 break;
 
+            /* ── RAPOR ── */
             case 'rapor':
-                $data['reportList'] = \App\Models\Report::whereIn('student_id', $classroom->students->pluck('id'))
-                                        ->with('student')
-                                        ->latest()
-                                        ->get();
+                $data['reportList'] = Report::whereIn(
+                                          'student_id',
+                                          $classroom->students->pluck('id')
+                                      )
+                                      ->with('student')
+                                      ->latest()
+                                      ->get();
                 break;
 
+            /* ── PESERTA ── */
             case 'peserta':
                 $data['studentList'] = $classroom->students()
-                                         ->with(['parents', 'registrationTokens'])
+                                         ->with(['parents','registrationTokens'])
                                          ->orderBy('name')
                                          ->get();
                 break;
-                
-            
-                
+
+            /* ── SILABUS (opsional) ── */
+            case 'silabus':
+                $data['syllabusList'] = $classroom->syllabuses()->get();
+                break;
         }
 
         return view('Classroom.classroom-detail', $data);
     }
-    public function create()
-    {
-        $teachers = User::where('role', 'teacher')->get();
-        return view('Classrooms.index', compact('teachers'));
-    }
-    public function store(Request $r)
-    {
-        $r->validate([
-            'name'        => 'required|string|max:50',
-            'description' => 'nullable|string',
-            'owner_id'    => 'required|exists:users,id',
-        ]);
-    
-        $classroom = \App\Models\Classroom::create([
-            'name'        => $r->name,
-            'description' => $r->description,
-            'owner_id'    => $r->owner_id,
-        ]);
-    
-        return redirect()->route('classrooms.index')->with('success', 'Kelas berhasil dibuat!');
-    }
-    
-    public function studentsTab(Classroom $class)
-    {
-        // ambil token terakhir per siswa
-        $class->load([
-            'students.registrationTokens' => fn($q) => $q->latest()->limit(1)
-        ]);
-        
-        return view('Classroom.components.tab-students', [
-            'class'        => $class,
-            'studentList'  => $class->students  // collection Student model
-        ]);
-    }
-
 }

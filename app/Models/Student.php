@@ -53,6 +53,10 @@ class Student extends Model
         return $this->hasMany(RegistrationToken::class);
     }
 
+        public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
 
     /* ─────────── Relasi lain (kelas, dsb) tambahkan di bawah sini ─────────── */
 }

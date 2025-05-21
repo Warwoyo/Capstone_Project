@@ -6,8 +6,14 @@
     'mode' => null,
     'announcementList' => null,
     'student' => null,
-    'observation' => null
+    'observation' => null,
+    'activeDate'         => null,
+   'selectedSchedule'   => null,
+   'selectedDescription'=> null,
+   'classroomId'=> null,
 ])
+
+
 
 <!-- Kontainer global Alpine -->
 <div x-data="{ mode: @entangle('mode') }" class="space-y-2"></div>
@@ -16,7 +22,7 @@
     <x-tabs
         :tabs="['Presensi','Pengumuman','Jadwal','Observasi','Rapor','Peserta','Silabus']"
         :active="ucfirst($tab)"
-        :class-id="$class['id']"
+        :class-id="$class->id"  
     />
 
     {{-- Header / Search --}}
@@ -104,9 +110,17 @@
            
         />
         @elseif (strtolower($tab) === 'presensi')
-        <x-dynamic-component 
-            :component="'menu.' . $englishTab . '-menu'"  
-        />
+    <x-dynamic-component
+        :component="'menu.attendance-menu'"
+        :studentList="$student"
+        :scheduleList="$schedule"
+        :class="$class"
+        :activeDate="$activeDate"
+        :selectedSchedule="$selectedSchedule"        
+        :selectedDescription="$selectedDescription"
+        :classroomId="$classroomId"   
+    />
+
         
     @endif
 @endif

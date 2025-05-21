@@ -89,6 +89,7 @@
             :studentList="$student" 
             :class="$class" 
             :label="ucfirst($tab)" 
+            x-bind:mode="mode" 
            
         />
         @elseif (strtolower($tab) === 'observasi')
@@ -105,7 +106,6 @@
             :component="'menu.' . $englishTab . '-menu'" 
             :studentList="$student" 
             :class="$class" 
-            :semesterList="$semester"
             :label="ucfirst($tab)" 
            
         />
@@ -120,6 +120,16 @@
         :selectedDescription="$selectedDescription"
         :classroomId="$classroomId"   
     />
+
+     @elseif (strtolower($tab) === 'silabus')
+        <x-dynamic-component 
+            :component="'menu.' . $englishTab . '-menu'" 
+            :studentList="$student" 
+            :class="$class" 
+            :semesterList="$semester"
+            :label="ucfirst($tab)" 
+           
+        />
 
         
     @endif

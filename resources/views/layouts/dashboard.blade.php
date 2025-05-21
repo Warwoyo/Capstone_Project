@@ -27,11 +27,13 @@
   <!-- Layout wrapper -->
   <div class="flex md:flex-row flex-col min-h-screen">
 
-    <!-- Sidebar -->
-    <nav id="sidebar" class="fixed md:relative top-0 left-0 bottom-0 z-20 bg-sky-100 w-[90px] 
-        px-4 py-14 transform -translate-x-full md:translate-x-0 transition-transform duration-300
-        flex-col items-start gap-4 hidden md:flex relative">
-
+  <nav id="sidebar" 
+     class="bg-sky-100 w-[90px] px-4 py-14 transform transition-transform duration-300
+            flex flex-col justify-between h-screen
+            md:fixed md:top-0 md:left-0 md:bottom-0
+            fixed md:relative hidden md:flex z-10"
+>
+<div>
       <div class="w-full flex justify-center">
         <img 
           src="https://cdn.builder.io/api/v1/image/assets/TEMP/473ef97a35661bd7c1db4be64ed1e88e41692186?placeholderIfAbsent=true"
@@ -59,26 +61,46 @@
         </button>
 
         <!-- Classroom -->
-        <a href="{{ route('classrooms.index') }}">
-          <svg width="24" height="25" fill="none" stroke="#0086C9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 17.24V5.17C22 3.97 21.02 3.08 19.83 3.18..."/>
-            <path d="M12 5.99V20.99"/>
-            <path d="M7.75 8.99H5.5"/>
-            <path d="M8.5 11.99H5.5"/>
-          </svg>
-        </a>
+        <a href="{{ route('classrooms.index') }}" class="cursor-pointer" aria-label="Book">
+                  <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22 17.2399V5.16994C22 3.96994 21.02 3.07994 19.83 3.17994H19.77C17.67 3.35994 14.48 4.42994 12.7 5.54994L12.53 5.65994C12.24 5.83994 11.76 5.83994 11.47 5.65994L11.22 5.50994C9.44 4.39994 6.26 3.33994 4.16 3.16994C2.97 3.06994 2 3.96994 2 5.15994V17.2399C2 18.1999 2.78 19.0999 3.74 19.2199L4.03 19.2599C6.2 19.5499 9.55 20.6499 11.47 21.6999L11.51 21.7199C11.78 21.8699 12.21 21.8699 12.47 21.7199C14.39 20.6599 17.75 19.5499 19.93 19.2599L20.26 19.2199C21.22 19.0999 22 18.1999 22 17.2399Z" stroke="#0086C9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M12 5.98999V20.99" stroke="#0086C9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M7.75 8.98999H5.5" stroke="#0086C9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M8.5 11.99H5.5" stroke="#0086C9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  </svg>
+                </a>
 
         <!-- Admin -->
-        <a href="{{ route('Admin.index') }}">
-          <svg width="24" height="25" fill="none" stroke="#0086C9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12.16 11.37C..."/>
-            <path d="M7.16 15.06C..."/>
-          </svg>
-        </a>
+        <a href="{{ route('Admin.index') }}" class="cursor-pointer" aria-label="Category">
+                    <svg
+    width="24"
+    height="25"
+    viewBox="0 0 24 25"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    class="profile-icon"
+  >
+    <path
+      d="M12.16 11.37C12.06 11.36 11.94 11.36 11.83 11.37C9.45 11.29 7.56 9.34 7.56 6.94C7.56 4.49 9.54 2.5 12 2.5C14.45 2.5 16.44 4.49 16.44 6.94C16.43 9.34 14.54 11.29 12.16 11.37Z"
+      stroke="#0086C9"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M7.16 15.06C4.74 16.68 4.74 19.32 7.16 20.93C9.91 22.77 14.42 22.77 17.17 20.93C19.59 19.31 19.59 16.67 17.17 15.06C14.43 13.23 9.92 13.23 7.16 15.06Z"
+      stroke="#0086C9"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </svg>
+</a>
       </div>
-
+</div>
+<div class="mt-auto w-full flex justify-center">
       <!-- Tombol Logout -->
-      <form method="POST" action="{{ route('logout') }}" class="mt-auto w-full flex justify-center">
+      <form method="POST" action="{{ route('logout') }}">
         @csrf
         <button type="submit" class="flex flex-col items-center gap-1 text-[#0086C9] hover:text-red-500 transition-all duration-200">
           <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" 
@@ -90,7 +112,7 @@
           <span class="text-xs font-medium">Logout</span>
         </button>
       </form>
-
+</div>
     </nav>
 
     <!-- Main Content -->
@@ -115,11 +137,11 @@
       const sidebar = document.getElementById("sidebar");
 
       toggleBtn.addEventListener("click", () => {
-        sidebar.classList.toggle("hidden");
-        sidebar.classList.toggle("flex");
-        sidebar.classList.toggle("-translate-x-full");
-        sidebar.classList.toggle("translate-x-0");
-      });
+  if(window.innerWidth < 768){ // hanya di mobile
+    sidebar.classList.toggle("hidden");
+  }
+});
+
     });
   </script>
 
@@ -129,5 +151,6 @@
       locale: "id"
     });
   </script>
+
 </body>
 </html>

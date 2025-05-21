@@ -134,3 +134,9 @@ Route::get('/orangtua/anak/observasi',        [DashboardController::class, 'obse
 Route::get('/orangtua/anak/jadwal',           [DashboardController::class, 'scheduleParent']   )->name('orangtua.schedule');
 Route::get('/orangtua/anak/presensi',         [DashboardController::class, 'attendanceParent'] )->name('orangtua.attendance');
 Route::get('/orangtua/anak/riwayat-pengumuman',[DashboardController::class, 'announcementParent'])->name('orangtua.announcement');
+
+
+//testing syllabus page
+Route::get('/testingx', function () {
+    return view('testingx');
+});

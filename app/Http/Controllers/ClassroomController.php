@@ -11,6 +11,26 @@ use App\Models\{
 
 class ClassroomController extends Controller
 {
+
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'name'        => 'required|string|max:50',
+            'description' => 'required|string',
+            'owner_id'    => 'required|exists:users,id',
+            'photo'       => 'nullable|image|max:2048',
+        ]);
+
+        if ($request->hasFile('photo')) {
+            $data['photo'] = $request->file('photo')->store('classrooms', 'public');
+        }
+
+        $classroom = Classroom::create($data);
+
+        return redirect()->route('classroom.tab', [$classroom->id, 'pengumuman'])
+               ->with('success', 'Kelas berhasil ditambahkan');
+    }
+
     /* ========== LIST KELAS ========== */
     public function index()
     {

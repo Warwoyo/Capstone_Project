@@ -1,5 +1,4 @@
 
-
 @extends('layouts.dashboard')
 
 @section('content')
@@ -56,7 +55,9 @@
         </x-card.parent-stat-card>
 </div>
 <div>
-<x-card.announcement-card :announcementList="array_slice($announcementList, 0, 2)" />
+    {{-- Announcement Error karena bagian card nya telah kena modif--}}
+<x-card.announcement-card :announcementList="$announcementList" maxHeight="max-h-[80vh] md:max-h-[70vh]" />
+
 <div>
 </div>
     <!-- Header Icons -->

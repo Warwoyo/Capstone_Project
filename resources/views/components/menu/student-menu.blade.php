@@ -3,7 +3,7 @@
 
 <div
   x-data="{
-      mode     : 'view',    // view | add | edit
+      mode: 'view',    // view | add | edit
       editData : {},        // objek siswa yg sedang diedit
       modeOrtu : 'ortu'     // toggle ortu / wali di dalam edit
   }"
@@ -101,47 +101,48 @@
 
     {{-- ========== ADD FORM (BARU) ========== --}}
     <div x-show="mode==='add'" class="flex-1" x-data="{ modeOrtu:'ortu' }">
+        <div class="overflow-y-auto hide-scrollbar max-h-[60vh]">
         <form method="POST"
               action="{{ route('students.store',['class'=>$class->id]) }}"
               enctype="multipart/form-data"
-              class="p-4 bg-white rounded-lg border space-y-6">
+              class="bg-white rounded-lg border space-y-4 space-x-2 pr-2 ">
             @csrf
 
             {{-- ===== DATA SISWA ===== --}}
             <h3 class="font-semibold text-slate-700">Data Siswa</h3>
-            <div class="grid md:grid-cols-2 gap-4">
+            <div class="grid md:grid-cols-2 gap-2">
                 <div>
-                    <label class="block text-sm mb-1 text-gray-600">Nomor Induk</label>
+                    <label class="text-sm font-semibold text-gray-700">Nomor Induk</label>
                     <input name="student_number" required
-                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                           class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                 </div>
                 <div>
-                    <label class="block text-sm mb-1 text-gray-600">Nama Lengkap</label>
+                    <label class="text-sm font-semibold text-gray-700">Nama Lengkap</label>
                     <input name="name" required
-                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                           class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                 </div>
                 <div>
-                    <label class="block text-sm mb-1 text-gray-600">Tanggal Lahir</label>
+                    <label class="text-sm font-semibold text-gray-700">Tanggal Lahir</label>
                     <input type="date" name="birth_date" required
-                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                           class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                 </div>
                 <div>
-                    <label class="block text-sm mb-1 text-gray-600">Jenis Kelamin</label>
+                    <label class="text-sm font-semibold text-gray-700">Jenis Kelamin</label>
                     <select name="gender" required
-                            class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                            class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                         <option value="male">Laki-laki</option>
                         <option value="female">Perempuan</option>
                     </select>
                 </div>
                 <div class="md:col-span-2">
-                    <label class="block text-sm mb-1 text-gray-600">Foto (opsional)</label>
+                    <label class="text-sm font-semibold text-gray-700">Foto (opsional)</label>
                     <input type="file" name="photo"
-                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                           class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                 </div>
                 <div class="md:col-span-2">
-                    <label class="block text-sm mb-1 text-gray-600">Riwayat Medis</label>
-                    <textarea name="medical_history" rows="2"
-                              class="w-full border rounded px-2 py-1 focus:ring-sky-500"></textarea>
+                    <label class="text-sm font-semibold text-gray-700">Riwayat Medis</label>
+                    <textarea name="medical_history" rows="1"
+                              class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500"></textarea>
                 </div>
             </div>
 
@@ -161,74 +162,74 @@
             </div>
 
             {{-- ===== DATA ORANG TUA ===== --}}
-            <div x-show="modeOrtu==='ortu'" class="grid md:grid-cols-2 gap-4">
+            <div x-show="modeOrtu==='ortu'" class="grid md:grid-cols-2 gap-2">
                 @foreach (['father'=>'Ayah','mother'=>'Ibu'] as $pfx=>$lbl)
                     <div>
-                        <label class="block text-sm mb-1 text-gray-600">Nama {{ $lbl }}</label>
+                        <label class="text-sm font-semibold text-gray-700">Nama {{ $lbl }}</label>
                         <input :disabled="modeOrtu!=='ortu'" :required="modeOrtu==='ortu'"
                                name="{{ $pfx }}_name"
-                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                               class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                     </div>
                     <div>
-                        <label class="block text-sm mb-1 text-gray-600">NIK {{ $lbl }}</label>
+                        <label class="text-sm font-semibold text-gray-700">NIK {{ $lbl }}</label>
                         <input :disabled="modeOrtu!=='ortu'" name="{{ $pfx }}_nik"
-                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                               class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                     </div>
                     <div>
-                        <label class="block text-sm mb-1 text-gray-600">Pekerjaan {{ $lbl }}</label>
+                        <label class="text-sm font-semibold text-gray-700">Pekerjaan {{ $lbl }}</label>
                         <input :disabled="modeOrtu!=='ortu'" name="{{ $pfx }}_occupation"
-                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                               class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                     </div>
                     <div>
-                        <label class="block text-sm mb-1 text-gray-600">Telp {{ $lbl }}</label>
+                        <label class="text-sm font-semibold text-gray-700">Telp {{ $lbl }}</label>
                         <input :disabled="modeOrtu!=='ortu'" name="{{ $pfx }}_phone"
-                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                               class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                     </div>
                     <div class="md:col-span-2">
-                        <label class="block text-sm mb-1 text-gray-600">Email {{ $lbl }}</label>
+                        <label class="text-sm font-semibold text-gray-700">Email {{ $lbl }}</label>
                         <input type="email" :disabled="modeOrtu!=='ortu'" name="{{ $pfx }}_email"
-                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                               class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                     </div>
                     <div class="md:col-span-2">
-                        <label class="block text-sm mb-1 text-gray-600">Alamat {{ $lbl }}</label>
-                        <textarea :disabled="modeOrtu!=='ortu'" name="{{ $pfx }}_address" rows="2"
-                                  class="w-full border rounded px-2 py-1 focus:ring-sky-500"></textarea>
+                        <label class="text-sm font-semibold text-gray-700">Alamat {{ $lbl }}</label>
+                        <textarea :disabled="modeOrtu!=='ortu'" name="{{ $pfx }}_address" rows="1"
+                                  class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500"></textarea>
                     </div>
                 @endforeach
             </div>
 
             {{-- ===== DATA WALI ===== --}}
-            <div x-show="modeOrtu==='wali'" class="grid md:grid-cols-2 gap-4">
+            <div x-show="modeOrtu==='wali'" class="grid md:grid-cols-2 gap-2">
                 <div>
-                    <label class="block text-sm mb-1 text-gray-600">Nama Wali</label>
+                    <label class="text-sm font-semibold text-gray-700">Nama Wali</label>
                     <input :disabled="modeOrtu!=='wali'" :required="modeOrtu==='wali'"
                            name="guardian_name"
-                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                           class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                 </div>
                 <div>
-                    <label class="block text-sm mb-1 text-gray-600">NIK Wali</label>
+                    <label class="text-sm font-semibold text-gray-700">NIK Wali</label>
                     <input :disabled="modeOrtu!=='wali'" name="guardian_nik"
-                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                           class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                 </div>
                 <div>
-                    <label class="block text-sm mb-1 text-gray-600">Pekerjaan Wali</label>
+                    <label class="text-sm font-semibold text-gray-700">Pekerjaan Wali</label>
                     <input :disabled="modeOrtu!=='wali'" name="guardian_occupation"
-                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                           class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                 </div>
                 <div>
-                    <label class="block text-sm mb-1 text-gray-600">Telp Wali</label>
+                    <label class="text-sm font-semibold text-gray-700">Telp Wali</label>
                     <input :disabled="modeOrtu!=='wali'" name="guardian_phone"
-                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                           class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                 </div>
                 <div>
-                    <label class="block text-sm mb-1 text-gray-600">Email Wali</label>
+                    <label class="text-sm font-semibold text-gray-700">Email Wali</label>
                     <input type="email" :disabled="modeOrtu!=='wali'" name="guardian_email"
-                           class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                           class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                 </div>
                 <div class="md:col-span-2">
-                    <label class="block text-sm mb-1 text-gray-600">Alamat Wali</label>
-                    <textarea :disabled="modeOrtu!=='wali'" name="guardian_address" rows="2"
-                              class="w-full border rounded px-2 py-1 focus:ring-sky-500"></textarea>
+                    <label class="text-sm font-semibold text-gray-700">Alamat Wali</label>
+                    <textarea :disabled="modeOrtu!=='wali'" name="guardian_address" rows="1"
+                              class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500"></textarea>
                 </div>
             </div>
 
@@ -244,54 +245,55 @@
                 </button>
             </div>
         </form>
+                </div>
     </div>
 
 {{-- ========== FORM EDIT ========== --}}
 <div x-show="mode==='edit'" x-cloak class="flex-1">
-
+<div class="overflow-y-auto hide-scrollbar max-h-[60vh]">
     <form
         method="POST"
         :action="`{{ url('/classroom/'.$class->id.'/students') }}/${editData.id}`"
         enctype="multipart/form-data"
-        class="p-4 bg-white rounded-lg border space-y-6"
+        class="bg-white rounded-lg border space-y-4 space-x-2 pr-2  "
     >
         @csrf @method('PUT')
 
         {{-- ===== DATA SISWA ===== --}}
         <h3 class="font-semibold text-slate-700">Data Siswa</h3>
-        <div class="grid md:grid-cols-2 gap-4">
+        <div class="grid md:grid-cols-2 gap-2">
             <div>
-                <label class="block text-sm mb-1 text-gray-600">Nomor Induk</label>
+                <label class="text-sm font-semibold text-gray-700">Nomor Induk</label>
                 <input name="student_number" x-model="editData.student_number" required
-                       class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                       class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
             </div>
             <div>
-                <label class="block text-sm mb-1 text-gray-600">Nama Lengkap</label>
+                <label class="text-sm font-semibold text-gray-700">Nama Lengkap</label>
                 <input name="name" x-model="editData.name" required
-                       class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                       class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
             </div>
             <div>
-                <label class="block text-sm mb-1 text-gray-600">Tanggal Lahir</label>
+                <label class="text-sm font-semibold text-gray-700">Tanggal Lahir</label>
                 <input type="date" name="birth_date" x-model="editData.birth_date" required
-                       class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                       class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
             </div>
             <div>
-                <label class="block text-sm mb-1 text-gray-600">Jenis Kelamin</label>
+                <label class="text-sm font-semibold text-gray-700">Jenis Kelamin</label>
                 <select name="gender" x-model="editData.gender"
-                        class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                        class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                     <option value="male">Laki-laki</option>
                     <option value="female">Perempuan</option>
                 </select>
             </div>
             <div class="md:col-span-2">
-                <label class="block text-sm mb-1 text-gray-600">Riwayat Medis</label>
-                <textarea name="medical_history" x-model="editData.medical_history" rows="2"
-                          class="w-full border rounded px-2 py-1 focus:ring-sky-500"></textarea>
+                <label class="text-sm font-semibold text-gray-700">Riwayat Medis</label>
+                <textarea name="medical_history" x-model="editData.medical_history" rows="1"
+                          class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500"></textarea>
             </div>
             <div class="md:col-span-2">
-                <label class="block text-sm mb-1 text-gray-600">Foto (opsional)</label>
+                <label class="text-sm font-semibold text-gray-700">Foto (opsional)</label>
                 <input type="file" name="photo"
-                       class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                       class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
             </div>
         </div>
 
@@ -314,43 +316,43 @@
                 @foreach(['father'=>'Ayah','mother'=>'Ibu'] as $pfx=>$lbl)
                     <div>
                         <h4 class="font-semibold text-slate-700 mb-2">{{ $lbl }}</h4>
-                        <div class="grid md:grid-cols-2 gap-4">
+                        <div class="grid md:grid-cols-2 gap-2">
                             <div>
-                                <label class="block text-sm mb-1 text-gray-600">Nama</label>
+                                <label class="text-sm font-semibold text-gray-700">Nama</label>
                                 <input name="{{ $pfx }}_name" :disabled="editData.tipe_data!=='ortu'"
                                        x-model="editData.{{ $pfx }}_name"
-                                       class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                                       class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                             </div>
                             <div>
-                                <label class="block text-sm mb-1 text-gray-600">NIK</label>
+                                <label class="text-sm font-semibold text-gray-700">NIK</label>
                                 <input name="{{ $pfx }}_nik" :disabled="editData.tipe_data!=='ortu'"
                                        x-model="editData.{{ $pfx }}_nik"
-                                       class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                                       class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                             </div>
                             <div>
-                                <label class="block text-sm mb-1 text-gray-600">Pekerjaan</label>
+                                <label class="text-sm font-semibold text-gray-700">Pekerjaan</label>
                                 <input name="{{ $pfx }}_occupation" :disabled="editData.tipe_data!=='ortu'"
                                        x-model="editData.{{ $pfx }}_occupation"
-                                       class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                                       class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                             </div>
                             <div>
-                                <label class="block text-sm mb-1 text-gray-600">Telp</label>
+                                <label class="text-sm font-semibold text-gray-700">Telp</label>
                                 <input name="{{ $pfx }}_phone" :disabled="editData.tipe_data!=='ortu'"
                                        x-model="editData.{{ $pfx }}_phone"
-                                       class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                                       class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                             </div>
                             <div class="md:col-span-2">
-                                <label class="block text-sm mb-1 text-gray-600">Email</label>
+                                <label class="text-sm font-semibold text-gray-700">Email</label>
                                 <input name="{{ $pfx }}_email" :disabled="editData.tipe_data!=='ortu'"
                                        x-model="editData.{{ $pfx }}_email"
-                                       class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                                       class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                             </div>
                             <div class="md:col-span-2">
-                                <label class="block text-sm mb-1 text-gray-600">Alamat</label>
-                                <textarea name="{{ $pfx }}_address" rows="2"
+                                <label class="text-sm font-semibold text-gray-700">Alamat</label>
+                                <textarea name="{{ $pfx }}_address" rows="1"
                                           :disabled="editData.tipe_data!=='ortu'"
                                           x-model="editData.{{ $pfx }}_address"
-                                          class="w-full border rounded px-2 py-1 focus:ring-sky-500"></textarea>
+                                          class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500"></textarea>
                             </div>
                         </div>
                     </div>
@@ -362,37 +364,37 @@
         <template x-if="editData.tipe_data==='wali'">
             <div class="mt-4 border-t pt-4">
                 <h4 class="font-semibold text-slate-700 mb-3">Data Wali</h4>
-                <div class="grid md:grid-cols-2 gap-4">
+                <div class="grid md:grid-cols-2 gap-2">
                     <div>
-                        <label class="block text-sm mb-1 text-gray-600">Nama Wali</label>
+                        <label class="text-sm font-semibold text-gray-700">Nama Wali</label>
                         <input name="guardian_name" :disabled="editData.tipe_data!=='wali'"
                                x-model="editData.guardian_name"
-                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                               class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                     </div>
                     <div>
-                        <label class="block text-sm mb-1 text-gray-600">Hubungan</label>
+                        <label class="text-sm font-semibold text-gray-700">Hubungan</label>
                         <input name="guardian_relation" :disabled="editData.tipe_data!=='wali'"
                                x-model="editData.guardian_relation"
-                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                               class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                     </div>
                     <div>
-                        <label class="block text-sm mb-1 text-gray-600">Telp</label>
+                        <label class="text-sm font-semibold text-gray-700">Telp</label>
                         <input name="guardian_phone" :disabled="editData.tipe_data!=='wali'"
                                x-model="editData.guardian_phone"
-                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                               class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                     </div>
                     <div>
-                        <label class="block text-sm mb-1 text-gray-600">Email</label>
+                        <label class="text-sm font-semibold text-gray-700">Email</label>
                         <input name="guardian_email" :disabled="editData.tipe_data!=='wali'"
                                x-model="editData.guardian_email"
-                               class="w-full border rounded px-2 py-1 focus:ring-sky-500">
+                               class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
                     </div>
                     <div class="md:col-span-2">
-                        <label class="block text-sm mb-1 text-gray-600">Alamat</label>
-                        <textarea name="guardian_address" rows="2"
+                        <label class="text-sm font-semibold text-gray-700">Alamat</label>
+                        <textarea name="guardian_address" rows="1"
                                   :disabled="editData.tipe_data!=='wali'"
                                   x-model="editData.guardian_address"
-                                  class="w-full border rounded px-2 py-1 focus:ring-sky-500"></textarea>
+                                  class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500"></textarea>
                     </div>
                 </div>
             </div>
@@ -410,6 +412,7 @@
             </button>
         </div>
     </form>
+                </div>
 </div>
 
 

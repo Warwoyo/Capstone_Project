@@ -1,5 +1,6 @@
 
 @props(['mode' => 'view', 'scheduleList' , 'class'])
+
 @extends('layouts.dashboard')
 
 @section('content')

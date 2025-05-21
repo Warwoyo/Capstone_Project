@@ -26,7 +26,7 @@ class DashboardController extends Controller
                     'announcementList' => Announcement::latest()->get(), // dari database
                 ]);
             case 'parent':
-                return view('Dashboard.parent', compact('user')); // dashboard khusus orang tua
+                return view('Orangtua.index', compact('user')); // dashboard khusus orang tua
             default:
                 abort(403);
         }

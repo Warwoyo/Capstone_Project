@@ -109,6 +109,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/attendance/{classroom}', [AttendanceController::class, 'store'])
      ->name('attendance.store');
     Route::get('/kelas/{classroom}/presensi/ajax', [AttendanceController::class, 'ajax']);
+    Route::post('/schedules', [ScheduleController::class, 'store'])->name('schedules.stores');
+    Route::put('/schedules/{schedule}', [ScheduleController::class, 'update'])->name('schedules.update');
+    Route::delete('/schedules/{schedule}', [ScheduleController::class, 'destroy'])->name('schedules.destroy');
+    Route::get('/schedules', [ScheduleController::class, 'index'])->name('schedules.index');
+    Route::resource('schedules', ScheduleController::class);
+    
+    // Additional classroom-specific schedule route
+    Route::post('classroom/{classroom}/jadwal', [ScheduleController::class, 'store'])
+        ->name('classroom.schedules.store');
+    
 
 
 

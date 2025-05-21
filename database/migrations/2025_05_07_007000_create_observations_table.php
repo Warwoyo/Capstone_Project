@@ -8,7 +8,7 @@ return new class extends Migration {
     public function up(): void {
         Schema::create('observations', function (Blueprint $t) {
             $t->id();
-            $t->foreignId('schedule_detail_id')->constrained()->cascadeOnDelete(); // sub-tema
+            $t->foreignId('schedule_detail_id')->constrained('sub_themes')->cascadeOnDelete();
             $t->foreignId('student_id')->constrained()->cascadeOnDelete();
             $t->text('description');
             $t->timestamps();

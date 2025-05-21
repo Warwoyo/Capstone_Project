@@ -7,23 +7,22 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void {
         // Tema
-        Schema::create('schedules', function (Blueprint $t) {
-            $t->id();
-            $t->foreignId('classroom_id')->constrained()->cascadeOnDelete();
-            $t->string('title', 100);         // judul tema
-            $t->timestamps();
+        Schema::create('schedules', function (Blueprint $table) {
+            $table->id();
+            $table->string('title');
+            $table->text('description');
+            $table->timestamps();
         });
 
         // Sub-tema dalam satu tema
-        Schema::create('schedule_details', function (Blueprint $t) {
-            $t->id();
-            $t->foreignId('schedule_id')->constrained()->cascadeOnDelete();
-            $t->string('sub_title', 100);
-            $t->date('start_date');
-            $t->date('end_date');
-            $t->unsignedTinyInteger('week')->nullable(); // opsional, minggu ke-X
-            $t->timestamps();
-            $t->unique(['schedule_id', 'sub_title']);    // hindari duplikat
+        Schema::create('sub_themes', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('schedule_id')->constrained()->onDelete('cascade');
+            $table->string('title');
+            $table->date('start_date');
+            $table->date('end_date');
+            $table->integer('week')->nullable();
+            $table->timestamps();
         });
     }
     public function down(): void {

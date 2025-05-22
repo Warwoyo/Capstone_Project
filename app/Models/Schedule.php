@@ -1,29 +1,37 @@
 <?php
-// filepath: /home/anton/Documents/capstone/Capstone_Project/app/Models/Schedule.php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Schedule extends Model
 {
-    protected $fillable = ['classroom_id', 'title', 'description'];
-    
-    /**
-     * Get the classroom that owns the schedule.
-     */
-    public function classroom()
+    protected $fillable = [
+        'classroom_id',
+        'title', 
+        'description',
+        'created_at'
+    ];
+
+    public function classroom(): BelongsTo
     {
         return $this->belongsTo(Classroom::class);
     }
-        public function subThemes()
+
+    public function scheduleDetails(): HasMany
     {
         return $this->hasMany(ScheduleDetail::class);
     }
-    /**
-     * Get the schedule details for the schedule.
-     */
-    public function details()
+
+    // Method to handle cascading deletes
+    protected static function boot()
     {
-        return $this->hasMany(ScheduleDetail::class);
+        parent::boot();
+        
+        static::deleting(function($schedule) {
+            $schedule->scheduleDetails()->delete();
+        });
     }
 }

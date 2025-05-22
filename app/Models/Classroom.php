@@ -20,7 +20,7 @@ class Classroom extends Model
 
 
     public function attendances(){ return $this->hasMany(Attendance::class); }
-    public function schedules() { return $this->hasMany(Schedule::class); }
+    public function schedule() { return $this->hasMany(Schedule::class); }
     public function announcements(){ return $this->hasMany(Announcement::class); }
     public function observations(){ return $this->hasManyThrough(Observation::class, ScheduleDetail::class); }
 }

@@ -19,6 +19,11 @@ return new class extends Migration
 
             $t->string('description', 200)->nullable();
         });
+
+        Schema::table('schedules', function (Blueprint $table) {
+            $table->unsignedBigInteger('classroom_id')->nullable()->after('id');
+            $table->foreign('classroom_id')->references('id')->on('classrooms')->onDelete('cascade');
+        });
     }
 
     /**
@@ -28,6 +33,11 @@ return new class extends Migration
     {
         Schema::table('attendances', function (Blueprint $table) {
             //
+        });
+
+        Schema::table('schedules', function (Blueprint $table) {
+            $table->dropForeign(['classroom_id']);
+            $table->dropColumn('classroom_id');
         });
     }
 };

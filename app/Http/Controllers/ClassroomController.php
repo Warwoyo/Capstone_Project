@@ -6,7 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\{
     Classroom,
     Report,
-    User
+    User,
+    Schedule,
 };
 
 class ClassroomController extends Controller
@@ -73,8 +74,8 @@ class ClassroomController extends Controller
 
             /* ── JADWAL ── */
             case 'jadwal':
-                $data['scheduleList'] = $classroom->schedules()
-                                        ->with('details')
+                $data['scheduleList'] = $classroom->schedule()
+                                        ->with('scheduleDetails') // Changed from 'details' to 'scheduleDetails'
                                         ->orderBy('created_at')
                                         ->get();
                 break;
@@ -113,7 +114,7 @@ class ClassroomController extends Controller
                         'statusToday'  => $attendanceMap[$s->id] ?? null,
                     ]);
 
-                $data['scheduleList'] = $classroom->schedules()
+                $data['scheduleList'] = $classroom->Schedule()
                                        ->orderBy('title')
                                        ->get(['id','title']);
                 break;

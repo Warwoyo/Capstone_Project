@@ -1,3 +1,4 @@
+
 {{-- resources/views/components/menu/announcement-menu.blade.php --}}
 @props(['announcementList', 'class'])
 
@@ -63,6 +64,5 @@
     </form>
 
     <!-- DAFTAR PENGUMUMAN -->
-    {{-- <x-card.announcement-card :announcementList="$announcementList"/> --}}
-
+    <x-card.announcement-card :announcementList="$announcementList"/>
 </div>

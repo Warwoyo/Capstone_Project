@@ -292,47 +292,28 @@ function toggleDetail(id, button) {
 
 function loadSubSchedules(scheduleId) {
     const container = document.getElementById(`sub-schedules-${scheduleId}`);
-    if (!container) return;
-
     container.innerHTML = '<div class="animate-pulse"><div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div><div class="h-4 bg-gray-200 rounded w-1/2"></div></div>';
 
     fetch(`/schedules/${scheduleId}/sub-themes`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
-            if (!data.success) {
-                throw new Error(data.message || 'Failed to load sub themes');
-            }
-
-            if (!data.sub_themes || data.sub_themes.length === 0) {
-                container.innerHTML = '<p class="text-sm text-gray-500">Tidak ada sub tema.</p>';
-                return;
-            }
-
             container.innerHTML = data.sub_themes.map(sub => `
-                <div class="p-2 bg-sky-50 rounded border border-sky-100 mb-2">
+                <div class="p-2 bg-sky-50 rounded border border-sky-100">
                     <div class="flex justify-between items-start">
                         <div>
-                            <div class="font-medium text-sm">${sub.title || ''}</div>
+                            <div class="font-medium text-sm">${sub.title}</div>
                             <div class="text-xs text-gray-600">
                                 ${formatDate(sub.start_date)} - ${formatDate(sub.end_date)}
-                                ${sub.week ? ` (Minggu ke-${sub.week})` : ''}
+                                ${sub.week ? `(Minggu ke-${sub.week})` : ''}
                             </div>
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `).join('') || '<p class="text-sm text-gray-500">Tidak ada sub tema.</p>';
         })
         .catch(error => {
-            console.error('Error loading sub themes:', error);
-            container.innerHTML = `
-                <div class="text-sm text-red-500 p-2 border border-red-200 rounded bg-red-50">
-                    Gagal memuat sub tema. Silakan coba lagi nanti.
-                </div>`;
+            console.error('Error:', error);
+            container.innerHTML = '<p class="text-sm text-red-500">Gagal memuat sub tema.</p>';
         });
 }
 

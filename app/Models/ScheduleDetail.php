@@ -9,6 +9,7 @@ class ScheduleDetail extends Model
 {
     protected $fillable = [
         'schedule_id',
+        'classroom_id', // Add this
         'title',
         'start_date',
         'end_date',

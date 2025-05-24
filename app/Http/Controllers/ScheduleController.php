@@ -41,8 +41,8 @@ class ScheduleController extends Controller
                 'description' => 'required|string',
                 'classroom_id' => 'required|exists:classrooms,id',
                 'sub_themes' => 'required|array',
-                'sub_themes.*.title' => 'nullable|string|max:255',
-                'sub_themes.*.start_date' => 'nullable|date',
+                'sub_themes.*.title' => 'required|string|max:255',
+                'sub_themes.*.start_date' => 'required|date',
                 'sub_themes.*.end_date' => 'required|date',
                 'sub_themes.*.week' => 'nullable|integer|min:1|max:52',
             ]);
@@ -51,15 +51,16 @@ class ScheduleController extends Controller
             $schedule = Schedule::create([
                 'title' => $validated['title'],
                 'description' => $validated['description'],
-                'classroom_id' => $validated['classroom_id'],
+                'classroom_id' => $validated['classroom_id']
             ]);
 
             // Create sub themes
             foreach ($validated['sub_themes'] as $subTheme) {
                 ScheduleDetail::create([
                     'schedule_id' => $schedule->id,
-                    'title' => $subTheme['title'] ?? null,
-                    'start_date' => $subTheme['start_date'] ?? null,
+                    'classroom_id' => $validated['classroom_id'], // Add classroom_id here
+                    'title' => $subTheme['title'],
+                    'start_date' => $subTheme['start_date'],
                     'end_date' => $subTheme['end_date'],
                     'week' => $subTheme['week'] ?? null,
                 ]);
@@ -74,7 +75,6 @@ class ScheduleController extends Controller
 
         } catch (Exception $e) {
             DB::rollback();
-            \Log::error('Schedule creation error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat menyimpan jadwal: ' . $e->getMessage()

@@ -20,7 +20,6 @@ class Classroom extends Model
     {
         return $this->belongsToMany(Student::class, 'classroom_student');
     }
-    
 
     public function attendances()
     { 

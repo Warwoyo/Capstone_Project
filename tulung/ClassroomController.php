@@ -129,7 +129,7 @@ public function showClassroomDetail(Request $r, Classroom $classroom, string $ta
                                     ->orderBy('created_at', 'desc')
                                     ->get();
                                     
-                        $data['scheduleList'] = $rawSchedules->map(function ($schedule) {
+                        $data['schedule'] = $rawSchedules->map(function($schedule) {
                             return [
                                 'id' => $schedule->id,
                                 'title' => $schedule->title,

@@ -122,7 +122,19 @@ Route::middleware('auth')->group(function () {
     Route::delete('/schedules/{id}', 'ScheduleController@destroy')->name('schedules.destroy');
     Route::get('/schedules/{schedule}/sub-themes', [ScheduleController::class, 'getSubThemes'])
     ->name('schedules.sub-themes');
-});
+
+    // Observasi
+    // routes/web.php
+
+    // Observation AJAX routes
+Route::get('/schedules/{schedule}/sub-themes', [ScheduleController::class, 'getSubThemes'])
+    ->name('schedules.sub-themes');
+Route::get('/schedules/{schedule}/students', [ScheduleController::class, 'getStudents'])
+    ->name('schedules.students');
+Route::post('/observations/store', [ObservationController::class, 'store'])
+    ->name('observations.store');
+    });
+
 
 /*
 |--------------------------------------------------------------------------

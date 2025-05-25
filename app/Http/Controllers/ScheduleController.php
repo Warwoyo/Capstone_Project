@@ -131,26 +131,31 @@ class ScheduleController extends Controller
         }
     }
 
-public function getSubThemes(Schedule $schedule)
-{
-    try {
-        $scheduleDetails = $schedule->scheduleDetails()
-            ->orderBy('week')
-            ->orderBy('start_date')
-            ->get();
-
-        return response()->json([
-            'success' => true,
-            'sub_themes' => $scheduleDetails // Keep response key as sub_themes for frontend compatibility
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to load schedule details',
-            'error' => $e->getMessage()
-        ], 500);
+    public function getSubThemes($scheduleId)
+    {
+        try {
+            $schedule = Schedule::with('scheduleDetails')->findOrFail($scheduleId);
+            
+            return response()->json([
+                'success' => true,
+                'sub_themes' => $schedule->scheduleDetails->map(function($detail) {
+                    return [
+                        'id' => $detail->id,
+                        'title' => $detail->title,
+                        'description' => $detail->description ?? '',
+                        'start_date' => $detail->start_date->format('Y-m-d'),
+                        'end_date' => $detail->end_date->format('Y-m-d'),
+                        'week' => $detail->week
+                    ];
+                })
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat sub tema: ' . $e->getMessage()
+            ], 500);
+        }
     }
-}
 
     public function edit(Schedule $schedule)
 {
@@ -194,5 +199,28 @@ public function destroy(Schedule $schedule)
         ], 500);
     }
 }
-    
+
+    public function getStudents($scheduleId)
+    {
+        try {
+            $schedule = Schedule::with('classroom.students')->findOrFail($scheduleId);
+            
+            return response()->json([
+                'success' => true,
+                'students' => $schedule->classroom->students->map(function($student) {
+                    return [
+                        'id' => $student->id,
+                        'name' => $student->name,
+                        'student_id' => $student->student_number
+                    ];
+                })
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat data siswa: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 }

@@ -1,203 +1,530 @@
 
+@props(['mode' => 'view', 'scheduleList' => [], 'class'])
 
-@props(['mode' , 'observationList' , 'class' ,'studentList'])
-<div x-data="{ mode: @entangle('mode') }" class="flex-1 w-full">
-<!-- View Data -->
-<div x-show="mode === 'view'"class="flex-1 w-full">
-<div class="overflow-y-auto hide-scrollbar max-h-[43vh] md:max-h-[42vh]">
-<div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 items-start">
-    @foreach ($observationList as $observation)
-        <article class="flex flex-col justify-between p-4 w-full bg-white border border-sky-600 rounded-2xl"
-        @click="mode = 'score'">
-          <div class="flex flex-col gap-1 overflow-hidden">
-            <h2 class="text-base font-bold text-sky-800 truncate">
-              {{ $observation['title'] }}
-            </h2>
-            <p class="text-sm text-gray-500 truncate">
-              {{ $observation['date'] }}
-            </p>
-          </div>
+<meta name="csrf-token" content="{{ csrf_token() }}">
 
-          <button
-            type="button"
-            class="flex items-center gap-1 mt-4 text-xs font-medium text-sky-800 hover:opacity-80 transition-opacity"
-            onclick="toggleDetail('detail-{{ $observation['id'] }}', this)"
-            aria-label="Lihat Detail"
-          >
-            <!-- Mata tertutup default -->
-            <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
-              <path class="eye-path" stroke-linecap="round" stroke-linejoin="round" d="M10 13.1429C12.9338 13.1429 15.5898 11.5357 17.0167 9C15.5898 6.46429 12.9338 4.85714 10 4.85714C7.06618 4.85714 4.41018 6.46429 2.98327 9C4.41018 11.5357 7.06618 13.1429 10 13.1429ZM10 4C13.4967 4 16.5251 6.03429 18 9C16.5251 11.9657 13.4967 14 10 14C6.50327 14 3.47491 11.9657 2 9C3.47491 6.03429 6.50327 4 10 4ZM10 11C10.5401 11 11.058 10.7893 11.4399 10.4142C11.8218 10.0391 12.0364 9.53043 12.0364 9C12.0364 8.46957 11.8218 7.96086 11.4399 7.58579C11.058 7.21071 10.5401 7 10 7C9.45992 7 8.94197 7.21071 8.56007 7.58579C8.17818 7.96086 7.96364 8.46957 7.96364 9C7.96364 9.53043 8.17818 10.0391 8.56007 10.4142C8.94197 10.7893 9.45992 11 10 11ZM10 11.8571C9.22846 11.8571 8.48852 11.5561 7.94296 11.0203C7.3974 10.4845 7.09091 9.75776 7.09091 9C7.09091 8.24224 7.3974 7.51551 7.94296 6.97969C8.48852 6.44388 9.22846 6.14286 10 6.14286C10.7715 6.14286 11.5115 6.44388 12.057 6.97969C12.6026 7.51551 12.9091 8.24224 12.9091 9C12.9091 9.75776 12.6026 10.4845 12.057 11.0203C11.5115 11.5561 10.7715 11.8571 10 11.8571Z" />
-            </svg>
-            <span class="toggle-text">Lihat Detail</span>
-          </button>
+<div x-data="{ mode: '{{ $mode }}' }" 
+     @change-mode.window="mode = $event.detail" 
+     class="flex-1 w-full">
 
-          <!-- Div detail yang akan ditampilkan dengan transisi -->
-          <div id="detail-{{ $observation['id'] }}" class="hidden mt-4 p-4 border-t border-gray-300 transition-all duration-500 ease-in-out">
-            <p class="text-sm text-gray-700">
-              Detail Jadwal: {{ $observation['description'] ?? 'Tidak ada deskripsi.' }}
-            </p>
-            <div class="flex justify-end gap-4">
-                    <button @click="mode = 'add'" class="flex gap-1 items-center text-xs font-medium text-sky-800">
-                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M8.25 1.5H6.75C3 1.5 1.5 3 1.5 6.75V11.25C1.5 15 3 16.5 6.75 16.5H11.25C15 16.5 16.5 15 16.5 11.25V9.75" stroke="#065986" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M12.0299 2.26495L6.11991 8.17495C5.89491 8.39995 5.66991 8.84245 5.62491 9.16495L5.30241 11.4224C5.18241 12.2399 5.75991 12.8099 6.57741 12.6974L8.83491 12.3749C9.14991 12.3299 9.59241 12.1049 9.82491 11.8799L15.7349 5.96995C16.7549 4.94995 17.2349 3.76495 15.7349 2.26495C14.2349 0.764945 13.0499 1.24495 12.0299 2.26495Z" stroke="#065986" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M11.1826 3.11255C11.6851 4.90505 13.0876 6.30755 14.8876 6.81755" stroke="#065986" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        Edit
-                    </button>
-                    <button class="flex gap-1 items-center text-xs font-medium text-red-500">
-                        <svg width="18" height="18" viewBox="0 0 19 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M15.0417 2.875H3.95833C3.08388 2.875 2.375 3.58388 2.375 4.45833V15.5417C2.375 16.4161 3.08388 17.125 3.95833 17.125H15.0417C15.9161 17.125 16.625 16.4161 16.625 15.5417V4.45833C16.625 3.58388 15.9161 2.875 15.0417 2.875Z" stroke="#F04438" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M7.125 7.625L11.875 12.375M11.875 7.625L7.125 12.375" stroke="#F04438" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        Hapus
-                    </button>
+    <!-- View Schedules for Observation -->
+    <div x-show="mode === 'view'" class="flex-1 w-full">
+        <div class="overflow-y-auto hide-scrollbar max-h-[43vh] md:max-h-[42vh]">
+            @if(count($scheduleList) > 0)
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 items-start">
+                    @foreach ($scheduleList as $schedule)
+                        <article class="flex flex-col justify-between p-4 w-full bg-white border border-sky-600 rounded-2xl cursor-pointer hover:bg-sky-50 transition-colors" 
+                                 data-schedule-id="{{ $schedule['id'] }}"
+                                 onclick="selectScheduleForObservation({{ $schedule['id'] }})">
+                            <div class="flex flex-col gap-1 overflow-hidden">
+                                <h2 class="text-base font-bold text-sky-800 truncate">
+                                    {{ $schedule['title'] }}
+                                </h2>
+                                <p class="text-sm text-gray-500 truncate">
+                                    {{ $schedule['description'] ?? 'Tidak ada deskripsi' }}
+                                </p>
+                                <p class="text-xs text-gray-400">
+                                    Dibuat: {{ $schedule['date'] }}
+                                </p>
+                            </div>
+
+                            <div class="mt-3 flex items-center justify-between">
+                                <span class="text-xs text-sky-600 font-medium">
+                                    {{ count($schedule['sub_themes'] ?? []) }} Sub Tema
+                                </span>
+                                <svg class="w-5 h-5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            </div>
+                        </article>
+                    @endforeach
                 </div>
-          </div>
-
-        </article>
-      @endforeach
-  </div>
-</div>
-</div>
-
-
-<div x-show="mode === 'score'"class="flex-1 w-full">
-<div class="overflow-y-auto hide-scrollbar max-h-[43vh] md:max-h-[42vh]">
-<div class="grid grid-cols-1 md:grid-cols-1 gap-x-6 gap-y-2 items-start">
-<div class="pl-2 flex items-center bg-sky-200 h-[43px] rounded-t-lg">
-      @foreach (['Nama Lengkap', 'Status', 'Pilihan'] as $header)
-        <h3 class="flex-1 text-sm font-medium text-center text-slate-600 max-md:text-sm max-sm:text-xs">
-          {{ $header }}
-        </h3>
-      @endforeach
-    </div>
-
-    <!-- Data Rows -->
-    @foreach ($studentList as $student)
-      <div class="flex items-center px-3 py-1 border border-gray-200">
-        <div class="flex-1 text-sm text-center text-slate-600">{{ $student['nama'] }}</div>
-        <div class="flex-1 text-sm text-center text-slate-600">Belum Dinilai</div>
-        <div class="flex-1 text-sm text-center text-slate-600">
-          <div class="flex flex-col gap-1 items-center">
-            <button
-              class="w-20 text-xs font-medium bg-transparent rounded-lg border border-sky-300 text-slate-600 h-[25px]"
-              @click="mode = 'add-score'"
-            >
-              Nilai
-            </button>
-             <x-button.delete-button label="Observasi" />
-          </div>
+            @else
+                <!-- Empty state -->
+                <div class="flex flex-col items-center justify-center py-12 text-center">
+                    <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                    <h3 class="text-lg font-medium text-gray-600 mb-2">Belum Ada Jadwal</h3>
+                    <p class="text-sm text-gray-500">Tambahkan jadwal terlebih dahulu untuk melakukan observasi</p>
+                </div>
+            @endif
         </div>
-      </div>
-    @endforeach
-  </div>
-</div>
-</div>
+    </div>
 
-<div x-show="mode === 'add-score'" class="flex-1 w-full">
-    <!-- Header -->
-    <x-header.scoring-name-header />
-
-    <!-- Kontainer dengan scroll -->
-    <div class="overflow-y-auto hide-scrollbar max-h-[43vh] md:max-h-[42vh] px-2">
-        <!-- Grid 2 kolom di md ke atas -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-            <!-- Kartu Observasi -->
-            <x-card.observation-scoring-card
-                title="Minggu 1 - Lingkungan Keluarga"
-                content="Anita menunjukkan perkembangan yang sangat baik dalam beradaptasi di lingkungan keluarga."
-            />
-
-            <x-card.observation-scoring-card
-                title="Minggu 2 - Kegiatan Rumah"
-                content="Anita mulai terlibat dalam kegiatan rumah seperti membantu orang tua dengan semangat."
-            />
-
-            <x-card.observation-scoring-card
-                title="Minggu 3 - Sosialisasi"
-                content="Kemampuan komunikasi Anita meningkat dalam bersosialisasi dengan anggota keluarga."
-            />
-
-            <x-card.observation-scoring-card
-                title="Minggu 4 - Tanggung Jawab"
-                content="Anita mulai menunjukkan rasa tanggung jawab terhadap tugas kecil yang diberikan di rumah."
-            />
+    <!-- Select Schedule Detail -->
+    <div x-show="mode === 'select-detail'" class="flex-1 w-full">
+        <div class="mb-4">
+            <button @click="mode = 'view'" class="text-sky-600 text-sm hover:underline">← Kembali ke Jadwal</button>
+            <h3 class="text-lg font-bold text-sky-800 mt-2" id="selectedScheduleTitle">Pilih Sub Tema</h3>
         </div>
-         <div class="mt-4">
-        <x-button.submit-button />
-    </div>
-    </div>
-
-    <!-- Tombol Simpan -->
-   
-</div>
-
-
-<!-- Add Data -->
-<div x-show="mode === 'add'" class="flex-1 w-full"> 
-    <!-- Parent Flex Container -->
-    <div class="flex flex-wrap gap-1 md:gap-6 w-full"> <!-- <-- ini flex container -->
         
-        <!-- Kolom Kiri -->
-        <div class="flex-1 min-w-[300px]">
-            <form class="flex flex-col gap-3.5">
-                <div class="flex flex-col gap-8 max-md:gap-5 max-sm:gap-0">
-                    <!-- Form Input Judul -->
-                    <div class="flex flex-col gap-1.5">
-                        <label class="text-xs text-slate-600 max-sm:text-sm">
-                            <span>Judul</span><span class="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            placeholder="Judul Jadwal"
-                            class="px-4 py-0 h-10 text-sm font-medium text-gray-400 bg-gray-50 rounded-3xl border border-sky-600 w-full"
-                        />
-                    </div>
-
-                    <!-- Form Tanggal Gambar -->
-                    <div class="flex flex-col gap-1.5">
-    <label class="text-xs text-slate-600 max-sm:text-sm">
-        Tanggal <span class="text-red-500">*</span>
-    </label>
-    <input
-    type="text"
-    id="tanggal"
-    placeholder="01 - Januari - 2025"
-    class="px-4 py-0 h-10 text-sm font-medium text-gray-700 bg-white rounded-3xl border border-sky-600 w-full max-sm:text-sm"
-/>
-
-
-</div>
-
+        <div class="overflow-y-auto hide-scrollbar max-h-[43vh] md:max-h-[42vh]">
+            <div id="scheduleDetailsContainer" class="space-y-3">
+                <!-- Sub themes will be loaded here -->
+                <div class="animate-pulse">
+                    <div class="h-16 bg-gray-200 rounded-lg mb-3"></div>
+                    <div class="h-16 bg-gray-200 rounded-lg mb-3"></div>
                 </div>
-            </form>
-        </div>
-
-        <!-- Kolom Kanan -->
-        <div class="flex-1 min-w-[300px]">
-            <!-- Deskripsi -->
-            <div class="flex flex-col gap-1.5">
-                <label class="text-xs text-slate-600 max-sm:text-sm">
-                    <span>Deskripsi</span><span class="text-red-500">*</span>
-                </label>
-                <RichTextEditor />
             </div>
-
-            <!-- Toolbar dan Textarea -->
-            <div class="flex flex-col px-4 py-0 bg-gray-50 rounded-3xl border-sky-600 border-solid border-[1.5px]">
-                <div class="flex gap-3 items-center px-0 py-2.5 border-b border-gray-200">
-                    <!-- Tombol Toolbar -->
-                    <button class="text-lg text-black font-bold">B</button>
-                    <button class="text-lg text-black underline">U</button>
-                    <!-- Icon lainnya -->
-                </div>
-
-                <textarea class="p-2.5 text-xs font-medium text-gray-500 h-[80px] bg-transparent resize-none focus:outline-none" placeholder="Masukkan deskripsi...."></textarea>
-            
-    </div> <!-- Tutup flex container -->
-</div>
-</div>
-<div>
-            <x-button.submit-button />
         </div>
+    </div>
+
+    <!-- Student Scoring -->
+    <div x-show="mode === 'scoring'" class="flex-1 w-full">
+        <div class="mb-4">
+            <button @click="mode = 'select-detail'" class="text-sky-600 text-sm hover:underline">← Kembali ke Sub Tema</button>
+            <div class="mt-2">
+                <h3 class="text-lg font-bold text-sky-800" id="scoringScheduleTitle">Jadwal</h3>
+                <p class="text-sm text-gray-600" id="scoringDetailTitle">Sub Tema</p>
+            </div>
+        </div>
+
+        <div class="overflow-y-auto hide-scrollbar max-h-[35vh]">
+            <div id="studentsContainer" class="space-y-4">
+                <!-- Students will be loaded here -->
+                <div class="animate-pulse">
+                    <div class="h-24 bg-gray-200 rounded-lg mb-3"></div>
+                    <div class="h-24 bg-gray-200 rounded-lg mb-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 flex gap-3 justify-end">
+            <button @click="mode = 'select-detail'" 
+                    class="px-4 py-2 text-sky-600 border border-sky-600 rounded-full hover:bg-sky-50 transition-colors">
+                Batal
+            </button>
+            <button onclick="saveObservationScores()" id="saveScoresBtn"
+                    class="px-4 py-2 bg-sky-600 text-white rounded-full hover:bg-sky-700 transition-colors disabled:opacity-50">
+                Simpan Nilai
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<script>
+let currentScheduleId = null;
+let currentDetailId = null;
+let observationScores = {};
+
+function selectScheduleForObservation(scheduleId) {
+    currentScheduleId = scheduleId;
+    
+    const scheduleList = @json($scheduleList);
+    const scheduleData = scheduleList.find(s => s.id == scheduleId);
+    
+    if (!scheduleData) {
+        alert('Data jadwal tidak ditemukan');
+        return;
+    }
+
+    console.log('Schedule selected:', scheduleData);
+    document.getElementById('selectedScheduleTitle').textContent = `${scheduleData.title} - Pilih Sub Tema`;
+    
+    // Load schedule details first
+    loadScheduleDetails(scheduleId);
+    
+    // Switch mode using event dispatch
+    setTimeout(() => {
+        console.log('Switching mode to select-detail');
+        window.dispatchEvent(new CustomEvent('change-mode', { detail: 'select-detail' }));
+    }, 200);
+}
+
+function loadScheduleDetails(scheduleId) {
+    const container = document.getElementById('scheduleDetailsContainer');
+    
+    console.log('Loading schedule details for schedule ID:', scheduleId);
+    
+    // Show loading state
+    container.innerHTML = `
+        <div class="animate-pulse space-y-3">
+            <div class="h-16 bg-gray-200 rounded-lg"></div>
+            <div class="h-16 bg-gray-200 rounded-lg"></div>
+            <div class="h-16 bg-gray-200 rounded-lg"></div>
+        </div>
+    `;
+
+    // Fetch sub-themes for the selected schedule
+    fetch(`/schedules/${scheduleId}/sub-themes`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Sub-themes data:', data);
+        
+        if (data.success && data.sub_themes && data.sub_themes.length > 0) {
+            const htmlContent = data.sub_themes.map(subTheme => {
+                console.log('Processing sub-theme:', subTheme);
+                return `
+                    <div class="p-4 bg-white border border-sky-300 rounded-lg cursor-pointer hover:bg-sky-50 hover:border-sky-500 transition-all duration-200"
+                         onclick="selectScheduleDetail(${subTheme.id}, '${escapeHtml(subTheme.title)}')">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <h4 class="font-medium text-sky-800 mb-1">${escapeHtml(subTheme.title)}</h4>
+                                <p class="text-sm text-gray-600 mb-2">
+                                    ${subTheme.description ? escapeHtml(subTheme.description) : 'Tidak ada deskripsi'}
+                                </p>
+                                <div class="text-xs text-gray-500">
+                                    <span>📅 ${formatDate(subTheme.start_date)} - ${formatDate(subTheme.end_date)}</span>
+                                    ${subTheme.week ? `<span class="ml-3 px-2 py-1 bg-sky-100 text-sky-700 rounded">Minggu ke-${subTheme.week}</span>` : ''}
+                                </div>
+                            </div>
+                            <div class="flex-shrink-0 ml-3">
+                                <svg class="w-5 h-5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = htmlContent;
+            console.log('Container HTML updated');
+        } else {
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-12 text-center">
+                    <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                    <h3 class="text-lg font-medium text-gray-600 mb-2">Belum Ada Sub Tema</h3>
+                    <p class="text-sm text-gray-500">Sub tema belum dibuat untuk jadwal ini</p>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error loading schedule details:', error);
+        container.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-12 text-center">
+                <svg class="w-16 h-16 text-red-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <h3 class="text-lg font-medium text-gray-600 mb-2">Gagal Memuat Data</h3>
+                <p class="text-sm text-gray-500 mb-4">Terjadi kesalahan saat memuat sub tema</p>
+                <button onclick="loadScheduleDetails(${scheduleId})" 
+                        class="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors">
+                    Coba Lagi
+                </button>
+            </div>
+        `;
+    });
+}
+
+function selectScheduleDetail(detailId, detailTitle) {
+    currentDetailId = detailId;
+    
+    console.log('Detail selected:', detailId, detailTitle);
+    
+    // Update titles for scoring section
+    const scheduleList = @json($scheduleList);
+    const scheduleData = scheduleList.find(s => s.id == currentScheduleId);
+    
+    document.getElementById('scoringScheduleTitle').textContent = scheduleData ? scheduleData.title : 'Jadwal';
+    document.getElementById('scoringDetailTitle').textContent = detailTitle;
+    
+    // Load students for this class
+    loadStudentsForScoring();
+    
+    // Switch to scoring mode
+    window.dispatchEvent(new CustomEvent('change-mode', { detail: 'scoring' }));
+}
+
+function loadStudentsForScoring() {
+    const container = document.getElementById('studentsContainer');
+    
+    console.log('Loading students for scoring. Schedule ID:', currentScheduleId, 'Detail ID:', currentDetailId);
+    
+    // Show loading state
+    container.innerHTML = `
+        <div class="animate-pulse space-y-4">
+            <div class="h-32 bg-gray-200 rounded-lg"></div>
+            <div class="h-32 bg-gray-200 rounded-lg"></div>
+            <div class="h-32 bg-gray-200 rounded-lg"></div>
+        </div>
+    `;
+
+    // Fetch students for scoring
+    fetch(`/schedules/${currentScheduleId}/students`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Students data:', data);
+        
+        if (data.success && data.students && data.students.length > 0) {
+            // Generate student observation cards
+            container.innerHTML = data.students.map(student => `
+                <div class="w-full max-w-2xl border border-gray-300 rounded-2xl p-1 mb-4">
+                    <!-- Header with Student Info -->
+                    <header class="flex items-center justify-between text-sm text-center text-sky-800 bg-sky-200 h-11 rounded-t-lg px-4">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-8 h-8 bg-sky-100 rounded-full flex items-center justify-center">
+                                <span class="text-sky-600 font-medium text-xs">
+                                    ${escapeHtml(student.name).charAt(0).toUpperCase()}
+                                </span>
+                            </div>
+                            <div class="text-left">
+                                <div class="font-medium">${escapeHtml(student.name)}</div>
+                                <div class="text-xs text-sky-600">NIS: ${escapeHtml(student.student_id || 'N/A')}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs">Nilai:</span>
+                            <div class="flex space-x-1">
+                                ${generateScoreButtons(student.id)}
+                            </div>
+                        </div>
+                    </header>
+
+                    <div class="flex flex-col gap-2.5 items-start p-4">
+                        <label class="text-xs text-slate-600">Observasi untuk ${escapeHtml(student.name)}</label>
+
+                        <!-- Editor Container -->
+                        <div class="flex flex-col w-full px-4 py-2 bg-gray-50 rounded-3xl border border-sky-600 border-solid">
+                            <!-- Toolbar -->
+                            <div class="flex gap-3 items-center border-b border-gray-200 pb-2">
+                                <button onclick="formatText('bold', ${student.id})" class="text-lg font-bold text-black hover:text-sky-600">B</button>
+                                <button onclick="formatText('underline', ${student.id})" class="text-lg underline text-black hover:text-sky-600">U</button>
+                                <button onclick="formatText('italic', ${student.id})" class="text-lg italic text-black hover:text-sky-600">I</button>
+                            </div>
+
+                            <!-- Text Area -->
+                            <textarea
+                                id="observation-text-${student.id}"
+                                class="p-2.5 text-xs font-medium text-gray-700 bg-transparent resize-none focus:outline-none min-h-[80px]"
+                                placeholder="Tulis hasil observasi untuk ${escapeHtml(student.name)}..."
+                                onchange="updateObservationText(${student.id})"
+                            ></textarea>
+                        </div>
+
+                        <!-- Score Display -->
+                        <div class="w-full mt-2">
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-600">Status penilaian:</span>
+                                <span id="score-display-${student.id}" class="font-medium text-gray-400">
+                                    Belum dinilai
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Initialize observation texts object if not exists
+            if (!window.observationTexts) {
+                window.observationTexts = {};
+            }
+        } else {
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-12 text-center">
+                    <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                    </svg>
+                    <h3 class="text-lg font-medium text-gray-600 mb-2">Belum Ada Siswa</h3>
+                    <p class="text-sm text-gray-500">Tidak ada siswa yang terdaftar di kelas ini</p>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error loading students:', error);
+        container.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-12 text-center">
+                <svg class="w-16 h-16 text-red-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <h3 class="text-lg font-medium text-gray-600 mb-2">Gagal Memuat Data Siswa</h3>
+                <p class="text-sm text-gray-500 mb-4">Terjadi kesalahan saat memuat data siswa</p>
+                <button onclick="loadStudentsForScoring()" 
+                        class="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors">
+                    Coba Lagi
+                </button>
+            </div>
+        `;
+    });
+}
+
+
+
+function generateScoreButtons(studentId) {
+    const scores = [1, 2, 3, 4];
+    return scores.map(score => `
+        <button onclick="setStudentScore(${studentId}, ${score})" 
+                id="score-btn-${studentId}-${score}"
+                class="w-6 h-6 text-xs border border-gray-300 rounded-full hover:bg-sky-100 hover:border-sky-300 transition-colors focus:outline-none focus:ring-1 focus:ring-sky-500">
+            ${score}
+        </button>
+    `).join('');
+}
+function setStudentScore(studentId, score) {
+    observationScores[studentId] = score;
+    
+    const scores = [1, 2, 3, 4];
+    scores.forEach(s => {
+        const btn = document.getElementById(`score-btn-${studentId}-${s}`);
+        if (btn) {
+            if (s === score) {
+                btn.className = 'w-6 h-6 text-xs bg-sky-600 text-white border border-sky-600 rounded-full focus:outline-none focus:ring-1 focus:ring-sky-500';
+            } else {
+                btn.className = 'w-6 h-6 text-xs border border-gray-300 rounded-full hover:bg-sky-100 hover:border-sky-300 transition-colors focus:outline-none focus:ring-1 focus:ring-sky-500';
+            }
+        }
+    });
+    
+    const scoreDisplay = document.getElementById(`score-display-${studentId}`);
+    if (scoreDisplay) {
+        const scoreLabels = {1: 'Kurang', 2: 'Cukup', 3: 'Baik', 4: 'Sangat Baik'};
+        scoreDisplay.textContent = `${scoreLabels[score]} (${score})`;
+        scoreDisplay.className = 'font-medium text-sky-600';
+    }
+    
+    console.log('Score set:', { studentId, score, allScores: observationScores });
+}
+
+function saveObservationScores() {
+    const saveBtn = document.getElementById('saveScoresBtn');
+    
+    if (Object.keys(observationScores).length === 0) {
+        alert('Silakan berikan nilai kepada minimal satu siswa sebelum menyimpan');
+        return;
+    }
+    
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Menyimpan...';
+    
+    // Prepare observation data including texts
+    const observationsData = [];
+    Object.keys(observationScores).forEach(studentId => {
+        observationsData.push({
+            student_id: parseInt(studentId),
+            score: observationScores[studentId],
+            observation_text: window.observationTexts ? (window.observationTexts[studentId] || '') : ''
+        });
+    });
+    
+    const observationData = {
+        schedule_id: currentScheduleId,
+        schedule_detail_id: currentDetailId,
+        observations: observationsData
+    };
+    
+    console.log('Saving observation data:', observationData);
+    
+    fetch('/observations/store', {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify(observationData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Save response:', data);
+        
+        if (data.success) {
+            alert('Nilai observasi berhasil disimpan!');
+            
+            // Reset data
+            observationScores = {};
+            window.observationTexts = {};
+            
+            // Go back to schedule list
+            window.dispatchEvent(new CustomEvent('change-mode', { detail: 'view' }));
+        } else {
+            throw new Error(data.message || 'Gagal menyimpan nilai');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving scores:', error);
+        alert('Terjadi kesalahan saat menyimpan nilai: ' + error.message);
+    })
+    .finally(() => {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Simpan Nilai';
+    });
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatDate(dateString) {
+    if (!dateString) return '';
+    try {
+        const options = { day: 'numeric', month: 'short', year: 'numeric' };
+        return new Date(dateString).toLocaleDateString('id-ID', options);
+    } catch (error) {
+        return dateString;
+    }
+}
+
+function formatText(command, studentId) {
+    const textarea = document.getElementById(`observation-text-${studentId}`);
+    if (textarea) {
+        textarea.focus();
+        // Note: execCommand is deprecated, but for basic formatting in textarea we'll use a simple approach
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selectedText = textarea.value.substring(start, end);
+        
+        let formattedText = selectedText;
+        switch(command) {
+            case 'bold':
+                formattedText = `**${selectedText}**`;
+                break;
+            case 'italic':
+                formattedText = `*${selectedText}*`;
+                break;
+            case 'underline':
+                formattedText = `__${selectedText}__`;
+                break;
+        }
+        
+        textarea.value = textarea.value.substring(0, start) + formattedText + textarea.value.substring(end);
+        updateObservationText(studentId);
+    }
+}
+
+function updateObservationText(studentId) {
+    const textarea = document.getElementById(`observation-text-${studentId}`);
+    if (textarea) {
+        if (!window.observationTexts) {
+            window.observationTexts = {};
+        }
+        window.observationTexts[studentId] = textarea.value;
+        console.log('Observation text updated for student:', studentId, textarea.value);
+    }
+}
+</script>

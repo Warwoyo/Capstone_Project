@@ -18,11 +18,13 @@
 <body class="bg-white">
 
   <!-- Toggle Button (Mobile Only) -->
-  <button id="toggleSidebarBtn" class="md:hidden fixed top-4 left-4 z-30 p-2 text-white bg-blue-200 rounded-full shadow-lg flex justify-center items-center">
+   <div class="md:hidden fixed top-4 left-4 z-30 p-2 text-white bg-blue-200 rounded-full shadow-lg flex ml-auto">
+  <button id="toggleSidebarBtn" >
     <svg class="text-blue-800" width="24" height="24" viewBox="0 0 37 37" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M13.875 9.25L23.125 18.5L13.875 27.75" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
   </button>
+</div>
 
   <!-- Layout wrapper -->
   <div class="flex md:flex-row flex-col min-h-screen">

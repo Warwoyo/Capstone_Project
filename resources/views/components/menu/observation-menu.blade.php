@@ -9,7 +9,7 @@
 
     <!-- View Schedules for Observation -->
     <div x-show="mode === 'view'" class="flex-1 w-full">
-        <div class="overflow-y-auto hide-scrollbar max-h-[43vh] md:max-h-[42vh]">
+        <div class="overflow-y-auto hide-scrollbar max-h-[63vh] md:max-h-[56vh]">
             @if(count($scheduleList) > 0)
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 items-start">
                     @foreach ($scheduleList as $schedule)
@@ -54,13 +54,13 @@
 
     <!-- Select Schedule Detail -->
     <div x-show="mode === 'select-detail'" class="flex-1 w-full">
-        <div class="mb-4">
+        <div class="mb-2">
             <button @click="mode = 'view'" class="text-sky-600 text-sm hover:underline">← Kembali ke Jadwal</button>
             <h3 class="text-lg font-bold text-sky-800 mt-2" id="selectedScheduleTitle">Pilih Sub Tema</h3>
         </div>
         
-        <div class="overflow-y-auto hide-scrollbar max-h-[43vh] md:max-h-[42vh]">
-            <div id="scheduleDetailsContainer" class="space-y-3">
+        <div class="overflow-y-auto hide-scrollbar max-h-[55vh] md:max-h-[44vh]">
+            <div id="scheduleDetailsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
                 <!-- Sub themes will be loaded here -->
                 <div class="animate-pulse">
                     <div class="h-16 bg-gray-200 rounded-lg mb-3"></div>
@@ -72,16 +72,24 @@
 
     <!-- Student Scoring -->
     <div x-show="mode === 'scoring'" class="flex-1 w-full">
-        <div class="mb-4">
-            <button @click="mode = 'select-detail'" class="text-sky-600 text-sm hover:underline">← Kembali ke Sub Tema</button>
-            <div class="mt-2">
-                <h3 class="text-lg font-bold text-sky-800" id="scoringScheduleTitle">Jadwal</h3>
-                <p class="text-sm text-gray-600" id="scoringDetailTitle">Sub Tema</p>
-            </div>
-        </div>
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-2 gap-2">
+    
+    <!-- Tombol kembali -->
+    <button @click="mode = 'select-detail'" class="text-sky-600 text-sm hover:underline">
+      ← Kembali ke Sub Tema
+    </button>
 
-        <div class="overflow-y-auto hide-scrollbar max-h-[35vh]">
-            <div id="studentsContainer" class="space-y-4">
+    <!-- Jadwal dan Sub Tema -->
+    <div class="flex items-center text-sm font-bold gap-1">
+      <h3 class="text-sky-800" id="scoringScheduleTitle">Jadwal</h3>
+      <span class="text-gray-400">|</span>
+      <p class="text-gray-600" id="scoringDetailTitle">Sub Tema</p>
+    </div>
+
+  </div>
+
+        <div class="overflow-y-auto hide-scrollbar max-h-[52vh] md:max-h-[45vh]">
+            <div id="studentsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
                 <!-- Students will be loaded here -->
                 <div class="animate-pulse">
                     <div class="h-24 bg-gray-200 rounded-lg mb-3"></div>
@@ -90,13 +98,13 @@
             </div>
         </div>
 
-        <div class="mt-4 flex gap-3 justify-end">
+        <div class="flex gap-3 justify-end">
             <button @click="mode = 'select-detail'" 
-                    class="px-4 py-2 text-sky-600 border border-sky-600 rounded-full hover:bg-sky-50 transition-colors">
+                    class="px-4 py-1 text-sky-600 border border-sky-600 rounded-full hover:bg-sky-50 transition-colors">
                 Batal
             </button>
             <button onclick="saveObservationScores()" id="saveScoresBtn"
-                    class="px-4 py-2 bg-sky-600 text-white rounded-full hover:bg-sky-700 transition-colors disabled:opacity-50">
+                    class="px-4 py-1 bg-sky-600 text-white rounded-full hover:bg-sky-700 transition-colors disabled:opacity-50">
                 Simpan Nilai
             </button>
         </div>
@@ -298,7 +306,7 @@ function loadStudentsForScoring() {
                         </div>
                     </header>
 
-                    <div class="flex flex-col gap-2.5 items-start p-4">
+                    <div class="flex flex-col gap-2.5 items-start pl-4 pr-4"">
                         <label class="text-xs text-slate-600">Observasi untuk ${escapeHtml(student.name)}</label>
 
                         <!-- Editor Container -->

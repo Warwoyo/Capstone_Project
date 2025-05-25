@@ -12,7 +12,7 @@
 
     {{-- ========== VIEW LIST ========== --}}
     <div x-show="mode==='view'" class="flex-1 w-full">
-        <div class="overflow-y-auto hide-scrollbar max-h-[60vh]">
+        <div class="overflow-y-auto hide-scrollbar max-h-[62vh] md:max-h-[56vh]">
             {{-- Header --}}
             <div class="pl-2 flex items-center bg-sky-200 h-10 rounded-t-lg">
                 @foreach (['Nama','Kelas','Token','Aksi'] as $h)
@@ -101,7 +101,7 @@
 
     {{-- ========== ADD FORM (BARU) ========== --}}
     <div x-show="mode==='add'" class="flex-1" x-data="{ modeOrtu:'ortu' }">
-        <div class="overflow-y-auto hide-scrollbar max-h-[60vh]">
+        <div class="overflow-y-auto hide-scrollbar max-h-[62vh] md:max-h-[56vh]">
         <form method="POST"
               action="{{ route('students.store',['class'=>$class->id]) }}"
               enctype="multipart/form-data"
@@ -250,7 +250,7 @@
 
 {{-- ========== FORM EDIT ========== --}}
 <div x-show="mode==='edit'" x-cloak class="flex-1">
-<div class="overflow-y-auto hide-scrollbar max-h-[60vh]">
+<div class="overflow-y-auto hide-scrollbar max-h-[62vh] md:max-h-[56vh]">
     <form
         method="POST"
         :action="`{{ url('/classroom/'.$class->id.'/students') }}/${editData.id}`"

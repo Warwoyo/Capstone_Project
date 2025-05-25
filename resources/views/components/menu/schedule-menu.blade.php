@@ -6,9 +6,11 @@
 <div x-data="{ mode: @entangle('mode') }" class="flex-1 w-full">
     <!-- View Data -->
     <div x-show="mode === 'view'" class="flex-1 w-full">
-        <div class="overflow-y-auto hide-scrollbar max-h-[43vh] md:max-h-[42vh]">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 items-start">
+        <div class="overflow-y-auto hide-scrollbar max-h-[63vh] md:max-h-[56vh]">
+           <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 items-start">
+                
                 @foreach ($scheduleList as $schedule)
+                
                     <article class="flex flex-col justify-between p-4 w-full bg-white border border-sky-600 rounded-2xl" data-schedule-id="{{ $schedule['id'] }}">
                         <div class="flex flex-col gap-1 overflow-hidden">
                             <h2 class="text-base font-bold text-sky-800 truncate">
@@ -78,20 +80,23 @@
                             </div>
                         </div>
                     </article>
+               
                 @endforeach
+
             </div>
         </div>
     </div>
 
     <!-- Add/Edit Form -->
     <div x-show="mode === 'add' || mode === 'edit'" class="flex-1 w-full">
-        <form id="scheduleForm" class="flex flex-col gap-3.5">
+        
+        <form id="scheduleForm" class="flex flex-col gap-3.5 ">
             @csrf
             <input type="hidden" name="schedule_id" id="scheduleId">
             <div class="flex flex-wrap gap-1 md:gap-6 w-full">
                 <!-- Left Column -->
                 <div class="flex-1 min-w-[300px]">
-                    <div class="flex flex-col gap-8 max-md:gap-5 max-sm:gap-0">
+                    <div class="flex flex-col gap-4 max-md:gap-5 max-sm:gap-0">
                         <!-- Title Input -->
                         <div class="flex flex-col gap-1.5">
                             <label class="text-xs text-slate-600 max-sm:text-sm">
@@ -118,27 +123,43 @@
                                 rows="3"
                                 required></textarea>
                         </div>
+                         <div class="hidden md:flex gap-4 mx-auto mb-2">
+                <button 
+                    type="button" 
+                    @click="mode = 'view'"
+                    class="px-4 py-2 text-sky-600 border border-sky-600 font-semibold rounded-full hover:bg-sky-50 transition-colors"
+                >
+                    Batal
+                </button>
+                <button 
+                    type="submit" 
+                    id="submitSchedule" 
+                    class="px-4 py-2 bg-sky-600 text-white font-semibold rounded-full hover:bg-sky-700 transition-colors"
+                >
+                    Simpan Jadwal
+                </button>
+            </div>
                     </div>
                 </div>
 
                 <!-- Right Column - Sub Themes -->
-                <div class="flex-1 min-w-[300px]">
-                    <div class="flex flex-col gap-8 max-md:gap-5 max-sm:gap-0">
-                        <div class="flex justify-between items-center mb-2">
-                            <label class="text-sm font-medium text-slate-700">Sub Tema</label>
+                <div class="flex-1 min-w-[300px] overflow-y-auto hide-scrollbar max-h-[50vh] md:max-h-[55vh]">
+                    <div class="flex flex-col max-md:gap-5 max-sm:gap-0">
+                        <div class=" sticky top-0 flex items-center mb-1 ml-auto md:mr-2">
+                           {{--<label class="text-sm font-medium text-slate-700">Sub Tema</label>--}} 
                             <button type="button" id="addSubTheme" class="px-3 py-1 bg-sky-600 text-white text-xs rounded-full hover:bg-sky-700 transition-colors">
                                 + Tambah Sub Tema
                             </button>
                         </div>
                         
-                        <div id="subThemesContainer" class="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                        <div id="subThemesContainer" class="space-y-4 max-h overflow-y-auto pr-2 ">
                             <!-- Sub themes will be added here -->
                         </div>
                     </div>
                 </div>
             </div>
             
-            <div class="flex gap-4 justify-end mt-6">
+           <div class="flex md:hidden gap-4 mx-auto mt-2">
                 <button 
                     type="button" 
                     @click="mode = 'view'"
@@ -160,33 +181,61 @@
 
 <!-- Sub Theme Template -->
 <template id="subThemeTemplate">
-    <div class="sub-theme-item border border-sky-200 rounded-lg p-3 bg-sky-50">
-        <div class="flex justify-between mb-2">
-            <h4 class="text-sm font-medium text-sky-800">Sub Tema</h4>
-            <button type="button" class="remove-sub-theme text-red-500 text-xs hover:text-red-700 transition-colors">Hapus</button>
-        </div>
-        <div class="space-y-3">
-            <div>
-                <label class="block text-xs text-slate-600">Judul Sub Tema<span class="text-red-500">*</span></label>
-                <input type="text" name="sub_themes[][title]" class="w-full px-3 py-1.5 mt-1 text-sm border border-sky-300 rounded-md" required>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-                <div>
-                    <label class="block text-xs text-slate-600">Tanggal Mulai<span class="text-red-500">*</span></label>
-                    <input type="date" name="sub_themes[][start_date]" class="w-full px-3 py-1.5 mt-1 text-sm border border-sky-300 rounded-md" required>
-                </div>
-                <div>
-                    <label class="block text-xs text-slate-600">Tanggal Selesai<span class="text-red-500">*</span></label>
-                    <input type="date" name="sub_themes[][end_date]" class="w-full px-3 py-1.5 mt-1 text-sm border border-sky-300 rounded-md" required>
-                </div>
-            </div>
-            <div>
-                <label class="block text-xs text-slate-600">Minggu ke- (opsional)</label>
-                <input type="number" name="sub_themes[][week]" min="1" max="52" class="w-full px-3 py-1.5 mt-1 text-sm border border-sky-300 rounded-md">
-            </div>
-        </div>
+  <div class="sub-theme-item border border-sky-600 rounded-3xl p-4 bg-white">
+    <div class="flex justify-between items-center mb-3">
+      <h4 class="text-sm font-semibold text-slate-700">Sub Tema</h4>
+      <button type="button" class="remove-sub-theme text-red-500 text-xs hover:text-red-700 transition-colors">Hapus</button>
     </div>
+
+    <div class="flex flex-col gap-4">
+      <!-- Judul Sub Tema -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-xs text-slate-600">Judul Sub Tema<span class="text-red-500">*</span></label>
+        <input
+          type="text"
+          name="sub_themes[][title]"
+          class="px-4 py-2 h-10 text-sm font-medium text-gray-700 bg-white rounded-3xl border border-sky-600 w-full"
+          required
+        />
+      </div>
+
+      <!-- Tanggal -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs text-slate-600">Tanggal Mulai<span class="text-red-500">*</span></label>
+          <input
+            type="date"
+            name="sub_themes[][start_date]"
+            class="px-4 py-2 h-10 text-sm font-medium text-gray-700 bg-white rounded-3xl border border-sky-600 w-full"
+            required
+          />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs text-slate-600">Tanggal Selesai<span class="text-red-500">*</span></label>
+          <input
+            type="date"
+            name="sub_themes[][end_date]"
+            class="px-4 py-2 h-10 text-sm font-medium text-gray-700 bg-white rounded-3xl border border-sky-600 w-full"
+            required
+          />
+        </div>
+      </div>
+
+      <!-- Minggu -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-xs text-slate-600">Minggu ke- (opsional)</label>
+        <input
+          type="number"
+          name="sub_themes[][week]"
+          min="1"
+          max="52"
+          class="px-4 py-2 h-10 text-sm font-medium text-gray-700 bg-white rounded-3xl border border-sky-600 w-full"
+        />
+      </div>
+    </div>
+  </div>
 </template>
+
 
 <script>
 let originalFormHtml = '';
@@ -290,7 +339,7 @@ function toggleDetail(id, button) {
     }
 }
 
-function loadSubSchedules(scheduleId) {
+function loadSubSchedules(scheduleId, callback) {
     const container = document.getElementById(`sub-schedules-${scheduleId}`);
     container.innerHTML = '<div class="animate-pulse"><div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div><div class="h-4 bg-gray-200 rounded w-1/2"></div></div>';
 
@@ -298,7 +347,7 @@ function loadSubSchedules(scheduleId) {
         .then(response => response.json())
         .then(data => {
             container.innerHTML = data.sub_themes.map(sub => `
-                <div class="p-2 bg-sky-50 rounded border border-sky-100">
+                <div class="p-3 bg-sky-50 border border-sky-600 rounded-2xl">
                     <div class="flex justify-between items-start">
                         <div>
                             <div class="font-medium text-sm">${sub.title}</div>
@@ -310,12 +359,16 @@ function loadSubSchedules(scheduleId) {
                     </div>
                 </div>
             `).join('') || '<p class="text-sm text-gray-500">Tidak ada sub tema.</p>';
+
+            if (callback) callback();
         })
         .catch(error => {
             console.error('Error:', error);
             container.innerHTML = '<p class="text-sm text-red-500">Gagal memuat sub tema.</p>';
+            if (callback) callback();
         });
 }
+
 
 function editSchedule(id) {
     const form = document.getElementById('scheduleForm');
@@ -516,4 +569,28 @@ function formatDate(dateString) {
     const options = { day: 'numeric', month: 'short', year: 'numeric' };
     return new Date(dateString).toLocaleDateString('id-ID', options);
 }
+
+function toggleDetail(id, button) {
+    const detailElement = document.getElementById(id);
+    const toggleText = button.querySelector('.toggle-text');
+    const eyePath = button.querySelector('.eye-path');
+    const scheduleId = id.split('-')[1];
+    
+    if (detailElement.classList.contains('hidden')) {
+        detailElement.classList.remove('hidden');
+        toggleText.textContent = 'Sembunyikan Detail';
+        eyePath.setAttribute('d', 'M10 13.1429C12.9338 13.1429 15.5898 11.5357 17.0167 9C15.5898 6.46429 12.9338 4.85714 10 4.85714C7.06618 4.85714 4.41018 6.46429 2.98327 9C4.41018 11.5357 7.06618 13.1429 10 13.1429Z');
+        
+        // Load sub schedules dan scroll setelah data selesai load
+        loadSubSchedules(scheduleId, () => {
+            detailElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        });
+    } else {
+        detailElement.classList.add('hidden');
+        toggleText.textContent = 'Lihat Detail';
+        eyePath.setAttribute('d', 'M10 13.1429C12.9338 13.1429 15.5898 11.5357 17.0167 9C15.5898 6.46429 12.9338 4.85714 10 4.85714C7.06618 4.85714 4.41018 6.46429 2.98327 9C4.41018 11.5357 7.06618 13.1429 10 13.1429ZM10 4C13.4967 4 16.5251 6.03429 18 9C16.5251 11.9657 13.4967 14 10 14C6.50327 14 3.47491 11.9657 2 9C3.47491 6.03429 6.50327 4 10 4ZM10 11C10.5401 11 11.058 10.7893 11.4399 10.4142C11.8218 10.0391 12.0364 9.53043 12.0364 9C12.0364 8.46957 11.8218 7.96086 11.4399 7.58579C11.058 7.21071 10.5401 7 10 7C9.45992 7 8.94197 7.21071 8.56007 7.58579C8.17818 7.96086 7.96364 8.46957 7.96364 9C7.96364 9.53043 8.17818 10.0391 8.56007 10.4142C8.94197 10.7893 9.45992 11 10 11ZM10 11.8571C9.22846 11.8571 8.48852 11.5561 7.94296 11.0203C7.3974 10.4845 7.09091 9.75776 7.09091 9C7.09091 8.24224 7.3974 7.51551 7.94296 6.97969C8.48852 6.44388 9.22846 6.14286 10 6.14286C10.7715 6.14286 11.5115 6.44388 12.057 6.97969C12.6026 7.51551 12.9091 8.24224 12.9091 9C12.9091 9.75776 12.6026 10.4845 12.057 11.0203C11.5115 11.5561 10.7715 11.8571 10 11.8571Z');
+    }
+}
+
 </script>
+

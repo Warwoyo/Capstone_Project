@@ -9,7 +9,16 @@
     <!-- Main Content -->
     <section class="pt-6 px-8 max-md:p-4 max-sm:p-2.5">
 
-        <x-header.search-header />
+     <header class="flex flex-col gap-2">
+  <nav class="text-sm text-slate-600 flex flex-wrap items-center gap-1 mt-4 md:mt-3 justify-center md:justify-start w-full">
+    <span class="text-sky-600">Manajemen Kelas</span>
+    <span class="text-slate-400">></span>
+    <span class="text-slate-600 font-medium truncate max-w-[150px] sm:max-w-[200px] md:max-w-none">
+      {{ $class->name }}
+    </span>
+  </nav>
+</header>
+
 
         <div class="max-w-screen-xl mx-auto pt-3">
             <!-- Container Scrollable -->

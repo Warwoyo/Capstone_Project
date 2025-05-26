@@ -11,7 +11,7 @@ use App\Models\{Student, Classroom, User, RegistrationToken, UserContact, Parent
 class StudentController extends Controller
 {
     
-    
+
 public function store(Request $request, Classroom $class)
 {
     DB::beginTransaction();
@@ -24,28 +24,60 @@ public function store(Request $request, Classroom $class)
         // Hubungkan siswa dengan kelas
         $class->students()->attach($student->id);
 
-        // Simpan data orang tua
-        $parents = [
-            [
-                'name' => $request->father_name,
-                'relation' => 'father',
-                'phone' => $request->father_phone,
-                'email' => $request->father_email,
-                'nik' => $request->father_nik,
-                'occupation' => $request->father_occupation,
-                'address' => $request->father_address,
-            ],
-            [
-                'name' => $request->mother_name,
-                'relation' => 'mother',
-                'phone' => $request->mother_phone,
-                'email' => $request->mother_email,
-                'nik' => $request->mother_nik,
-                'occupation' => $request->mother_occupation,
-                'address' => $request->mother_address,
-            ],
-        ];
+        // Generate registration token untuk orang tua
+        RegistrationToken::generateFor($student);
 
+        // Siapkan data orang tua berdasarkan tipe_data
+        $parents = [];
+
+        if ($request->tipe_data === 'ortu') {
+            // Data ayah
+            if (!empty(trim($request->father_name))) {
+                $parents[] = [
+                    'name' => $request->father_name,
+                    'relation' => 'father',
+                    'phone' => $request->father_phone ?: null,
+                    'email' => $request->father_email ?: null,
+                    'nik' => $request->father_nik ?: null,
+                    'occupation' => $request->father_occupation ?: null,
+                    'address' => $request->father_address ?: null,
+                ];
+            }
+
+            // Data ibu
+            if (!empty(trim($request->mother_name))) {
+                $parents[] = [
+                    'name' => $request->mother_name,
+                    'relation' => 'mother',
+                    'phone' => $request->mother_phone ?: null,
+                    'email' => $request->mother_email ?: null,
+                    'nik' => $request->mother_nik ?: null,
+                    'occupation' => $request->mother_occupation ?: null,
+                    'address' => $request->mother_address ?: null,
+                ];
+            }
+        } else { // wali
+            if (!empty(trim($request->guardian_name))) {
+                $parents[] = [
+                    'name' => $request->guardian_name,
+                    'relation' => 'guardian',
+                    'phone' => $request->guardian_phone ?: null,
+                    'email' => $request->guardian_email ?: null,
+                    'nik' => $request->guardian_nik ?: null,
+                    'occupation' => $request->guardian_occupation ?: null,
+                    'address' => $request->guardian_address ?: null,
+                ];
+            }
+        }
+
+        // Buang field kosong phone/email supaya tidak "duplicate NULL"
+        foreach ($parents as &$parent) {
+            if (empty($parent['phone'])) unset($parent['phone']);
+            if (empty($parent['email'])) unset($parent['email']);
+        }
+        unset($parent);
+
+        // Simpan data orang tua
         foreach ($parents as $parent) {
             $student->parents()->create($parent);
         }

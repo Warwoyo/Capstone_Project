@@ -412,11 +412,14 @@ function setStudentScore(studentId, score) {
 }
 
 function saveObservationScores() {
+    // Prevent default action if this was triggered by a form or link
+    event.preventDefault();
+    
     const saveBtn = document.getElementById('saveScoresBtn');
     
     if (Object.keys(observationScores).length === 0) {
         alert('Silakan berikan nilai kepada minimal satu siswa sebelum menyimpan');
-        return;
+        return false;
     }
     
     saveBtn.disabled = true;
@@ -440,18 +443,34 @@ function saveObservationScores() {
     
     console.log('Saving observation data:', observationData);
     
+    
+    // Make sure CSRF token exists
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    if (!csrfToken) {
+        alert('CSRF token tidak ditemukan. Silakan refresh halaman.');
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Simpan Nilai';
+        return false;
+    }
+    
     fetch('/observations/store', {
         method: 'POST',
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': csrfToken.getAttribute('content'),
+            'X-Requested-With': 'XMLHttpRequest'
         },
         body: JSON.stringify(observationData)
     })
     .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            return response.text().then(text => {
+                throw new Error(`HTTP ${response.status}: ${text}`);
+            });
         }
         return response.json();
     })
@@ -479,6 +498,8 @@ function saveObservationScores() {
         saveBtn.disabled = false;
         saveBtn.textContent = 'Simpan Nilai';
     });
+    
+    return false;
 }
 
 function escapeHtml(text) {

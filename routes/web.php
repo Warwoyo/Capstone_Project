@@ -10,7 +10,8 @@ use App\Http\Controllers\{
     AnnouncementController,
     DashboardController,
     ParentRegisterController,
-    AttendanceController
+    AttendanceController,
+    ObservationController
 };
 
 
@@ -135,13 +136,19 @@ Route::middleware('auth')->group(function () {
     // routes/web.php
 
     // Observation AJAX routes
-Route::get('/schedules/{schedule}/sub-themes', [ScheduleController::class, 'getSubThemes'])
-    ->name('schedules.sub-themes');
-Route::get('/schedules/{schedule}/students', [ScheduleController::class, 'getStudents'])
-    ->name('schedules.students');
-Route::post('/observations/store', [ObservationController::class, 'store'])
-    ->name('observations.store');
-    });
+    Route::get('/schedules/{schedule}/sub-themes', [ScheduleController::class, 'getSubThemes'])
+        ->name('schedules.sub-themes');
+    Route::get('/schedules/{schedule}/students', [ScheduleController::class, 'getStudents'])
+        ->name('schedules.students');
+    Route::post('/observations/store', [ObservationController::class, 'store'])
+        ->name('observations.store');
+    Route::get(
+        '/observations/{schedule}/{detail}',
+        [ObservationController::class, 'getObservations']
+    )->name('observations.fetch');
+
+
+});
 
 
 /*

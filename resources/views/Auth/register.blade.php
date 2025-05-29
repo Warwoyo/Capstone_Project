@@ -1,3 +1,4 @@
+
 @extends('layouts.app')
 
 @section('title', 'Registrasi Orang Tua')
@@ -35,15 +36,43 @@
         <p id="tokenError" class="text-sm text-orange-500 mt-1 hidden">Token harus 8 karakter huruf/angka.</p>
       </div>
 
-      {{-- Nomor Handphone --}}
+      {{-- Pilihan Login Method --}}
       <div>
+        <label class="block text-sm text-gray-600 mb-2">Pilih metode registrasi</label>
+        <div class="flex space-x-4">
+          <label class="flex items-center">
+            <input type="radio" name="login_method" value="phone" id="phoneMethod" 
+                   class="mr-2 text-sky-600 focus:ring-sky-500" checked>
+            <span class="text-sm text-gray-700">Nomor Handphone</span>
+          </label>
+          <label class="flex items-center">
+            <input type="radio" name="login_method" value="email" id="emailMethod" 
+                   class="mr-2 text-sky-600 focus:ring-sky-500">
+            <span class="text-sm text-gray-700">Email</span>
+          </label>
+        </div>
+      </div>
+
+      {{-- Nomor Handphone --}}
+      <div id="phoneSection">
         <label for="phone" class="block text-sm text-gray-600">Nomor Handphone</label>
         <input type="tel" name="phone_number" id="phone"
                placeholder="08xxxxxxxxxx"
                class="w-full px-4 py-2 mt-2 border border-gray-300 rounded-md
                       focus:outline-none focus:ring-2 focus:ring-sky-500 bg-gray-200"
-               value="{{ old('phone_number') }}" required>
+               value="{{ old('phone_number') }}">
         <p id="phoneError" class="text-sm text-orange-500 mt-1 hidden">Nomor telepon tidak valid.</p>
+      </div>
+
+      {{-- Email --}}
+      <div id="emailSection" class="hidden">
+        <label for="email" class="block text-sm text-gray-600">Email</label>
+        <input type="email" name="email" id="email"
+               placeholder="contoh@email.com"
+               class="w-full px-4 py-2 mt-2 border border-gray-300 rounded-md
+                      focus:outline-none focus:ring-2 focus:ring-sky-500 bg-gray-200"
+               value="{{ old('email') }}">
+        <p id="emailError" class="text-sm text-orange-500 mt-1 hidden">Format email tidak valid.</p>
       </div>
 
       {{-- Password --}}
@@ -97,49 +126,101 @@
 <script>
   const form = document.getElementById('parentRegisterForm');
   const phoneInput = document.getElementById('phone');
+  const emailInput = document.getElementById('email');
   const tokenInput = document.getElementById('token');
   const passInput = document.getElementById('password');
   const confirmInput = document.getElementById('password_confirmation');
 
+  const phoneMethod = document.getElementById('phoneMethod');
+  const emailMethod = document.getElementById('emailMethod');
+  const phoneSection = document.getElementById('phoneSection');
+  const emailSection = document.getElementById('emailSection');
+
   const phoneErr = document.getElementById('phoneError');
+  const emailErr = document.getElementById('emailError');
   const tokenErr = document.getElementById('tokenError');
   const passErr  = document.getElementById('passwordError');
   const confErr  = document.getElementById('confirmError');
 
+  // Toggle between phone and email sections
+  function toggleLoginMethod() {
+    if (phoneMethod.checked) {
+      phoneSection.classList.remove('hidden');
+      emailSection.classList.add('hidden');
+      phoneInput.setAttribute('required', '');
+      emailInput.removeAttribute('required');
+      emailInput.value = '';
+    } else {
+      phoneSection.classList.add('hidden');
+      emailSection.classList.remove('hidden');
+      emailInput.setAttribute('required', '');
+      phoneInput.removeAttribute('required');
+      phoneInput.value = '';
+    }
+  }
+
+  phoneMethod.addEventListener('change', toggleLoginMethod);
+  emailMethod.addEventListener('change', toggleLoginMethod);
+
   function resetErr() {
-    [phoneInput, tokenInput, passInput, confirmInput].forEach(el => el.classList.remove('border-orange-500'));
-    [phoneErr, tokenErr, passErr, confErr].forEach(el => el.classList.add('hidden'));
+    [phoneInput, emailInput, tokenInput, passInput, confirmInput].forEach(el => el.classList.remove('border-orange-500'));
+    [phoneErr, emailErr, tokenErr, passErr, confErr].forEach(el => el.classList.add('hidden'));
   }
 
   form.addEventListener('submit', e => {
     resetErr();
 
-    /* normalisasi no HP */
-    phoneInput.value = phoneInput.value.trim()
-        .replace(/^\+?62/, '0')
-        .replace(/\D/g, '');
-
     const phoneRegex  = /^08\d{8,11}$/;     // 10-13 digit
+    const emailRegex  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const tokenRegex  = /^[A-Za-z0-9]{8}$/; // 8 alnum
     let ok = true;
 
+    // Validate token
     if (!tokenRegex.test(tokenInput.value)) {
-      tokenInput.classList.add('border-orange-500'); tokenErr.classList.remove('hidden'); ok = false;
+      tokenInput.classList.add('border-orange-500'); 
+      tokenErr.classList.remove('hidden'); 
+      ok = false;
     }
 
-    if (!phoneRegex.test(phoneInput.value)) {
-      phoneInput.classList.add('border-orange-500'); phoneErr.classList.remove('hidden'); ok = false;
+    // Validate based on selected method
+    if (phoneMethod.checked) {
+      // Normalize phone number
+      phoneInput.value = phoneInput.value.trim()
+          .replace(/^\+?62/, '0')
+          .replace(/\D/g, '');
+
+      if (!phoneRegex.test(phoneInput.value)) {
+        phoneInput.classList.add('border-orange-500'); 
+        phoneErr.classList.remove('hidden'); 
+        ok = false;
+      }
+    } else {
+      // Validate email
+      if (!emailRegex.test(emailInput.value.trim())) {
+        emailInput.classList.add('border-orange-500'); 
+        emailErr.classList.remove('hidden'); 
+        ok = false;
+      }
     }
 
+    // Validate password
     if (passInput.value.length < 6) {
-      passInput.classList.add('border-orange-500');  passErr.classList.remove('hidden');  ok = false;
+      passInput.classList.add('border-orange-500');  
+      passErr.classList.remove('hidden');  
+      ok = false;
     }
 
+    // Validate password confirmation
     if (passInput.value !== confirmInput.value) {
-      confirmInput.classList.add('border-orange-500'); confErr.classList.remove('hidden'); ok = false;
+      confirmInput.classList.add('border-orange-500'); 
+      confErr.classList.remove('hidden'); 
+      ok = false;
     }
 
-    if (!ok) e.preventDefault(); // blok submit bila ada error
+    if (!ok) e.preventDefault(); // block submit if there are errors
   });
+
+  // Initialize the form
+  toggleLoginMethod();
 </script>
 @endsection

@@ -11,13 +11,13 @@ class Observation extends Model
 
     protected $fillable = [
         'schedule_id',
-        'schedule_detail_id',
+        'schedule_detail_id', 
         'student_id',
         'score',
         'observation_text',
-        'observed_at',
-        'observer_id'
+        'description' // Add this if missing
     ];
+
 
     protected $casts = [
         'observed_at' => 'datetime'

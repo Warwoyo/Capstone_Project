@@ -1,12 +1,20 @@
 <?php
 
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Schedule;
-use App\Models\ScheduleDetail;
-use App\Models\ObservationScore;
-use Illuminate\Support\Facades\DB;
+/* ————————————————   TAMBAHKAN BARIS INI ———————————————— */
+use Illuminate\Support\Facades\Log;           // ← WAJIB
+/* ——————————————————————————————————————————————— */
+
+use App\Models\{
+    Observation,
+    Classroom,
+    ScheduleDetail,
+    Student
+};
+
 
 class ObservationController extends Controller
 {
@@ -130,56 +138,80 @@ class ObservationController extends Controller
             ], 500);
         }
     }
-    public function store(Request $request)
-    {
-        try {
-            $request->validate([
-                'schedule_id' => 'required|exists:schedules,id',
-                'schedule_detail_id' => 'required|exists:schedule_details,id',
-                'observations' => 'required|array',
-                'observations.*.student_id' => 'required|exists:students,id',
-                'observations.*.score' => 'required|integer|min:1|max:4',
-                'observations.*.observation_text' => 'nullable|string'
-            ]);
 
-            Log::info('Storing observations:', $request->all());
+public function store(Request $request)
+{
+    try {
+        $request->validate([
+            'schedule_id' => 'required|exists:schedules,id',
+            'schedule_detail_id' => 'required|exists:schedule_details,id', // This should reference schedule_details
+            'observations' => 'required|array',
+            'observations.*.student_id' => 'required|exists:students,id',
+            'observations.*.score' => 'required|integer|min:1|max:4',
+            'observations.*.observation_text' => 'nullable|string'
+        ]);
 
-            foreach ($request->observations as $observationData) {
-                Observation::updateOrCreate(
-                    [
-                        'schedule_id' => $request->schedule_id,
-                        'schedule_detail_id' => $request->schedule_detail_id,
-                        'student_id' => $observationData['student_id'],
-                    ],
-                    [
-                        'score' => $observationData['score'],
-                        'observation_text' => $observationData['observation_text'],
-                        'observed_at' => now(),
-                        'observer_id' => auth()->id() ?? 1 // Fallback for testing
-                    ]
-                );
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Observasi berhasil disimpan',
-                'count' => count($request->observations)
-            ]);
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data tidak valid',
-                'errors' => $e->errors()
-            ], 422);
-        } catch (\Exception $e) {
-            Log::error('Error storing observations: ' . $e->getMessage());
-            Log::error('Stack trace: ' . $e->getTraceAsString());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menyimpan observasi: ' . $e->getMessage()
-            ], 500);
+        \Log::info('Storing observations:', $request->all());
+        
+        $scheduleId = $request->schedule_id;
+        $scheduleDetailId = $request->schedule_detail_id;
+        $observations = $request->observations;
+        
+        foreach ($observations as $obs) {
+            Observation::updateOrCreate(
+                [
+                    'schedule_id' => $scheduleId,
+                    'schedule_detail_id' => $scheduleDetailId,
+                    'student_id' => $obs['student_id']
+                ],
+                [
+                    'score' => $obs['score'],
+                    'observation_text' => $obs['observation_text'],
+                    'description' => $obs['observation_text'] ?? '', // Ensure description is provided
+                ]
+            );
         }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Observasi berhasil disimpan',
+            'count' => count($observations)
+        ]);
+
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Data tidak valid',
+            'errors' => $e->errors()
+        ], 422);
+    } catch (\Exception $e) {
+        \Log::error('Error storing observations: ' . $e->getMessage());
+        \Log::error('Stack trace: ' . $e->getTraceAsString());
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal menyimpan observasi: ' . $e->getMessage()
+        ], 500);
     }
+}
+public function getObservations($scheduleId, $detailId)
+{
+    try {
+        $observations = Observation::where('schedule_id', $scheduleId)
+            ->where('schedule_detail_id', $detailId)
+            ->get(['student_id', 'score', 'observation_text']);
+
+        return response()->json([
+            'success'      => true,
+            'observations' => $observations,
+        ]);
+    } catch (\Throwable $e) {
+        \Log::error('Error fetching observations: ' . $e->getMessage());
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal memuat observasi: ' . $e->getMessage(),
+        ], 500);
+    }
+}
 }

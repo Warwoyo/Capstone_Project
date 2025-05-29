@@ -57,6 +57,15 @@ class Student extends Model
     {
         return $this->hasMany(Attendance::class);
     }
+    public function classroom()
+    {
+        return $this->classrooms()->first();
+    }
+    public function classrooms()
+    {
+        return $this->belongsToMany(Classroom::class, 'classroom_student');
+    }
+
 
     /* ─────────── Relasi lain (kelas, dsb) tambahkan di bawah sini ─────────── */
 }

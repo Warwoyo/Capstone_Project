@@ -91,6 +91,7 @@ class ParentRegisterController extends Controller
         // Auto-login akun yg baru dibuat (parent pendaftar)
         Auth::attempt(['email' => $parent->email, 'password' => $r->password]);
 
-        return redirect()->route('dashboard');
+        return redirect()->route('dashboard.index')
+            ->with('success', 'Akun berhasil dibuat. Selamat datang di aplikasi sekolah!');
     }
 }

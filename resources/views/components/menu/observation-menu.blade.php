@@ -128,7 +128,6 @@ function selectScheduleForObservation(scheduleId) {
         return;
     }
 
-    console.log('Schedule selected:', scheduleData);
     document.getElementById('selectedScheduleTitle').textContent = `${scheduleData.title} - Pilih Sub Tema`;
     
     // Load schedule details first
@@ -136,15 +135,12 @@ function selectScheduleForObservation(scheduleId) {
     
     // Switch mode using event dispatch
     setTimeout(() => {
-        console.log('Switching mode to select-detail');
         window.dispatchEvent(new CustomEvent('change-mode', { detail: 'select-detail' }));
     }, 200);
 }
 
 function loadScheduleDetails(scheduleId) {
     const container = document.getElementById('scheduleDetailsContainer');
-    
-    console.log('Loading schedule details for schedule ID:', scheduleId);
     
     // Show loading state
     container.innerHTML = `
@@ -170,11 +166,10 @@ function loadScheduleDetails(scheduleId) {
         return response.json();
     })
     .then(data => {
-        console.log('Sub-themes data:', data);
         
         if (data.success && data.sub_themes && data.sub_themes.length > 0) {
             const htmlContent = data.sub_themes.map(subTheme => {
-                console.log('Processing sub-theme:', subTheme);
+
                 return `
                     <div class="p-4 bg-white border border-sky-300 rounded-lg cursor-pointer hover:bg-sky-50 hover:border-sky-500 transition-all duration-200"
                          onclick="selectScheduleDetail(${subTheme.id}, '${escapeHtml(subTheme.title)}')">
@@ -200,7 +195,6 @@ function loadScheduleDetails(scheduleId) {
             }).join('');
             
             container.innerHTML = htmlContent;
-            console.log('Container HTML updated');
         } else {
             container.innerHTML = `
                 <div class="flex flex-col items-center justify-center py-12 text-center">
@@ -234,8 +228,6 @@ function loadScheduleDetails(scheduleId) {
 function selectScheduleDetail(detailId, detailTitle) {
     currentDetailId = detailId;
     
-    console.log('Detail selected:', detailId, detailTitle);
-    
     // Update titles for scoring section
     const scheduleList = @json($scheduleList);
     const scheduleData = scheduleList.find(s => s.id == currentScheduleId);
@@ -250,142 +242,123 @@ function selectScheduleDetail(detailId, detailTitle) {
     window.dispatchEvent(new CustomEvent('change-mode', { detail: 'scoring' }));
 }
 
+// Pastikan variabel global ada
+window.observationScores = window.observationScores || {};
+window.observationTexts  = window.observationTexts  || {};
+
 function loadStudentsForScoring() {
-    const container = document.getElementById('studentsContainer');
-    
-    console.log('Loading students for scoring. Schedule ID:', currentScheduleId, 'Detail ID:', currentDetailId);
-    
-    // Show loading state
-    container.innerHTML = `
-        <div class="animate-pulse space-y-4">
-            <div class="h-32 bg-gray-200 rounded-lg"></div>
-            <div class="h-32 bg-gray-200 rounded-lg"></div>
-            <div class="h-32 bg-gray-200 rounded-lg"></div>
-        </div>
-    `;
+  const container = document.getElementById('studentsContainer');
+  container.innerHTML = '<p class="text-center">Memuat data …</p>';
 
-    // Fetch students for scoring
-    fetch(`/schedules/${currentScheduleId}/students`, {
-        method: 'GET',
-        headers: {
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Students data:', data);
-        
-        if (data.success && data.students && data.students.length > 0) {
-            // Generate student observation cards
-            container.innerHTML = data.students.map(student => `
-                <div class="w-full max-w-2xl border border-gray-300 rounded-2xl p-1 mb-4">
-                    <!-- Header with Student Info -->
-                    <header class="flex items-center justify-between text-sm text-center text-sky-800 bg-sky-200 h-11 rounded-t-lg px-4">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-8 h-8 bg-sky-100 rounded-full flex items-center justify-center">
-                                <span class="text-sky-600 font-medium text-xs">
-                                    ${escapeHtml(student.name).charAt(0).toUpperCase()}
-                                </span>
-                            </div>
-                            <div class="text-left">
-                                <div class="font-medium">${escapeHtml(student.name)}</div>
-                                <div class="text-xs text-sky-600">NIS: ${escapeHtml(student.student_id || 'N/A')}</div>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <span class="text-xs">Nilai:</span>
-                            <div class="flex space-x-1">
-                                ${generateScoreButtons(student.id)}
-                            </div>
-                        </div>
-                    </header>
+  Promise.all([
+    fetch(`/schedules/${currentScheduleId}/students`).then(r => r.json()),
+    fetch(`/observations/${currentScheduleId}/${currentDetailId}`).then(r => r.json())
+  ])
+  .then(([studentRes, obsRes]) => {
+    if (!studentRes.success) throw new Error('Gagal memuat siswa');
 
-                    <div class="flex flex-col gap-2.5 items-start pl-4 pr-4"">
-                        <label class="text-xs text-slate-600">Observasi untuk ${escapeHtml(student.name)}</label>
+    // Map observasi → { student_id: obsObj }
+    const obsMap = {};
+    if (obsRes.success) {
+      obsRes.observations.forEach(o => { obsMap[o.student_id] = o; });
+    }
 
-                        <!-- Editor Container -->
-                        <div class="flex flex-col w-full px-4 py-2 bg-gray-50 rounded-3xl border border-sky-600 border-solid">
-                            <!-- Toolbar -->
-                            <div class="flex gap-3 items-center border-b border-gray-200 pb-2">
-                                <button onclick="formatText('bold', ${student.id})" class="text-lg font-bold text-black hover:text-sky-600">B</button>
-                                <button onclick="formatText('underline', ${student.id})" class="text-lg underline text-black hover:text-sky-600">U</button>
-                                <button onclick="formatText('italic', ${student.id})" class="text-lg italic text-black hover:text-sky-600">I</button>
-                            </div>
+    // Render kartu siswa
+    container.innerHTML = studentRes.students.map(student => {
+      const existing   = obsMap[student.id] || {};
+      const score      = existing.score ?? null;
+      const obsText    = existing.observation_text ?? '';
 
-                            <!-- Text Area -->
-                            <textarea
-                                id="observation-text-${student.id}"
-                                class="p-2.5 text-xs font-medium text-gray-700 bg-transparent resize-none focus:outline-none min-h-[80px]"
-                                placeholder="Tulis hasil observasi untuk ${escapeHtml(student.name)}..."
-                                onchange="updateObservationText(${student.id})"
-                            ></textarea>
-                        </div>
+      // Cache ke memori supaya tombol langsung aktif
+      if (score !== null) observationScores[student.id] = score;
+      if (obsText)        observationTexts[student.id] = obsText;
 
-                        <!-- Score Display -->
-                        <div class="w-full mt-2">
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="text-gray-600">Status penilaian:</span>
-                                <span id="score-display-${student.id}" class="font-medium text-gray-400">
-                                    Belum dinilai
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-
-            // Initialize observation texts object if not exists
-            if (!window.observationTexts) {
-                window.observationTexts = {};
-            }
-        } else {
-            container.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-12 text-center">
-                    <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
-                    </svg>
-                    <h3 class="text-lg font-medium text-gray-600 mb-2">Belum Ada Siswa</h3>
-                    <p class="text-sm text-gray-500">Tidak ada siswa yang terdaftar di kelas ini</p>
-                </div>
-            `;
-        }
-    })
-    .catch(error => {
-        console.error('Error loading students:', error);
-        container.innerHTML = `
-            <div class="flex flex-col items-center justify-center py-12 text-center">
-                <svg class="w-16 h-16 text-red-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <h3 class="text-lg font-medium text-gray-600 mb-2">Gagal Memuat Data Siswa</h3>
-                <p class="text-sm text-gray-500 mb-4">Terjadi kesalahan saat memuat data siswa</p>
-                <button onclick="loadStudentsForScoring()" 
-                        class="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors">
-                    Coba Lagi
-                </button>
+      return `
+        <div class="w-full max-w-2xl border border-gray-300 rounded-2xl p-1 mb-4">
+          <!-- Header -->
+          <header class="flex items-center justify-between text-sm text-sky-800 bg-sky-200 h-11 rounded-t-lg px-4">
+            <div class="flex items-center space-x-2">
+              <div class="w-8 h-8 bg-sky-100 rounded-full flex items-center justify-center">
+                <span class="text-sky-600 font-medium text-xs">
+                  ${escapeHtml(student.name).charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div class="text-left">
+                <div class="font-medium">${escapeHtml(student.name)}</div>
+                <div class="text-xs text-sky-600">NIS: ${escapeHtml(student.student_number ?? 'N/A')}</div>
+              </div>
             </div>
-        `;
-    });
+            <div class="flex items-center space-x-2">
+              <span class="text-xs">Nilai:</span>
+              <div class="flex space-x-1">
+                ${generateScoreButtons(student.id, score)}
+              </div>
+            </div>
+          </header>
+
+          <!-- Body -->
+          <div class="flex flex-col gap-2.5 items-start pl-4 pr-4">
+            <!-- Editor -->
+            <div class="flex flex-col w-full px-4 py-2 bg-gray-50 rounded-3xl border border-sky-600">
+              <!-- Toolbar -->
+              <div class="flex gap-3 items-center border-b border-gray-200 pb-2">
+                <button onclick="formatText('bold', ${student.id})"      class="text-lg font-bold    hover:text-sky-600">B</button>
+                <button onclick="formatText('underline', ${student.id})" class="text-lg underline     hover:text-sky-600">U</button>
+                <button onclick="formatText('italic', ${student.id})"    class="text-lg italic        hover:text-sky-600">I</button>
+              </div>
+
+              <!-- Textarea -->
+              <textarea
+                id="observation-text-${student.id}"
+                class="p-2.5 text-xs font-medium text-gray-700 bg-transparent resize-none focus:outline-none min-h-[80px]"
+                placeholder="Tulis hasil observasi untuk ${escapeHtml(student.name)}…"
+                onchange="updateObservationText(${student.id})"
+              >${escapeHtml(obsText)}</textarea>
+            </div>
+
+            <!-- Status -->
+            <div class="w-full mt-2">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-600">Status penilaian:</span>
+                <span id="score-display-${student.id}"
+                      class="font-medium ${score ? 'text-sky-600' : 'text-gray-400'}">
+                  ${score ? getScoreLabel(score) : 'Belum dinilai'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Aktifkan tombol nilai yg sudah tersimpan
+    Object.entries(observationScores)
+          .forEach(([sid, sc]) => setStudentScore(sid, sc));
+  })
+  .catch(err => {
+    container.innerHTML = `<p class="text-red-500 text-center">${err.message}</p>`;
+  });
 }
 
 
 
-function generateScoreButtons(studentId) {
+
+
+function generateScoreButtons(studentId, activeScore = null) {
     const scores = [1, 2, 3, 4];
     return scores.map(score => `
-        <button onclick="setStudentScore(${studentId}, ${score})" 
-                id="score-btn-${studentId}-${score}"
-                class="w-6 h-6 text-xs border border-gray-300 rounded-full hover:bg-sky-100 hover:border-sky-300 transition-colors focus:outline-none focus:ring-1 focus:ring-sky-500">
+        <button
+            onclick="setStudentScore(${studentId}, ${score})"
+            id="score-btn-${studentId}-${score}"
+            class="w-6 h-6 text-xs border rounded-full
+                   ${score === activeScore ? 'bg-sky-600 text-white border-sky-600' : 'bg-white text-gray-700'}
+                   transition-colors focus:outline-none">
             ${score}
         </button>
     `).join('');
 }
+
+
 function setStudentScore(studentId, score) {
     observationScores[studentId] = score;
     
@@ -408,15 +381,20 @@ function setStudentScore(studentId, score) {
         scoreDisplay.className = 'font-medium text-sky-600';
     }
     
-    console.log('Score set:', { studentId, score, allScores: observationScores });
 }
-
+function getScoreLabel(score) {
+    const scoreLabels = {1: 'Kurang', 2: 'Cukup', 3: 'Baik', 4: 'Sangat Baik'};
+    return `${scoreLabels[score]} (${score})`;
+}
 function saveObservationScores() {
+    // Prevent default action if this was triggered by a form or link
+    event.preventDefault();
+    
     const saveBtn = document.getElementById('saveScoresBtn');
     
     if (Object.keys(observationScores).length === 0) {
         alert('Silakan berikan nilai kepada minimal satu siswa sebelum menyimpan');
-        return;
+        return false;
     }
     
     saveBtn.disabled = true;
@@ -438,25 +416,37 @@ function saveObservationScores() {
         observations: observationsData
     };
     
-    console.log('Saving observation data:', observationData);
+    
+    
+    // Make sure CSRF token exists
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    if (!csrfToken) {
+        alert('CSRF token tidak ditemukan. Silakan refresh halaman.');
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Simpan Nilai';
+        return false;
+    }
     
     fetch('/observations/store', {
         method: 'POST',
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': csrfToken.getAttribute('content'),
+            'X-Requested-With': 'XMLHttpRequest'
         },
         body: JSON.stringify(observationData)
     })
     .then(response => {
+        
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            return response.text().then(text => {
+                throw new Error(`HTTP ${response.status}: ${text}`);
+            });
         }
         return response.json();
     })
     .then(data => {
-        console.log('Save response:', data);
         
         if (data.success) {
             alert('Nilai observasi berhasil disimpan!');
@@ -479,6 +469,8 @@ function saveObservationScores() {
         saveBtn.disabled = false;
         saveBtn.textContent = 'Simpan Nilai';
     });
+    
+    return false;
 }
 
 function escapeHtml(text) {
@@ -532,7 +524,6 @@ function updateObservationText(studentId) {
             window.observationTexts = {};
         }
         window.observationTexts[studentId] = textarea.value;
-        console.log('Observation text updated for student:', studentId, textarea.value);
     }
 }
 </script>

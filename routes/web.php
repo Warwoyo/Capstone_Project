@@ -10,7 +10,8 @@ use App\Http\Controllers\{
     AnnouncementController,
     DashboardController,
     ParentRegisterController,
-    AttendanceController
+    AttendanceController,
+    ObservationController
 };
 
 
@@ -63,7 +64,15 @@ Route::middleware('auth')->group(function () {
             ->only(['store','destroy','index','show'])
             ->shallow();
     });
-
+    /* ── PARENT-ONLY ─────────────────────────────────────────────────── */
+    Route::middleware('role:parent')->group(function () {
+        Route::get('/orangtua/anak/data-anak',           [DashboardController::class, 'childrenParent']     )->name('orangtua.children');
+        Route::get('/orangtua/anak/observasi',           [DashboardController::class, 'observationParent']  )->name('orangtua.observation');
+        Route::get('/orangtua/anak/jadwal',              [DashboardController::class, 'scheduleParent']     )->name('orangtua.schedule');
+        Route::get('/orangtua/anak/presensi',            [DashboardController::class, 'attendanceParent']   )->name('orangtua.attendance');
+        Route::get('/orangtua/anak/riwayat-pengumuman',  [DashboardController::class, 'announcementParent'] )->name('orangtua.announcement');
+        Route::get('/orangtua/anak/silabus',             [DashboardController::class, 'syllabusParent']     )->name('orangtua.syllabus');
+    });
     /* ── CLASSROOMS ───────────────────────────────────────────────────── */
     // A. Guru & Admin = full CRUD
     Route::middleware('role:admin,teacher')->group(function () {
@@ -127,13 +136,19 @@ Route::middleware('auth')->group(function () {
     // routes/web.php
 
     // Observation AJAX routes
-Route::get('/schedules/{schedule}/sub-themes', [ScheduleController::class, 'getSubThemes'])
-    ->name('schedules.sub-themes');
-Route::get('/schedules/{schedule}/students', [ScheduleController::class, 'getStudents'])
-    ->name('schedules.students');
-Route::post('/observations/store', [ObservationController::class, 'store'])
-    ->name('observations.store');
-    });
+    Route::get('/schedules/{schedule}/sub-themes', [ScheduleController::class, 'getSubThemes'])
+        ->name('schedules.sub-themes');
+    Route::get('/schedules/{schedule}/students', [ScheduleController::class, 'getStudents'])
+        ->name('schedules.students');
+    Route::post('/observations/store', [ObservationController::class, 'store'])
+        ->name('observations.store');
+    Route::get(
+        '/observations/{schedule}/{detail}',
+        [ObservationController::class, 'getObservations']
+    )->name('observations.fetch');
+
+
+});
 
 
 /*
@@ -148,14 +163,6 @@ Route::get('/', function () {
 });
 
 Route::get('/testing', fn () => view('index22'))->name('index-test');
-
-/* Orang-tua dashboard sample */
-Route::get('/orangtua',                       [DashboardController::class, 'indexParent']      )->name('orangtua.index');
-Route::get('/orangtua/anak/data-anak',        [DashboardController::class, 'childrenParent']   )->name('orangtua.children');
-Route::get('/orangtua/anak/observasi',        [DashboardController::class, 'observationParent'])->name('orangtua.observation');
-Route::get('/orangtua/anak/jadwal',           [DashboardController::class, 'scheduleParent']   )->name('orangtua.schedule');
-Route::get('/orangtua/anak/presensi',         [DashboardController::class, 'attendanceParent'] )->name('orangtua.attendance');
-Route::get('/orangtua/anak/riwayat-pengumuman',[DashboardController::class, 'announcementParent'])->name('orangtua.announcement');
 
 
 //testing syllabus page

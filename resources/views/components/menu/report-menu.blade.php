@@ -12,14 +12,14 @@
     ];
 @endphp
 
-<div x-data="{ mode: '{{ $mode }}', openDetail: null }" class="flex-1 w-full">
+<div x-data="{ mode: '{{ $mode }}', openDetail: null, selectedSemester: 1 }" class="flex-1 w-full">
     <!-- VIEW MODE -->
     <div x-show="mode === 'view'" class="flex-1 w-full">
         <div class="overflow-y-auto hide-scrollbar max-h-[43vh] md:max-h-[42vh]">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 items-start">
                 @foreach ($semesterList as $semester)
                     <article class="flex flex-col justify-between p-4 w-full bg-white border border-sky-600 rounded-2xl"
-                             @click="mode = 'score'">
+                              @click="selectedSemester = {{ $semester['id'] }}; mode = 'score'">
                         <div class="flex flex-col gap-1 overflow-hidden">
                             <h2 class="text-base font-bold text-sky-800 truncate">
                                 Semester {{ $semester['semester'] }} {{ $semester['year'] }}
@@ -67,26 +67,53 @@
                 </div>
 
                 @foreach ($studentList as $student)
-                    <div class="flex items-center px-3 py-1 border border-gray-200">
-                        <div class="flex-1 text-sm text-center text-slate-600">{{ $student['nama'] }}</div>
-                        <div class="flex-1 text-sm text-center text-slate-600">Belum Dinilai</div>
-                        <div class="flex-1 text-sm text-center text-slate-600">
-                            <div class="flex flex-col gap-1 items-center">
-                                <button class="w-20 text-xs font-medium bg-transparent rounded-lg border border-sky-300 text-slate-600 h-[25px]"
-                                        @click="mode = 'add-score'">
-                                    Nilai
-                                </button>
-                                <x-button.delete-button label="Nilai Rapor Ini" />
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
+    <div class="flex items-center px-3 py-1 border border-gray-200">
+        <div class="flex-1 text-sm text-center text-slate-600">{{ $student['nama'] }}</div>
+        <div class="flex-1 text-sm text-center text-slate-600">Belum Dinilai</div>
+        <div class="flex-1 text-sm text-center text-slate-600">
+            <div class="flex flex-col gap-1 items-center">
+                <button
+    class="w-20 text-xs font-medium bg-transparent rounded-lg border border-sky-300 text-slate-600 h-[25px]"
+    @click="
+        mode = (selectedSemester === 1 ? 'add-score1' : 'add-score2');
+        $nextTick(() => {
+            if (mode === 'add-score1') {
+                renderData(getData);
+            } else {
+                renderData(getData2);
+            }
+        });
+    "
+>
+    Nilai
+</button>
+                <x-button.delete-button label="Nilai Rapor Ini" />
+                <button
+    class="w-20 text-xs font-medium bg-transparent rounded-lg border border-yellow-400 text-yellow-700 h-[25px]"
+    @click="
+        selectedStudent = {{ $student['id'] }};
+        mode = (selectedSemester === 1 ? 'add-score1' : 'add-score2');
+        $nextTick(() => {
+            if (mode === 'add-score1') {
+                renderData(getData, selectedStudent, true); // true = edit mode
+            } else {
+                renderData(getData2, selectedStudent, true);
+            }
+        });
+    "
+>
+    Edit
+</button>
+            </div>
+        </div>
+    </div>
+@endforeach
             </div>
         </div>
     </div>
 
     <!-- ADD SCORE MODE -->
-    <div x-show="mode === 'add-score'" class="flex-1 w-full">
+    <div x-show="mode === 'add-score1' || mode === 'add-score2'" class="flex-1 w-full" x-init="renderData = window.renderData; renderData()">
         <x-header.scoring-name-header />
 
         <!-- Table wrapper (scrollable only for table) -->
@@ -219,12 +246,14 @@
 </div>
 
 
-        <div class="mt-6 flex justify-end">
+        <div class="mt-6 flex justify-end mb-1">
             <button class="bg-sky-600 text-white px-6 py-2 rounded-full hover:bg-sky-700 transition">
                 Simpan
             </button>
         </div>
     </div>
+
+    
 
     <!-- ADD DATA MODE -->
     <div x-show="mode === 'add'" class="flex-1 w-full">
@@ -643,10 +672,381 @@ function getData() {
   ];
 }
 
+function getData2() {
+  return [
+    {
+      number: 1,
+      label: "NILAI AGAMA DAN MORAL (NAM)",
+      items: [
+        {
+          kode: "1.1",
+          kompetensi: "Berdo’a sebelum dan sesudah melaksanakan kegiatan",
+          nilai: { BSH: true },
+          catatanText: "Ananda dalam aspek nilai agama dan moral sudah menunjukkan perkembangan yang baik",
+          subitems: []
+        },
+        {
+          kode: '1.2',
+          kompetensi: 'Menyanyikan lagu-lagu keagamaan',
+          nilai: { BSH: true },
+          catatanText: '',
+          subitems: []
+        },
+        {
+          kode: '1.3',
+          kompetensi: 'Meniru pelaksanaan kegiatan ibadah secara sederhana',
+          nilai: { BSH: true },
+          catatanText: '',
+          subitems: []
+        },
+        {
+          kode: '1.4',
+          kompetensi: 'Terlibat dalam kegiatan keagamaan',
+          nilai: { BSH: true },
+          catatanText: '',
+          subitems: []
+        },
+        {
+          kode: '1.5',
+          kompetensi: 'Membedakan ciptaan-ciptaan Tuhan',
+          nilai: { BSB: true },
+          catatanText: '',
+          subitems: []
+        },
+        {
+          kode: '1.7',
+          kompetensi: 'Membiasakan memberi dan menjawab salam',
+          nilai: { BSH: true },
+          catatanText: '',
+          subitems: []
+        },
+        {
+          kode: '1.8',
+          kompetensi: "Menghafal Do’a sehari-hari",
+          nilai: {},
+          catatanText: '',
+          subitems: [
+            { kode: '1.8.1', label: "Do’a masuk kamar mandi", nilai: { BM: true } },
+            { kode: '1.8.2', label: "Do’a keluar kamar mandi", nilai: { MM: true } }
+          ]
+        },
+        {
+          kode: '1.9',
+          kompetensi: 'Menghafal Hadist',
+          nilai: {},
+          catatanText: '',
+          subitems: [
+            { kode: '1.9.1', label: "Hadist tentang sholat", nilai: { BM: true } },
+            { kode: '1.9.2', label: "Hadist tentang senyum", nilai: { BM: true } }
+          ]
+        },
+        {
+          kode: '1.10',
+          kompetensi: 'Menghafal surat-surat pendek',
+          nilai: {},
+          catatanText: '',
+          subitems: [
+            { kode: '1.10.1', label: "Surat Al-Falaq", nilai: { MM: true } },
+            { kode: '1.10.2', label: "Surat Al-Kausar", nilai: { MM: true } }
+          ]
+        },
+        {
+          kode: '1.11',
+          kompetensi: 'Mengikuti gerakan berwudhu dan sholat',
+          nilai: { BSB: true },
+          catatanText: '',
+          subitems: []
+        },
+        {
+          kode: '1.12',
+          kompetensi: 'Menirukan bacaan sholat',
+          nilai: { BM: true },
+          catatanText: '',
+          subitems: []
+        }
+      ]
+    },
+    {
+      number: 2,
+      label: "SOSIAL EMOSIONAL",
+      items: [
+        {
+          kode: "2.1",
+          kompetensi: "Membedakan perilaku yang benar-salah dan baik-buruk",
+          nilai: { BSH: true },
+          catatanText: "Ananda dalam aspek sosial emosional berkembang dengan baik",
+          subitems: []
+        },
+        {
+          kode: "2.2",
+          kompetensi: "Bersosialisasi dan bermain bersama teman",
+          nilai: { BSH: true },
+          catatanText: '',
+          subitems: []
+        },
+        {
+          kode: "2.3",
+          kompetensi: "Menghormati orang tua dan menyayangi teman",
+          nilai: { BSH: true },
+          catatanText: '',
+          subitems: []
+        },
+        {
+          kode: "2.4",
+          kompetensi: "Berani bertanya secara sederhana",
+          nilai: { BSH: true },
+          catatanText: '',
+          subitems: []
+        },
+        {
+          kode: "2.5",
+          kompetensi: "Melaksanakan kegiatan sendiri sampai selesai",
+          nilai: { BSH: true },
+          catatanText: '',
+          subitems: []
+        },
+        {
+          kode: "2.6",
+          kompetensi: "Bertanggung jawab atas barang milik pribadinya",
+          nilai: { BSH: true },
+          catatanText: '',
+          subitems: []
+        },
+        {
+          kode: "2.7",
+          kompetensi: "Berbagi dengan teman, menolong teman, sabar menunggu antrian",
+          nilai: { BSH: true },
+          catatanText: '',
+          subitems: []
+        },
+        {
+          kode: "2.8",
+          kompetensi: "Menunjukkan sikap berbagi pada orang lain",
+          nilai: { BSH: true },
+          catatanText: '',
+          subitems: []
+        },
+        {
+          kode: "2.9",
+          kompetensi: "Mampu percaya diri",
+          nilai: { BSH: true },
+          catatanText: '',
+          subitems: []
+        }
+      ]
+    },
+    {
+      number: 3,
+      label: "FISIK MOTORIK",
+      items: [
+        {
+          kode: "3.1",
+          kompetensi: "FISIK MOTORIK KASAR",
+          nilai: {},
+          catatanText: "",
+          subitems: [
+            {
+              kode: "3.1.1",
+              label: "Naik turun tangga/tempat yang lebih tinggi dan rendah",
+              nilai: { BSH: true },
+              catatanText: "Dalam motorik kasar Ananda berkembang dengan baik",
+            },
+            {
+              kode: "3.1.2",
+              label: "Berjalan zig -zag",
+              nilai: { BSH: true },
+              catatanText: "",
+            },
+            {
+              kode: "3.1.3",
+              label: "Berlari-lari kecil",
+              nilai: { BSH: true },
+              catatanText: "",
+            },
+            {
+              kode: "3.1.4",
+              label: "Melompat , merangkak dan merayap",
+              nilai: { BSH: true },
+              catatanText: "",
+            },
+            {
+              kode: "3.1.5",
+              label: "Mengikuti gerakan senam",
+              nilai: { BSH: true },
+              catatanText: "",
+            },
+          ],
+        },
+        {
+          kode: "3.2",
+          kompetensi: "FISIK MOTORIK HALUS",
+          nilai: {},
+          catatanText: "",
+          subitems: [
+            {
+              kode: "3.2.1",
+              label: "Life skill: melipat selimut, menyapu, menyiram tanaman, membuat jus buah.",
+              nilai: { BSH: true },
+              catatanText: "Dalam motorik halus Ananda berkembang dengan baik",
+            },
+            {
+              kode: "3.2.2",
+              label: "Meniru melipat kertas sederhana (4 lipatan)",
+              nilai: { BSH: true },
+              catatanText: "",
+            },
+            {
+              kode: "3.2.3",
+              label: "Mewarnai sesuai dengan perintah maupun bebas",
+              nilai: { BSH: true },
+              catatanText: "",
+            },
+            {
+              kode: "3.2.4",
+              label: "Merobek kertas, menempel kertas, menarik garis, finger painting secara mandiri",
+              nilai: { BSH: true },
+              catatanText: "",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      number: 4,
+      label: "BAHASA",
+      items: [
+        {
+          kode: "4.1",
+          kompetensi: "Membedakan dan menirukan kembali bunyi/ suara",
+          nilai: { BSH: true },
+          catatanText: "",
+          subitems: []
+        },
+        {
+          kode: "4.2",
+          kompetensi: "Bercerita sederhana tentang pengalaman pribadi",
+          nilai: { BSH: true },
+          catatanText: "",
+          subitems: []
+        },
+        {
+          kode: "4.3",
+          kompetensi: "Mengutarakan pendapat atau keinginannya",
+          nilai: { BSH: true },
+          catatanText: "",
+          subitems: []
+        },
+        {
+          kode: "4.4",
+          kompetensi: "Mendengarkan dan menceritakan kembali isi cerita",
+          nilai: { BSH: true },
+          catatanText: "",
+          subitems: []
+        },
+        {
+          kode: "4.5",
+          kompetensi: "Memahami perintah dan menjawab pertanyaan",
+          nilai: { BSH: true },
+          catatanText: "",
+          subitems: []
+        },
+        {
+          kode: "4.6",
+          kompetensi: "Menghafal beberapa lagu sederhana",
+          nilai: { BSH: true },
+          catatanText: "",
+          subitems: []
+        }
+      ]
+    },
+    {
+      number: 5,
+      label: "KOGNITIF",
+      items: [
+        {
+          kode: "5.1",
+          kompetensi: "Mengelompokkan benda dengan berbagai cara menurut ciri-ciri tertentu. Misal: menurut warna, bentuk, ukuran, jenis, dll",
+          nilai: { BSH: true },
+          catatanText: "Ananda dalam aspek kognitif berkembang dengan baik",
+          subitems: []
+        },
+        {
+          kode: "5.2",
+          kompetensi: "Memasangkan benda sesuai dengan pasangannya, jenisnya, persamaannya, dll",
+          nilai: { BSH: true },
+          catatanText: "",
+          subitems: []
+        },
+        {
+          kode: "5.3",
+          kompetensi: "Mengenal kasar-halus, berat-ringan, banyak-sedikit dan sama-tidak sama",
+          nilai: { BSH: true },
+          catatanText: "",
+          subitems: []
+        },
+        {
+          kode: "5.4",
+          kompetensi: "Mengenal dan menghafal angka 1-10 serta abjad (a-i-u-e-o)",
+          nilai: { BSH: true },
+          catatanText: "",
+          subitems: []
+        }
+      ]
+    },
+    {
+      number: 6,
+      label: "SENI BUDAYA",
+      items: [
+    {
+      kode: "6.1",
+      kompetensi: "Menyanyi sampai tuntas dengan irama yang benar",
+      nilai: { BSH: true },
+      catatanText: "Ananda aspek seni Ananda mampu mengikuti dengan baik",
+      subitems: []
+    },
+    {
+      kode: "6.2",
+      kompetensi: "Menyanyi lebih dari 3 lagu dengan irama",
+      nilai: { BSH: true },
+      catatanText: "",
+      subitems: []
+    },
+    {
+      kode: "6.3",
+      kompetensi: "Mengamati dan membedakan benda disekitar yang ada di dalam rumah",
+      nilai: { BSH: true },
+      catatanText: "",
+      subitems: []
+    },
+    {
+      kode: "6.4",
+      kompetensi: "Melukis dengan jari (Finger Painting)",
+      nilai: { BSH: true },
+      catatanText: "",
+      subitems: []
+    },
+    {
+      kode: "6.5",
+      kompetensi: "Melukis dengan cetakan (Stamping)",
+      nilai: { BSH: true },
+      catatanText: "",
+      subitems: []
+    },
+    {
+      kode: "6.6",
+      kompetensi: "Menciptakan bentuk bangunan dari balok",
+      nilai: { BSH: true },
+      catatanText: "",
+      subitems: []
+    }
+  ]
+    }
+  ];
+}
 
+function renderData(dataFunc = getData) {
+  const data = dataFunc();
 
-function renderData() {
-  const data = getData();
   const container = document.getElementById("reportContainer");
   container.innerHTML = "";
 
@@ -876,7 +1276,7 @@ tr.appendChild(tdNo);
     });
   });
 }
-
+window.renderData = renderData;
 // Helper to add a row to the table (radio buttons for single check per row)
 function addRow(container, kode, kompetensi, nilai, isSub, isOdd, radioGroup) {
   const tr = document.createElement("tr");
@@ -931,6 +1331,7 @@ tr.appendChild(tdKompetensi);
   container.appendChild(tr);
 }
 document.addEventListener('DOMContentLoaded', renderData);
+
 </script>
 
 <style>

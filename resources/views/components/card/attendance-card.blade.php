@@ -39,7 +39,7 @@
 
         {{-- ① Datepicker --}}
         <div>
-            <label class="block text-sm font-bold text-sky-800">Tanggal Observasi</label>
+            <label class="block text-sm font-bold text-sky-800">Tanggal Presensi</label>
             <input  x-ref="tgl"
                     name="attendance_date"
                     class="mt-2 px-4 h-10 bg-gray-50 rounded-3xl border border-sky-600 w-60 placeholder:text-slate-400"
@@ -51,35 +51,44 @@
         {{-- ② Tema & Keterangan --}}
         <template x-if="hasDate">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="flex flex-col gap-1.5">
-                    <label class="text-xs text-slate-600">Tema / Jadwal<span class="text-red-500">*</span></label>
-                    <select name="schedule_id"
-                            x-model="selectedSchedule"
-                            class="border rounded-md p-1 text-sm"
-                            required>
-                        <option value="" disabled>-- pilih jadwal --</option>
-                        @foreach ($schedules as $sch)
-                            <option value="{{ $sch->id }}">{{ $sch->title }}</option>
-                        @endforeach
-                    </select>
-                </div>
+               <div class="flex flex-col gap-1.5">
+  <label class="text-xs text-slate-600">
+    Tema / Jadwal<span class="text-red-500">*</span>
+  </label>
+  <select 
+    name="schedule_id"
+    x-model="selectedSchedule"
+    class="px-4 py-2 h-10 text-sm font-medium text-gray-700 bg-white border border-sky-600 rounded-3xl focus:outline-none"
+    required
+  >
+    <option value="" disabled>-- pilih jadwal --</option>
+    @foreach ($schedules as $sch)
+      <option value="{{ $sch->id }}">{{ $sch->title }}</option>
+    @endforeach
+  </select>
+</div>
+
 
                 <div class="flex flex-col gap-1.5">
-                    <label class="text-xs text-slate-600">Keterangan<span class="text-red-500">*</span></label>
-                    <input  type="text"
-                            name="description"
-                            x-model="selectedDescription"
-                            placeholder="Masukkan keterangan"
-                            class="border rounded-md p-1 text-sm"
-                            required>
-                </div>
-            </div>
+  <label class="text-xs text-slate-600">
+    Keterangan<span class="text-red-500">*</span>
+  </label>
+  <input 
+    type="text"
+    name="description"
+    x-model="selectedDescription"
+    placeholder="Masukkan keterangan"
+    class="px-4 py-2 h-10 text-sm font-medium text-gray-700 bg-white border border-sky-600 rounded-3xl focus:outline-none"
+    required
+  >
+</div>
+
         </template>
 
         {{-- ③ Tabel siswa --}}
         <template x-if="hasDate">
-            <div class="w-full overflow-x-auto">
-                <section class="min-w-[846px] mx-auto my-2 rounded-lg border bg-white">
+            <div class="w-full overflow-x-auto hide-scrollbar max-h-[55vh] md:max-h-[44vh]">
+                <section class="min-w-[100%] mx-auto my-2 rounded-lg border bg-white">
                     <header class="flex font-medium text-sky-800 bg-sky-200 text-sm">
                         <h3 class="flex-1 p-2.5 text-center">Nama Lengkap</h3>
                         <h3 class="flex-1 p-2.5 text-center"></h3>

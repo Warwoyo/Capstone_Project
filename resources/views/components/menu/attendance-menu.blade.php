@@ -8,12 +8,10 @@
 ])
 
 
-
-
-<div>
-    <h1 class="text-xl font-bold mb-4">
+<div class="w-full">
+    {{--<h1 class="text-xl font-bold mb-4">
         Presensi – {{ $class->name }}
-    </h1>
+    </h1>--}}
 
     <form method="POST" action="{{ route('attendance.store', $class) }}">
         @csrf

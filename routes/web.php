@@ -11,7 +11,9 @@ use App\Http\Controllers\{
     DashboardController,
     ParentRegisterController,
     AttendanceController,
-    ObservationController
+    ObservationController,
+    TemplateController,
+    ReportController
 };
 
 
@@ -147,10 +149,45 @@ Route::middleware('auth')->group(function () {
         [ObservationController::class, 'getObservations']
     )->name('observations.fetch');
 
+    Route::prefix('rapor')->group(function () {
+    // 1. template CRUD
+        Route::get   ('/templates',                    [TemplateController::class,'index']);
+        Route::post  ('/templates',                    [TemplateController::class,'store']);
+        Route::get   ('/templates/{template}',         [TemplateController::class,'show']);
+        Route::put   ('/templates/{template}',         [TemplateController::class,'update']);
+        // 2. assign template ke kelas
+        Route::post  ('/templates/{template}/assign',  [TemplateController::class,'assignToClass']);
+        // 3. ambil nilai existing & simpan
+        Route::get   ('/reports/{class}/{student}/{template}', [ReportController::class,'show']);
+        Route::post  ('/reports',                      [ReportController::class,'store']);  // body: {class_id,student_id,template_id,scores: [{item_id,value,note}]}
+    });
+
 
 });
 
+    Route::middleware(['auth'])   // <- pakai auth session? hapus kalau belum butuh
+        ->prefix('rapor')
+        ->name('rapor.')        // route() helper → rapor.templates.index, dst
+        ->group(function () {
 
+        /* ---------- TEMPLATE ---------- */
+        Route::get   ('/templates',                 [TemplateController::class,'index'  ])->name('templates.index');
+        Route::post  ('/templates',                 [TemplateController::class,'store'  ])->name('templates.store');
+        Route::get   ('/templates/{id}',            [TemplateController::class,'show'   ])->name('templates.show');
+        Route::put   ('/templates/{id}',            [TemplateController::class,'update' ])->name('templates.update');
+        Route::delete('/templates/{id}',            [TemplateController::class,'destroy'])->name('templates.destroy');
+        Route::post  ('/templates/{id}/assign',     [TemplateController::class,'assignToClass']);
+        
+        Route::post('/rapor/templates', [TemplateController::class,'store']);
+        Route::get ('/rapor/templates',  [TemplateController::class,'index']);
+
+        /* ---------- RAPOR (header + nilai) ---------- */
+        Route::get   ('/reports',                   [ReportController::class,'index'  ])->name('reports.index');
+        Route::get   ('/reports/{id}',              [ReportController::class,'show'   ])->name('reports.show');
+        Route::post  ('/reports',                   [ReportController::class,'store'  ])->name('reports.store');
+        Route::put   ('/reports/{id}',              [ReportController::class,'update' ])->name('reports.update');
+        Route::delete('/reports/{id}',              [ReportController::class,'destroy'])->name('reports.destroy');
+    });
 /*
 |--------------------------------------------------------------------------
 | FALLBACK & TESTING

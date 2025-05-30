@@ -31,4 +31,8 @@ class ScheduleDetail extends Model
     {
         return $this->belongsTo(Classroom::class);
     }
+    public function scheduleDetails()
+    {
+        return $this->hasMany(SubTheme::class); // or whatever your SubTheme model is called
+    }
 }

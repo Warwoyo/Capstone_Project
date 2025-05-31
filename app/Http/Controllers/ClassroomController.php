@@ -8,6 +8,7 @@ use App\Models\{
     Report,
     User,
     Schedule,
+    StudentReport
 };
 
 class ClassroomController extends Controller
@@ -154,15 +155,15 @@ public function showClassroomDetail(Request $r, Classroom $classroom, string $ta
                     break;
 
         /* ── RAPOR ── */
-        case 'rapor':
-            $data['reportList'] = Report::whereIn(
-                                      'student_id',
-                                      $classroom->students->pluck('id')
-                                  )
-                                  ->with('student')
-                                  ->latest()
-                                  ->get();
-            break;
+            case 'rapor':
+                $data['reportList'] = StudentReport::whereIn(
+                                          'student_id',
+                                          $classroom->students->pluck('id')
+                                      )
+                                      ->with(['student', 'template'])
+                                      ->latest()
+                                      ->get();
+                break;
 
         /* ── PESERTA ── */
         case 'peserta':

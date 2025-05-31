@@ -151,9 +151,63 @@ Route::middleware('auth')->group(function () {
                 [TemplateController::class, 'getAssignedTemplate']
             )->name('classes.assigned-template');
 
+            // Add route for multiple assigned templates
+            Route::get('/classes/{classroom}/assigned-templates', [TemplateController::class, 'getAssignedTemplates'])
+                ->name('classes.assigned-templates');
+                
+            // Alternative route for debugging assigned templates
+            Route::get('/debug/classes/{classroom}/assigned-templates', function ($classroomId) {
+                $assignments = \Illuminate\Support\Facades\DB::table('template_assignments')
+                    ->join('rapor_templates', 'template_assignments.template_id', '=', 'rapor_templates.id')
+                    ->where('template_assignments.classroom_id', $classroomId)
+                    ->select('rapor_templates.*', 'template_assignments.assigned_at', 'template_assignments.id as assignment_id')
+                    ->get();
+                
+                return response()->json([
+                    'success' => true,
+                    'data' => $assignments,
+                    'count' => $assignments->count(),
+                    'class_id' => $classroomId
+                ]);
+            })->name('debug.classes.assigned-templates');
+
             Route::get('/templates/{template}/assign', function () {
                 return redirect()->route('rapor.templates.index');
             })->name('templates.assign.get');
+            
+            // Simple route to check if assignments exist for a class
+            Route::get('/classes/{classroom}/check-assignments', function ($classroomId) {
+                $assignmentCount = \Illuminate\Support\Facades\DB::table('template_assignments')
+                    ->where('classroom_id', $classroomId)
+                    ->count();
+                
+                $allAssignments = \Illuminate\Support\Facades\DB::table('template_assignments')
+                    ->where('classroom_id', $classroomId)
+                    ->get();
+                
+                return response()->json([
+                    'success' => true,
+                    'class_id' => $classroomId,
+                    'assignment_count' => $assignmentCount,
+                    'assignments' => $allAssignments,
+                    'table_exists' => \Illuminate\Support\Facades\Schema::hasTable('template_assignments')
+                ]);
+            })->name('classes.check-assignments');
+
+            // Direct route to get assigned template IDs for a class
+            Route::get('/classes/{classroom}/assigned-template-ids', function ($classroomId) {
+                $templateIds = \Illuminate\Support\Facades\DB::table('template_assignments')
+                    ->where('classroom_id', $classroomId)
+                    ->pluck('template_id')
+                    ->toArray();
+                
+                return response()->json([
+                    'success' => true,
+                    'template_ids' => $templateIds,
+                    'count' => count($templateIds),
+                    'class_id' => $classroomId
+                ]);
+            })->name('classes.assigned-template-ids');
             
 
             /* ── STUDENT REPORTS ────────────────────────────────────── */
@@ -185,6 +239,10 @@ Route::middleware('auth')->group(function () {
             Route::delete('/classes/{classroom}/assigned-template', [TemplateController::class, 'removeAssignedTemplate'])
                 ->name('rapor.classes.remove-assigned-template');
                 
+            // Add route for removing specific template from classroom
+            Route::delete('/classes/{classroom}/assigned-template/{templateId}', [TemplateController::class, 'removeAssignedTemplate'])
+                ->name('classes.remove-assigned-template');
+                
 
         });
 
@@ -210,6 +268,9 @@ Route::middleware('auth')->group(function () {
                     'data' => $template
                 ]);
             })->name('template.structure');
+
+            // Add route for attendance summary AJAX
+            Route::get('/classrooms/{classroom}/attendance-summary', [ClassroomController::class, 'getAttendanceSummary']);
         });
     });
 
@@ -251,4 +312,26 @@ Route::get('/testing', fn () => view('index22'))->name('index-test');
 // Testing syllabus page
 Route::get('/testingx', function () {
     return view('testingx');
+});
+
+// Debug routes for rapor
+Route::group(['prefix' => 'rapor/debug'], function () {
+    Route::get('/class/{classId}/assignments', function ($classId) {
+        $assignments = \Illuminate\Support\Facades\DB::table('template_assignments')
+            ->where('class_id', $classId)
+            ->get();
+        
+        $templates = \Illuminate\Support\Facades\DB::table('template_assignments')
+            ->join('rapor_templates', 'template_assignments.template_id', '=', 'rapor_templates.id')
+            ->where('template_assignments.class_id', $classId)
+            ->select('rapor_templates.*', 'template_assignments.assigned_at')
+            ->get();
+        
+        return response()->json([
+            'class_id' => $classId,
+            'raw_assignments' => $assignments,
+            'templates_with_details' => $templates,
+            'count' => $assignments->count()
+        ]);
+    });
 });

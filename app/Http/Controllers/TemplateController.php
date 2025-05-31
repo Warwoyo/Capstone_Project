@@ -104,7 +104,23 @@ class TemplateController extends Controller
     public function show(ReportTemplate $template)
     {
         try {
-            $template->load(['themes.subThemes', 'assignments.classroom']);
+            Log::info("Showing template ID: " . $template->id);
+            
+            // Load with ordered relationships
+            $template->load(['themes' => function($query) {
+                $query->orderBy('order');
+            }, 'themes.subThemes' => function($query) {
+                $query->orderBy('order');
+            }]);
+            
+            // Log the structure
+            Log::info("Template " . $template->id . " has " . $template->themes->count() . " themes");
+            foreach ($template->themes as $theme) {
+                Log::info("Theme " . $theme->id . " (" . $theme->name . ") has " . $theme->subThemes->count() . " sub-themes");
+                foreach ($theme->subThemes as $subTheme) {
+                    Log::info("Sub-theme: " . $subTheme->id . " - " . $subTheme->name . " (belongs to theme " . $subTheme->theme_id . ")");
+                }
+            }
             
             return response()->json([
                 'success' => true,
@@ -226,20 +242,131 @@ class TemplateController extends Controller
      */
     public function assignToClass(Request $request, ReportTemplate $template)
     {
-        $classId = $request->input('class_id');
+        try {
+            $classId = $request->input('class_id');
+            
+            Log::info("Assigning template {$template->id} to class {$classId}");
 
-        // clear previous assignment
-        TemplateAssignment::where('classroom_id', $classId)
-                          ->update(['is_current' => false]);
+            // Check if assignment already exists (remove is_current requirement)
+            $existingAssignment = TemplateAssignment::where('classroom_id', $classId)
+                                    ->where('template_id', $template->id)
+                                    ->first();
 
-        // create new assignment
-        $assignment = TemplateAssignment::create([
-            'classroom_id' => $classId,
-            'template_id'  => $template->id,
-            'is_current'   => true,
-        ]);
+            if ($existingAssignment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Template sudah ditetapkan untuk kelas ini'
+                ], 422);
+            }
 
-        return response()->json($assignment, 201);
+            // Create new assignment
+            $assignment = TemplateAssignment::create([
+                'classroom_id' => $classId,
+                'template_id'  => $template->id,
+                'is_current'   => false, // Set to false to match existing data
+            ]);
+
+            Log::info("Template assignment created: " . $assignment->id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Template berhasil ditetapkan',
+                'data' => $assignment
+            ], 201);
+        } catch (\Exception $e) {
+            Log::error('Error assigning template: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menetapkan template'
+            ], 500);
+        }
+    }
+    /**
+     * Get multiple assigned templates for a classroom
+     */
+    public function getAssignedTemplates($classroomId)
+    {
+        try {
+            // Debug log
+            Log::info("Getting assigned templates for classroom: " . $classroomId);
+            
+            // Remove is_current requirement since all records have is_current = 0
+            $assignments = TemplateAssignment::where('classroom_id', $classroomId)
+                            ->get();
+
+            Log::info("Found assignments: " . $assignments->count());
+
+            if ($assignments->isEmpty()) {
+                return response()->json([], 200);
+            }
+
+            $templateIds = $assignments->pluck('template_id')->unique();
+            Log::info("Template IDs: " . $templateIds->toJson());
+            
+            // Load templates with all relationships including sub_themes, ordered properly
+            $templates = ReportTemplate::with(['themes' => function($query) {
+                $query->orderBy('order');
+            }, 'themes.subThemes' => function($query) {
+                $query->orderBy('order');
+            }])
+            ->whereIn('id', $templateIds)
+            ->where('is_active', true)
+            ->get();
+
+            Log::info("Found templates: " . $templates->count());
+            
+            // Transform to ensure proper structure with detailed logging
+            $templatesData = $templates->map(function ($template) {
+                Log::info("Processing template ID: " . $template->id . " - " . $template->title);
+                
+                $themesData = $template->themes->map(function ($theme) {
+                    Log::info("Processing theme ID: " . $theme->id . " - " . $theme->name . " (Template: " . $theme->template_id . ")");
+                    
+                    $subThemesData = $theme->subThemes->map(function ($subTheme) use ($theme) {
+                        Log::info("Processing sub-theme ID: " . $subTheme->id . " - " . $subTheme->name . " (Theme: " . $subTheme->theme_id . ")");
+                        return [
+                            'id' => $subTheme->id,
+                            'code' => $subTheme->code,
+                            'name' => $subTheme->name,
+                            'theme_id' => $subTheme->theme_id,
+                            'order' => $subTheme->order
+                        ];
+                    });
+                    
+                    Log::info("Theme " . $theme->id . " has " . $subThemesData->count() . " sub-themes");
+                    
+                    return [
+                        'id' => $theme->id,
+                        'code' => $theme->code,
+                        'name' => $theme->name,
+                        'template_id' => $theme->template_id,
+                        'order' => $theme->order,
+                        'sub_themes' => $subThemesData,
+                        'subThemes' => $subThemesData // Keep both for compatibility
+                    ];
+                });
+                
+                return [
+                    'id' => $template->id,
+                    'title' => $template->title,
+                    'description' => $template->description,
+                    'semester_type' => $template->semester_type,
+                    'is_active' => $template->is_active,
+                    'themes' => $themesData
+                ];
+            });
+
+            Log::info("Final templates data: " . $templatesData->toJson());
+
+            return response()->json($templatesData);
+        } catch (\Exception $e) {
+            Log::error('Error loading assigned templates: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            return response()->json([
+                'error' => 'Failed to load assigned templates',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
     public function getAssignedTemplate(int $classroomId)
     {
@@ -257,13 +384,20 @@ class TemplateController extends Controller
 
         return response()->json($template);
     }
-    public function removeAssignedTemplate($classroomId)
+    public function removeAssignedTemplate($classroomId, $templateId = null)
     {
         try {
-            // Find and remove the current assignment (unassign template from class)
-            $removed = TemplateAssignment::where('classroom_id', $classroomId)
-                                        ->where('is_current', true)
-                                        ->delete();
+            Log::info("Removing assigned template. Classroom: {$classroomId}, Template: {$templateId}");
+            
+            $query = TemplateAssignment::where('classroom_id', $classroomId);
+            
+            // If templateId is provided, only remove that specific template
+            if ($templateId) {
+                $query->where('template_id', $templateId);
+            }
+            
+            $removed = $query->delete();
+            Log::info("Removed {$removed} assignments");
 
             if ($removed) {
                 return response()->json([

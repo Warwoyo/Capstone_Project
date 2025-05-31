@@ -181,4 +181,67 @@ public function showClassroomDetail(Request $r, Classroom $classroom, string $ta
 
     return view('Classroom.classroom-detail', $data);
 }
+
+/* ========== GET ATTENDANCE SUMMARY ========== */
+    public function getAttendanceSummary(Classroom $classroom)
+    {
+        try {
+            $students = $classroom->students;
+            $attendanceData = [];
+            
+            foreach ($students as $student) {
+                $attendanceStats = $classroom->attendances()
+                    ->where('student_id', $student->id)
+                    ->selectRaw('
+                        student_id,
+                        COUNT(CASE WHEN status = "hadir" THEN 1 END) as present_count,
+                        COUNT(CASE WHEN status = "sakit" THEN 1 END) as sick_count,
+                        COUNT(CASE WHEN status = "ijin" THEN 1 END) as permission_count,
+                        COUNT(CASE WHEN status = "alpha" THEN 1 END) as absent_count,
+                        COUNT(*) as total_sessions
+                    ')
+                    ->groupBy('student_id')
+                    ->first();
+                
+                if ($attendanceStats) {
+                    $attendanceData[] = [
+                        'student_id' => $student->id,
+                        'student_name' => $student->name,
+                        'present_count' => $attendanceStats->present_count ?? 0,
+                        'sick_count' => $attendanceStats->sick_count ?? 0,
+                        'permission_count' => $attendanceStats->permission_count ?? 0,
+                        'absent_count' => $attendanceStats->absent_count ?? 0,
+                        'total_sessions' => $attendanceStats->total_sessions ?? 0,
+                    ];
+                } else {
+                    // Student with no attendance records
+                    $attendanceData[] = [
+                        'student_id' => $student->id,
+                        'student_name' => $student->name,
+                        'present_count' => 0,
+                        'sick_count' => 0,
+                        'permission_count' => 0,
+                        'absent_count' => 0,
+                        'total_sessions' => 0,
+                    ];
+                }
+            }
+            
+            return response()->json([
+                'success' => true,
+                'data' => $attendanceData,
+                'classroom_id' => $classroom->id,
+                'classroom_name' => $classroom->name,
+                'total_students' => count($attendanceData)
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error getting attendance summary: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load attendance data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

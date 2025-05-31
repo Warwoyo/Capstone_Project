@@ -182,7 +182,10 @@ Route::middleware('auth')->group(function () {
                 [\App\Http\Controllers\ReportController::class, 'getStudentsForReport']
             )->name('rapor.classes.students');
 
+            Route::delete('/classes/{classroom}/assigned-template', [TemplateController::class, 'removeAssignedTemplate'])
+                ->name('rapor.classes.remove-assigned-template');
                 
+
         });
 
         /* ── ADMIN PANEL ─────────────────────────────────────────────── */

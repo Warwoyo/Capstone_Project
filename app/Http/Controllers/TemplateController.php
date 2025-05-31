@@ -257,5 +257,31 @@ class TemplateController extends Controller
 
         return response()->json($template);
     }
+    public function removeAssignedTemplate($classroomId)
+    {
+        try {
+            // Find and remove the current assignment (unassign template from class)
+            $removed = TemplateAssignment::where('classroom_id', $classroomId)
+                                        ->where('is_current', true)
+                                        ->delete();
 
+            if ($removed) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Template berhasil dilepas dari kelas'
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak ada template yang ditetapkan untuk kelas ini'
+                ], 404);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error removing assigned template: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal melepas template dari kelas'
+            ], 500);
+        }
+    }
 }

@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\StudentReport;
-use App\Models\ReportScore;
 use App\Models\ReportTemplate;
-use App\Models\Student;
-use App\Models\Classroom;
+use App\Models\TemplateAssignment;
+use App\Models\TemplateTheme;
+use App\Models\TemplateSubTheme;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -174,5 +173,32 @@ class ReportController extends Controller
                 // tambahkan fields lain jika perlu
             ]),
         ]);
+    }
+    public function removeAssignedTemplate($classroomId)
+    {
+        try {
+            // Find and remove the current assignment (unassign template from class)
+            $removed = TemplateAssignment::where('classroom_id', $classroomId)
+                                        ->where('is_current', true)
+                                        ->delete();
+
+            if ($removed) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Template berhasil dilepas dari kelas'
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak ada template yang ditetapkan untuk kelas ini'
+                ], 404);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error removing assigned template: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal melepas template dari kelas'
+            ], 500);
+        }
     }
 }

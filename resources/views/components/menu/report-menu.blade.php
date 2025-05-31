@@ -3,8 +3,8 @@
 
 @php /** @var \App\Models\Classroom $class */ @endphp
 
+
 <script defer>
-// ================ HELPERS ================
 const uniqBy = (arr, keyFn) => {
     const seen = new Set();
     return arr.filter(i => {
@@ -21,7 +21,7 @@ function raporApp(classId){
         loading:false,
         error:null,
         templates:[],
-        assignedTemplates:[],
+        assignedTemplate:null,
         selectedTemplate:null,
         detailId:null,
         students:[],
@@ -29,28 +29,15 @@ function raporApp(classId){
             title:'',description:'',semester_type:'',
             themes:[{code:'',name:'',subThemes:[{code:'',name:''}]}]
         },
-        async saveNewTemplate(){
-            const f=this.newTemplateForm;
-            if(!f.title.trim()||!f.semester_type) return alert('Isi judul & semester');
-            for(const [ti,t] of f.themes.entries()){
-                if(!t.code.trim()||!t.name.trim()) return alert(`Tema ${ti+1} belum lengkap`);
-                for(const [si,s] of t.subThemes.entries()) if(!s.code.trim()||!s.name.trim()) return alert(`Subtema ${si+1} Tema ${ti+1} belum lengkap`);
-            }
-            await this.req('/rapor/templates',{method:'POST',body:JSON.stringify(f),headers:{'Content-Type':'application/json'}});
-            await this.loadTemplates();
-            this.mode='view';
-            this.resetForm();
-            alert('Template ditambahkan');
-        },
-
+        
+        // Helper variable to prevent Alpine.js template scope conflicts
+        currentTemplate: null,
 
         // ---------- utils ----------
         csrf(){return document.querySelector('meta[name="csrf-token"]').content;},
 
         async req(url, opt = {}) {
-          // pull headers aside so …rest doesn't clobber your merge
           const { headers = {}, ...rest } = opt;
-
           const res = await fetch(url, {
             credentials: 'same-origin',
             headers: {
@@ -60,54 +47,157 @@ function raporApp(classId){
             },
             ...rest
           });
-
           if (!res.ok) throw new Error(`${res.status}`);
           return res.status === 204 ? null : res.json();
         },
 
-        dedup(list){return uniqBy(list.filter(t=>t&&t.id&&t.title&&t.semester_type),t=>t.id);},
+        // Enhanced deduplication with better validation
+        dedup(list){
+            if (!Array.isArray(list)) return [];
+            const filtered = list.filter(t => {
+                return t && 
+                       typeof t === 'object' && 
+                       t.id && 
+                       typeof t.id === 'number' && 
+                       t.title && 
+                       typeof t.title === 'string' && 
+                       t.semester_type;
+            });
+            return uniqBy(filtered, t => t.id);
+        },
+        
         getSubThemes(th){return th.sub_themes??th.subThemes??[];},
         totalSub(tpl){return tpl?.themes?.reduce((n,t)=>n+this.getSubThemes(t).length,0)||0;},
 
+        // Helper method to safely get template data
+        getTemplateData(template) {
+            if (!template || typeof template !== 'object') return null;
+            return {
+                id: template.id,
+                title: template.title || 'Template Tanpa Judul',
+                description: template.description || 'Tidak ada deskripsi',
+                semester_type: template.semester_type || '',
+                themes: template.themes || []
+            };
+        },
+
         // ---------- lifecycle ----------
-        async init(){
-            try{
-                this.loading=true;
-                [this.templates,this.assignedTemplate]=await Promise.all([
-                    this.loadTemplates(),
-                    this.loadAssignedTemplate()
-                ]);
-            }catch(e){this.error='Gagal memuat data';}
-            this.loading=false;
+        async init() {
+            try {
+                this.loading = true;
+                this.error = null;
+                
+                console.log('Starting init for class:', this.classId);
+                
+                // Load assigned template first
+                const assigned = await this.loadAssignedTemplate();
+                this.assignedTemplate = assigned;
+                
+                // Load all templates
+                let allTemplates = await this.loadTemplates();
+                
+                // Ensure we have clean, deduplicated data
+                allTemplates = this.dedup(allTemplates);
+                
+                // Filter out assigned template from available templates
+                this.templates = assigned 
+                    ? allTemplates.filter(t => t.id !== assigned.id)
+                    : allTemplates;
+                
+                console.log('Init complete:', {
+                    assignedTemplate: this.assignedTemplate?.id,
+                    availableTemplates: this.templates.map(t => ({ id: t.id, title: t.title }))
+                });
+                
+            } catch (e) {
+                console.error('Init error:', e);
+                this.error = 'Gagal memuat data: ' + e.message;
+            }
+            this.loading = false;
         },
 
         // ---------- data ----------
         async loadTemplates(){
-            const data = await this.req('/rapor/templates');
-            return this.templates = this.dedup(data);
+            try {
+                const data = await this.req('/rapor/templates');
+                if (!Array.isArray(data)) {
+                    console.warn('Templates API returned non-array:', data);
+                    return [];
+                }
+                const dedupedData = this.dedup(data);
+                console.log('Templates loaded:', dedupedData.length, 'unique items');
+                return dedupedData;
+            } catch (e) {
+                console.error('Failed to load templates:', e);
+                return [];
+            }
         },
+        
         async loadAssignedTemplate(){
-            try{return await this.req(`/rapor/classes/${this.classId}/assigned-template`);}catch{ return null; }
+            try{
+                const assigned = await this.req(`/rapor/classes/${this.classId}/assigned-template`);
+                console.log('Assigned template:', assigned?.id);
+                return assigned && typeof assigned === 'object' ? assigned : null;
+            }catch(e){ 
+                console.log('No assigned template found:', e.message);
+                return null; 
+            }
         },
-        async loadStudents(){this.students=await this.req(`/classroom/${this.classId}/students`);},
+        
+        async loadStudents(){
+            try {
+                this.students = await this.req(`/classroom/${this.classId}/students`);
+            } catch (e) {
+                console.error('Failed to load students:', e);
+                this.students = [];
+            }
+        },
 
         // ---------- ui actions ----------
-        previewTemplate(t){this.selectedTemplate=t;this.mode='preview';},
-        cancelPreview(){this.selectedTemplate=null;this.mode='view';},
-        async confirmAssignTemplate(){
-            await this.req(
-            `/rapor/templates/${this.selectedTemplate.id}/assign`,
-            {
-              method:'POST',
-              headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({class_id:this.classId})
-            }
-          );
+        previewTemplate(t){
+            this.currentTemplate = this.getTemplateData(t);
+            this.selectedTemplate = this.currentTemplate;
+            this.mode='preview';
         },
+        
+        cancelPreview(){
+            this.selectedTemplate=null;
+            this.currentTemplate=null;
+            this.mode='view';
+        },
+        
+        async confirmAssignTemplate(){
+            if (!this.selectedTemplate) return;
+            
+            try {
+                await this.req(
+                    `/rapor/templates/${this.selectedTemplate.id}/assign`,
+                    {
+                        method:'POST',
+                        headers:{'Content-Type':'application/json'},
+                        body: JSON.stringify({class_id:this.classId})
+                    }
+                );
+                
+                // Update state after successful assignment
+                this.assignedTemplate = this.selectedTemplate;
+                this.templates = this.templates.filter(t => t.id !== this.selectedTemplate.id);
+                this.selectedTemplate = null;
+                this.currentTemplate = null;
+                this.mode = 'view';
+                
+                alert('Template berhasil ditetapkan');
+            } catch (e) {
+                console.error('Assignment error:', e);
+                alert('Gagal menetapkan template: ' + e.message);
+            }
+        },
+        
         async openReportForm(){
           if(!this.assignedTemplate) return alert('Belum ada template');
           await this.loadStudents();
           this.selectedTemplate = this.assignedTemplate;
+          this.currentTemplate = this.getTemplateData(this.assignedTemplate);
           // initialize empty scores map
           this.scores = {};
           this.students.forEach(s=>{
@@ -120,50 +210,124 @@ function raporApp(classId){
           });
           this.mode = 'score';
         },
-        showDetail(t){this.detailId=this.detailId===t.id?null:t.id;},
+        
+        showDetail(t){
+            this.detailId = this.detailId === t.id ? null : t.id;
+        },
+        
         async deleteTemplate(id){
             if(!confirm('Yakin hapus?'))return;
-            await this.req(`/rapor/templates/${id}`,{method:'DELETE'});
-            await this.loadTemplates();
-            alert('Hapus sukses');
+            try {
+                await this.req(`/rapor/templates/${id}`,{method:'DELETE'});
+                
+                // Remove from templates array
+                this.templates = this.templates.filter(t => t.id !== id);
+                
+                // Close detail if it was open for this template
+                if (this.detailId === id) {
+                    this.detailId = null;
+                }
+                
+                alert('Template berhasil dihapus');
+            } catch (e) {
+                console.error('Delete error:', e);
+                alert('Gagal menghapus template: ' + e.message);
+            }
         },
 
         // ---------- form ----------
         newTemplate(){this.resetForm();this.mode='add';},
-        resetForm(){this.newTemplateForm={title:'',description:'',semester_type:'',themes:[{code:'',name:'',subThemes:[{code:'',name:''}]}]};},
+        resetForm(){
+            this.newTemplateForm={
+                title:'',
+                description:'',
+                semester_type:'',
+                themes:[{code:'',name:'',subThemes:[{code:'',name:''}]}]
+            };
+        },
         addTheme(){this.newTemplateForm.themes.push({code:'',name:'',subThemes:[{code:'',name:''}]});},
         removeTheme(i){if(this.newTemplateForm.themes.length>1) this.newTemplateForm.themes.splice(i,1);},
         addSubTheme(i){this.newTemplateForm.themes[i].subThemes.push({code:'',name:''});},
         removeSubTheme(i,j){const st=this.newTemplateForm.themes[i].subThemes;if(st.length>1) st.splice(j,1);},
+        
         async saveNewTemplate(){
             const f=this.newTemplateForm;
             if(!f.title.trim()||!f.semester_type) return alert('Isi judul & semester');
             for(const [ti,t] of f.themes.entries()){
                 if(!t.code.trim()||!t.name.trim()) return alert(`Tema ${ti+1} belum lengkap`);
-                for(const [si,s] of t.subThemes.entries()) if(!s.code.trim()||!s.name.trim()) return alert(`Subtema ${si+1} Tema ${ti+1} belum lengkap`);
+                for(const [si,s] of t.subThemes.entries()) {
+                    if(!s.code.trim()||!s.name.trim()) return alert(`Subtema ${si+1} Tema ${ti+1} belum lengkap`);
+                }
             }
-            await this.req('/rapor/templates',{method:'POST',body:JSON.stringify(f),headers:{'Content-Type':'application/json'}});
-            await this.loadTemplates();
-            this.mode='view';
-            this.resetForm();
-            alert('Template ditambahkan');
+            
+            try {
+                const newTemplate = await this.req('/rapor/templates',{
+                    method:'POST',
+                    body:JSON.stringify(f),
+                    headers:{'Content-Type':'application/json'}
+                });
+                
+                // Add new template to list if not assigned
+                if (!this.assignedTemplate && newTemplate) {
+                    const cleanTemplate = this.getTemplateData(newTemplate);
+                    if (cleanTemplate) {
+                        this.templates = this.dedup([...this.templates, cleanTemplate]);
+                    }
+                }
+                
+                this.mode='view';
+                this.resetForm();
+                alert('Template ditambahkan');
+            } catch (e) {
+                console.error('Save template error:', e);
+                alert('Gagal menyimpan template: ' + e.message);
+            }
         },
+        
         async saveScores(){
-          await this.req(
-            `/rapor/classes/${this.classId}/reports`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type':'application/json' },
-              body: JSON.stringify({
-                template_id: this.assignedTemplate.id,
-                scores: this.scores
-              })
-            }
-          );
-          alert('Rapor tersimpan');
-          this.mode = 'view';
-          this.selectedTemplate = null;
+          try {
+              await this.req(
+                `/rapor/classes/${this.classId}/reports`,
+                {
+                  method: 'POST',
+                  headers: { 'Content-Type':'application/json' },
+                  body: JSON.stringify({
+                    template_id: this.assignedTemplate.id,
+                    scores: this.scores
+                  })
+                }
+              );
+              alert('Rapor tersimpan');
+              this.mode = 'view';
+              this.selectedTemplate = null;
+              this.currentTemplate = null;
+          } catch (e) {
+              console.error('Save scores error:', e);
+              alert('Gagal menyimpan rapor: ' + e.message);
+          }
         },
+        async removeAssignedTemplate() {
+            if (!this.assignedTemplate || !confirm('Yakin hapus template yang ditetapkan?')) return;
+            
+            try {
+                // Use the correct endpoint
+                await this.req(`/rapor/classes/${this.classId}/assigned-template`, {
+                    method: 'DELETE'
+                });
+                
+                // Move assigned template back to available templates
+                if (this.assignedTemplate) {
+                    this.templates = this.dedup([...this.templates, this.assignedTemplate]);
+                    this.assignedTemplate = null;
+                }
+                
+                alert('Template berhasil dihapus dari kelas');
+            } catch (e) {
+                console.error('Remove assigned template error:', e);
+                alert('Gagal menghapus template: ' + e.message);
+            }
+        },
+
     }
 }
 </script>
@@ -229,49 +393,44 @@ function raporApp(classId){
                 </button>
             </div>
         </div>
-
-        {{-- Template yang sudah ditetapkan --}}
-        <div x-show="assignedTemplate" class="bg-green-50 border border-green-200 rounded-lg p-4">
-            <div class="flex justify-between items-start">
-                <div class="flex-1">
-                    <h3 class="font-semibold text-green-800" x-text="assignedTemplate?.title"></h3>
-                    <p class="text-sm text-green-600" x-text="assignedTemplate?.semester_type ? `Semester ${assignedTemplate.semester_type}` : ''"></p>
-                    <p class="text-sm text-green-700 mt-2" x-text="assignedTemplate?.description"></p>
-                    <div class="mt-3 grid grid-cols-2 gap-4 text-xs text-green-600">
-                        <div>
-                            <span class="font-medium">Tema:</span> 
-                            <span x-text="assignedTemplate?.themes?.length || 0"></span>
-                        </div>
-                        <div>
-                            <span class="font-medium">Sub-tema:</span> 
-                            <span x-text="getTotalSubThemes(assignedTemplate)"></span>
-                        </div>
+{{-- Template yang sudah ditetapkan --}}
+<div x-show="assignedTemplate" class="space-y-3">
+    <h3 class="text-sm font-medium text-gray-700">Template yang Sudah Ditetapkan:</h3>
+    <div class="bg-white border border-sky-200 rounded-lg p-4">
+        <div class="flex justify-between items-start">
+            <div class="flex-1">
+                <h3 class="font-semibold text-sky-800" x-text="assignedTemplate?.title"></h3>
+                <p class="text-sm text-gray-500" x-text="assignedTemplate?.semester_type ? `Semester ${assignedTemplate.semester_type}` : ''"></p>
+                <p class="text-sm text-gray-600 mt-2" x-text="assignedTemplate?.description"></p>
+                <div class="mt-3 flex gap-4 text-xs text-gray-600">
+                    <div>
+                        <span class="font-medium">Tema:</span>
+                        <span x-text="assignedTemplate?.themes?.length || 0"></span>
                     </div>
-                    
-                    {{-- Show theme structure for assigned template --}}
-                    <div x-show="assignedTemplate?.themes?.length > 0" class="mt-4">
-                        <h4 class="text-sm font-medium text-green-800 mb-2">Struktur Penilaian:</h4>
-                        <div class="space-y-2 max-h-40 overflow-y-auto">
-                            <template x-for="(theme, themeIndex) in assignedTemplate?.themes || []" :key="'assigned-theme-' + themeIndex">
-                                <div class="bg-green-100 border border-green-300 rounded p-2">
-                                    <div class="font-medium text-green-800 text-sm">
-                                        <span x-text="`${theme.code} - ${theme.name}`"></span>
-                                    </div>
-                                    <div class="ml-3 mt-1 space-y-1">
-                                        <template x-for="(subTheme, subIndex) in getSubThemes(theme)" :key="'assigned-sub-' + themeIndex + '-' + subIndex">
-                                            <div class="text-xs text-green-700">
-                                                • <span x-text="`${subTheme.code} - ${subTheme.name}`"></span>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
+                    <div>
+                        <span class="font-medium">Sub-tema:</span>
+                        <span x-text="getTotalSubThemes(assignedTemplate)"></span>
                     </div>
                 </div>
-                <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full ml-4">Template Aktif</span>
+            </div>
+            <div class="flex flex-col gap-2 ml-4">
+                <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Template Aktif</span>
+                <button @click.prevent.stop="openReportForm()"
+                        class="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700">
+                    Buat Rapor
+                </button>
+                <button @click.prevent.stop="removeAssignedTemplate()"
+                        class="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700">
+                    Hapus
+                </button>
             </div>
         </div>
+    </div>
+</div>
+
+
+
+        {{-- Tombol untuk menambah template baru --}}
 
         {{-- Daftar template yang tersedia (hanya tampil jika belum ada template yang ditetapkan) --}}
         <div x-show="!assignedTemplate">
@@ -282,64 +441,64 @@ function raporApp(classId){
             </div>
 
             {{-- Templates Grid --}}
-            <div x-show="templates.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <template x-for="template in templates" :key="'template-card-' + template.id">
-                    <article class="p-4 bg-white border border-sky-500 rounded-xl flex flex-col justify-between cursor-pointer hover:shadow"
-                             @click="previewTemplate(template)">
-                        <div>
-                            <h2 class="font-bold text-sky-800 truncate" x-text="template.title || 'Template Tanpa Judul'"></h2>
-                            <p class="text-sm text-gray-500" x-text="template.semester_type ? `Semester ${template.semester_type}` : 'Tidak ada semester'"></p>
-                            <div class="mt-2 flex gap-4 text-xs text-gray-600">
-                                <span><span class="font-medium">Tema:</span> <span x-text="template.themes ? template.themes.length : 0"></span></span>
-                                <span><span class="font-medium">Sub-tema:</span> <span x-text="getTotalSubThemes(template)"></span></span>
-                            </div>
-                        </div>
-                        <div class="flex justify-between items-center mt-3">
-                            <button type="button" class="text-xs text-sky-800" @click.stop="showDetail(template)">
-                                Detail
-                            </button>
-                            <span class="text-xs text-sky-600">Klik untuk preview</span>
-                        </div>
-                        
-                        {{-- DETAIL PANEL --}}
-                        <div x-show="detailId === template.id" 
-                             x-transition:enter="transition ease-out duration-200"
-                             x-transition:enter-start="opacity-0 transform scale-95"
-                             x-transition:enter-end="opacity-100 transform scale-100"
-                             x-transition:leave="transition ease-in duration-150"
-                             x-transition:leave-start="opacity-100 transform scale-100"
-                             x-transition:leave-end="opacity-0 transform scale-95"
-                             class="mt-3 border-t pt-3 text-sm text-gray-700">
-                            <p x-text="template.description||'Tidak ada deskripsi.'"></p>
-                            
-                            {{-- Show themes and sub-themes in detail --}}
-                            <div x-show="template.themes?.length > 0" class="mt-3">
-                                <h5 class="font-medium text-gray-800 mb-2">Tema Penilaian:</h5>
-                                <div class="space-y-2 max-h-32 overflow-y-auto">
-                                    <template x-for="(theme, themeIndex) in template.themes || []" :key="'detail-theme-' + template.id + '-' + themeIndex">
-                                        <div class="bg-gray-50 border border-gray-200 rounded p-2">
-                                            <div class="font-medium text-gray-800 text-sm">
-                                                <span x-text="`${theme.code} - ${theme.name}`"></span>
-                                            </div>
-                                            <div class="ml-3 mt-1 space-y-1">
-                                                <template x-for="(subTheme, subIndex) in getSubThemes(theme)" :key="'detail-sub-' + template.id + '-' + themeIndex + '-' + subIndex">
-                                                    <div class="text-xs text-gray-600">
-                                                        • <span x-text="`${subTheme.code} - ${subTheme.name}`"></span>
-                                                    </div>
-                                                </template>
-                                            </div>
+<div x-show="templates.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <template x-for="(templateItem, templateIndex) in templates" :key="'template-card-' + templateItem.id">
+        <article class="p-4 bg-white border border-sky-500 rounded-xl flex flex-col justify-between cursor-pointer hover:shadow"
+                 @click="previewTemplate(templateItem)">
+            <div>
+                <h2 class="font-bold text-sky-800 truncate" x-text="templateItem.title || 'Template Tanpa Judul'"></h2>
+                <p class="text-sm text-gray-500" x-text="templateItem.semester_type ? `Semester ${templateItem.semester_type}` : 'Tidak ada semester'"></p>
+                <div class="mt-2 flex gap-4 text-xs text-gray-600">
+                    <span><span class="font-medium">Tema:</span> <span x-text="templateItem.themes ? templateItem.themes.length : 0"></span></span>
+                
+                </div>
+            </div>
+            <div class="flex justify-between items-center mt-3">
+                <button type="button" class="text-xs text-sky-800" @click.stop="showDetail(templateItem)">
+                    Detail
+                </button>
+                <span class="text-xs text-sky-600">Klik untuk preview</span>
+            </div>
+            
+            {{-- DETAIL PANEL --}}
+            <div x-show="detailId === templateItem.id" 
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 transform scale-95"
+                 x-transition:enter-end="opacity-100 transform scale-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 transform scale-100"
+                 x-transition:leave-end="opacity-0 transform scale-95"
+                 class="mt-3 border-t pt-3 text-sm text-gray-700">
+                <p x-text="templateItem.description || 'Tidak ada deskripsi.'"></p>
+                
+                {{-- Show themes and sub-themes in detail --}}
+                <div x-show="templateItem.themes?.length > 0" class="mt-3">
+                    <h5 class="font-medium text-gray-800 mb-2">Tema Penilaian:</h5>
+                    <div class="space-y-2 max-h-32 overflow-y-auto">
+                        <template x-for="(themeItem, themeIndex) in templateItem.themes || []" :key="'detail-theme-' + templateItem.id + '-' + themeIndex">
+                            <div class="bg-gray-50 border border-gray-200 rounded p-2">
+                                <div class="font-medium text-gray-800 text-sm">
+                                    <span x-text="`${themeItem.code} - ${themeItem.name}`"></span>
+                                </div>
+                                <div class="ml-3 mt-1 space-y-1">
+                                    <template x-for="(subThemeItem, subIndex) in getSubThemes(themeItem)" :key="'detail-sub-' + templateItem.id + '-' + themeIndex + '-' + subIndex">
+                                        <div class="text-xs text-gray-600">
+                                            • <span x-text="`${subThemeItem.code} - ${subThemeItem.name}`"></span>
                                         </div>
                                     </template>
                                 </div>
                             </div>
-                            
-                            <div class="flex justify-end gap-3 mt-3 text-xs">
-                                <button class="text-red-600" @click.stop="deleteTemplate(template.id)">Hapus</button>
-                            </div>
-                        </div>
-                    </article>
-                </template>
+                        </template>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end gap-3 mt-3 text-xs">
+                    <button class="text-red-600" @click.stop="deleteTemplate(templateItem.id)">Hapus</button>
+                </div>
             </div>
+        </article>
+    </template>
+</div>
         </div>
     </div>
 
@@ -362,8 +521,6 @@ function raporApp(classId){
                           x-text="selectedTemplate?.semester_type ? `Semester ${selectedTemplate.semester_type}` : ''"></span>
                     <span class="text-gray-500" 
                           x-text="selectedTemplate?.themes ? `${selectedTemplate.themes.length} Tema` : ''"></span>
-                    <span class="text-gray-500" 
-                          x-text="`${getTotalSubThemes(selectedTemplate)} Sub-tema`"></span>
                 </div>
             </div>
 

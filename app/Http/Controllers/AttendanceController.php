@@ -157,4 +157,83 @@ class AttendanceController extends Controller
             'highlightedDates' => $highlightedDates,
         ]);
     }
+
+    /**
+     * Display attendance for parents
+     */
+    public function parentAttendance()
+    {
+        try {
+            // Get children data from authenticated parent user
+            $user = auth()->user();
+            $children = $user->children()->with('classrooms')->get();
+            
+            \Log::info('Parent attendance - Children data:', ['children' => $children->toArray()]);
+            
+            if ($children->isEmpty()) {
+                return view('Orangtua.attendance', [
+                    'selectedStudent' => null,
+                    'attendanceData' => []
+                ]);
+            }
+
+            // Get first child for now (you can modify this to select specific child)
+            $selectedChild = $children->first();
+            
+            // Get classrooms for the child
+            $classroomIds = $selectedChild->classrooms->pluck('id');
+            
+            \Log::info('Parent attendance - Classroom IDs:', ['classroom_ids' => $classroomIds->toArray()]);
+            
+            if ($classroomIds->isEmpty()) {
+                return view('Orangtua.attendance', [
+                    'selectedStudent' => [
+                        'name' => $selectedChild->name,
+                        'class' => 'Belum ada kelas'
+                    ],
+                    'attendanceData' => []
+                ]);
+            }
+
+            // Get attendance data for the child
+            $attendanceData = Attendance::where('student_id', $selectedChild->id)
+                ->whereIn('classroom_id', $classroomIds)
+                ->with(['schedule'])
+                ->orderBy('attendance_date', 'desc')
+                ->get();
+                
+            \Log::info('Parent attendance - Raw attendance data:', ['attendance_count' => $attendanceData->count()]);
+            
+            $formattedAttendanceData = $attendanceData->map(function ($attendance) {
+                return [
+                    'date' => $attendance->attendance_date->format('Y-m-d'),
+                    'theme' => $attendance->schedule->title ?? $attendance->description ?? 'Tidak ada tema',
+                    'status' => ucfirst($attendance->status)
+                ];
+            })->toArray(); // Convert to array to ensure it's countable
+
+            $selectedStudent = [
+                'name' => $selectedChild->name,
+                'class' => $selectedChild->classrooms->first()->name ?? 'Belum ada kelas'
+            ];
+
+            \Log::info('Parent attendance - Final data:', [
+                'student' => $selectedStudent,
+                'attendance_count' => count($formattedAttendanceData)
+            ]);
+
+            return view('Orangtua.attendance', [
+                'selectedStudent' => $selectedStudent,
+                'attendanceData' => $formattedAttendanceData
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error in parentAttendance:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            
+            return view('Orangtua.attendance', [
+                'selectedStudent' => null,
+                'attendanceData' => []
+            ]);
+        }
+    }
 }

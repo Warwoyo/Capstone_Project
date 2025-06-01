@@ -6,7 +6,8 @@ use App\Models\Schedule;
 use App\Models\ScheduleDetail;
 use App\Models\Classroom;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB; // Add this import
+use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 use Exception;
 
 
@@ -17,7 +18,7 @@ class ScheduleController extends Controller
      */
     public function index(): View
     {
-        $schedules = Schedule::with(['subThemes'])
+        $schedules = Schedule::with(['scheduleDetails', 'classroom'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -25,6 +26,59 @@ class ScheduleController extends Controller
             'schedules' => $schedules,
             'mode' => 'view'
         ]);
+    }
+
+    /**
+     * Display schedules for parents
+     */
+    public function parentSchedule()
+    {
+        try {
+            // Get children data from authenticated parent user
+            $user = auth()->user();
+            $children = $user->children()->with('classrooms')->get();
+            
+            // Debug: Log children data
+            \Log::info('Children data:', ['children' => $children->toArray()]);
+            
+            // Get schedules for the children's classrooms using the pivot relationship
+            $classroomIds = collect();
+            foreach ($children as $child) {
+                $childClassroomIds = $child->classrooms->pluck('id');
+                $classroomIds = $classroomIds->merge($childClassroomIds);
+            }
+            $classroomIds = $classroomIds->unique()->filter();
+            
+            // Debug: Log classroom IDs
+            \Log::info('Classroom IDs:', ['classroom_ids' => $classroomIds->toArray()]);
+            
+            if ($classroomIds->isEmpty()) {
+                return view('Orangtua.schedule', [
+                    'children' => $children,
+                    'schedules' => collect()
+                ]);
+            }
+            
+            $schedules = Schedule::with(['scheduleDetails', 'classroom'])
+                ->whereIn('classroom_id', $classroomIds)
+                ->orderBy('created_at', 'desc')
+                ->get();
+                
+            // Debug: Log schedules data
+            \Log::info('Schedules data:', ['schedules' => $schedules->toArray()]);
+
+            return view('Orangtua.schedule', [
+                'children' => $children,
+                'schedules' => $schedules
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in parentSchedule:', ['error' => $e->getMessage()]);
+            
+            return view('Orangtua.schedule', [
+                'children' => collect(),
+                'schedules' => collect()
+            ]);
+        }
     }
 
     /**
@@ -103,11 +157,12 @@ class ScheduleController extends Controller
             ]);
 
             // Delete existing sub-themes
-            $schedule->details()->delete();
+            $schedule->scheduleDetails()->delete();
 
             // Create new sub-themes
             foreach ($validated['sub_themes'] as $subTheme) {
-                $schedule->details()->create([
+                $schedule->scheduleDetails()->create([
+                    'classroom_id' => $schedule->classroom_id,
                     'title' => $subTheme['title'],
                     'start_date' => $subTheme['start_date'],
                     'end_date' => $subTheme['end_date'],

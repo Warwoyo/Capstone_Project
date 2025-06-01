@@ -59,12 +59,32 @@
                     // 4. tentukan tipe data utk radio
                     $flat['tipe_data'] = $guardian ? 'wali' : 'ortu';
 
-                    // 5. URL foto lama (jika ada)
+                    // 5. URL foto lama (jika ada) dengan debug info
                     $flat['photo_url'] = $stu->photo ? asset('storage/'.$stu->photo) : null;
+                    $flat['photo_path'] = $stu->photo;
+                    $flat['photo_exists'] = $stu->photo ? $stu->photoExists() : false;
                 @endphp
 
                 <div class="flex items-center px-3 py-1 border border-gray-200">
-                    <div class="flex-1 text-sm text-center">{{ $stu->name }}</div>
+                    <div class="flex-1 text-sm text-center flex items-center justify-center">
+                        @if($stu->photo && $stu->photoExists())
+                            <img src="{{ asset('storage/'.$stu->photo) }}" alt="{{ $stu->name }}" 
+                                 class="w-8 h-8 rounded-full object-cover mr-2"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                            <span class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2 text-xs" style="display:none;">
+                                {{ substr($stu->name, 0, 1) }}
+                            </span>
+                        @elseif($stu->photo)
+                            <span class="w-8 h-8 rounded-full bg-red-200 flex items-center justify-center mr-2 text-xs text-red-600" title="Foto tidak ditemukan">
+                                ❌
+                            </span>
+                        @else
+                            <span class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2 text-xs">
+                                {{ substr($stu->name, 0, 1) }}
+                            </span>
+                        @endif
+                        {{ $stu->name }}
+                    </div>
                     <div class="flex-1 text-sm text-center">{{ $class->name ?? $stu->classroom_id }}</div>
                     <div class="flex-1 text-sm text-center">
                         {{ $stu->registrationTokens->pluck('token')->implode('/') ?: '-' }}
@@ -294,6 +314,16 @@
                 <label class="text-sm font-semibold text-gray-700">Foto (opsional)</label>
                 <input type="file" name="photo"
                        class="w-full text-sm text-gray-700 py-2 px-3 py-1.5 border border-sky-600 rounded-full focus:ring-2 focus:ring-sky-500">
+                <template x-if="editData.photo_url">
+                    <div class="mt-2">
+                        <img :src="editData.photo_url" alt="Foto siswa" class="w-16 h-16 rounded-full object-cover">
+                        <p class="text-xs text-gray-500 mt-1">Foto saat ini</p>
+                        <p class="text-xs text-gray-400" x-text="`File: ${editData.photo_path || 'Tidak ada'}`"></p>
+                        <span class="text-xs px-2 py-1 rounded" 
+                              :class="editData.photo_exists ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'"
+                              x-text="editData.photo_exists ? 'File tersedia' : 'File tidak ditemukan'"></span>
+                    </div>
+                </template>
             </div>
         </div>
 

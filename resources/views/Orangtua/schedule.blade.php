@@ -1,76 +1,130 @@
-
-@props(['mode' => 'view', 'scheduleList' , 'class'])
 @extends('layouts.dashboard')
 
 @section('content')
-<!-- ini dashboard orang tua -->
+<!-- Dashboard orang tua - Jadwal -->
 <main class="flex mx-auto w-full max-w-full h-screen bg-white">
 
     <!-- Main Content -->
-<div class="flex-1 p-5 max-md:p-2.5 max-sm:p-2.5">
+    <div class="flex-1 p-5 max-md:p-2.5 max-sm:p-2.5">
 
-    {{-- Header --}}
-    <header class="flex gap-3 items-center flex-wrap mt-11 md:mt-0">
-    <img 
-        src="https://cdn.builder.io/api/v1/image/assets/TEMP/7c611c0665bddb8f69e3b35c80f5477a6f0b559e?placeholderIfAbsent=true" 
-        alt="PAUD Logo" 
-        class="h-12 w-auto max-w-[60px]"
-    />
-    <div class="flex flex-col">
-        <h1 class="text-[24px] md:text-2xl  font-bold text-sky-600">PAUD Kartika Pradana</h1>
-        <p class=" text-[8px] text-sky-800">
-            Taman Penitipan Anak, Kelompok Bermain, dan Taman Kanak-Kanak
-        </p>
+        {{-- Header Logo --}}
+        <header class="flex gap-3 items-center flex-wrap mt-11 md:mt-0">
+            <img 
+                src="https://cdn.builder.io/api/v1/image/assets/TEMP/7c611c0665bddb8f69e3b35c80f5477a6f0b559e?placeholderIfAbsent=true" 
+                alt="PAUD Logo" 
+                class="h-12 w-auto max-w-[60px]"
+            />
+            <div class="flex flex-col">
+                <h1 class="text-[24px] md:text-2xl font-bold text-sky-600">PAUD Kartika Pradana</h1>
+                <p class="text-[8px] text-sky-800">
+                    Taman Penitipan Anak, Kelompok Bermain, dan Taman Kanak-Kanak
+                </p>
+            </div>
+        </header>
+
+        <x-header.parent-breadcrump-header label="Jadwal Pembelajaran" />
+
+        {{-- Tombol Kembali --}}
+        <div class="mb-4">
+            <a href="{{ url('/dashboard') }}" 
+               class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 transition-colors duration-200">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                Kembali ke Dashboard
+            </a>
+        </div>
+
+        <div class="text-lg font-semibold text-sky-700 mb-2">Jadwal Pembelajaran Anak</div>
+
+        {{-- Informasi untuk jadwal --}}
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6 rounded-r-lg">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-blue-700">
+                        <strong>Informasi:</strong> Berikut adalah jadwal pembelajaran untuk semua anak Anda. Pastikan anak hadir tepat waktu sesuai jadwal yang telah ditentukan.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Schedule Content --}}
+        <div class="flex-1 w-full md:px-4">
+            @if(isset($children) && $children->count() > 0 && isset($schedules) && $schedules->count() > 0)
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    @foreach($schedules as $schedule)
+                        <div class="bg-white border border-sky-600 rounded-2xl p-6 shadow-sm">
+                            <div class="flex flex-col gap-4">
+                                <div class="border-b border-gray-200 pb-3">
+                                    <h3 class="text-lg font-bold text-sky-800">
+                                        {{ $schedule->title ?? 'Jadwal Pembelajaran' }}
+                                    </h3>
+                                    <p class="text-sm text-gray-600">
+                                        Kelas: {{ $schedule->classroom->name ?? 'Tidak ada kelas' }}
+                                    </p>
+                                    <p class="text-sm text-gray-500">
+                                        Dibuat: {{ $schedule->created_at->format('d/m/Y') }}
+                                    </p>
+                                </div>
+                                
+                                @if($schedule->description)
+                                    <div class="mb-3">
+                                        <p class="text-sm text-gray-700">{{ $schedule->description }}</p>
+                                    </div>
+                                @endif
+
+                                @if($schedule->scheduleDetails && $schedule->scheduleDetails->count() > 0)
+                                    <div class="space-y-3">
+                                        <h4 class="font-semibold text-gray-800">Detail Jadwal:</h4>
+                                        @foreach($schedule->scheduleDetails as $detail)
+                                            <div class="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400">
+                                                <h5 class="font-medium text-blue-800">{{ $detail->title }}</h5>
+                                                <div class="text-sm text-blue-600 mt-1">
+                                                    <p>Tanggal: {{ $detail->start_date->format('d/m/Y') }} - {{ $detail->end_date->format('d/m/Y') }}</p>
+                                                    @if($detail->week)
+                                                        <p>Minggu ke: {{ $detail->week }}</p>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <div class="text-center py-4 text-gray-500">
+                                        <p class="text-sm">Belum ada detail jadwal</p>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="text-center py-12">
+                    <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    <h3 class="text-lg font-medium text-gray-700 mb-2">Belum Ada Jadwal</h3>
+                    <p class="text-gray-500">
+                        @if(!isset($children) || $children->count() == 0)
+                            Tidak ada data anak yang terdaftar.
+                        @elseif(!isset($schedules) || $schedules->count() == 0)
+                            Tidak ada jadwal pembelajaran yang tersedia untuk kelas anak Anda.
+                        @else
+                            Tidak ada jadwal pembelajaran yang tersedia.
+                        @endif
+                    </p>
+                </div>
+            @endif
+        </div>
+
+        <!-- Icon Header -->
+        <x-header.icon-header />
+
     </div>
-</header>
-<x-header.parent-breadcrump-header
-    label="Jadwal">
-</x-header.parent-breadcrump-header>
-<div class="flex-1 w-full md:px-10 pt-2"> <!-- Padding horizontal disini -->
-  
-  <!-- List Container -->
-  <div class="overflow-y-auto hide-scrollbar max-h-[73vh] md:max-h-[80vh]">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 items-start">
-      @foreach ($scheduleList as $schedule)
-        <!-- Card Start -->
-        <article class="flex flex-col justify-between p-4 w-full bg-white border border-sky-600 rounded-2xl">
-          <div class="flex flex-col gap-1 overflow-hidden">
-            <h2 class="text-base font-bold text-sky-800 truncate">
-              {{ $schedule['title'] }}
-            </h2>
-            <p class="text-sm text-gray-500 truncate">
-              {{ $schedule['date'] }}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            class="flex items-center gap-1 mt-2 text-xs font-medium text-sky-800 hover:opacity-80 transition-opacity"
-            onclick="toggleDetail('detail-{{ $schedule['id'] }}', this)"
-          >
-            <!-- Icon Mata -->
-            <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
-              <path class="eye-path" stroke-linecap="round" stroke-linejoin="round" d="M10 13.1429C12.9338 13.1429 15.5898 11.5357 17.0167 9C15.5898 6.46429 12.9338 4.85714 10 4.85714C7.06618 4.85714 4.41018 6.46429 2.98327 9C4.41018 11.5357 7.06618 13.1429 10 13.1429ZM10 4C13.4967 4 16.5251 6.03429 18 9C16.5251 11.9657 13.4967 14 10 14C6.50327 14 3.47491 11.9657 2 9C3.47491 6.03429 6.50327 4 10 4ZM10 11C10.5401 11 11.058 10.7893 11.4399 10.4142C11.8218 10.0391 12.0364 9.53043 12.0364 9C12.0364 8.46957 11.8218 7.96086 11.4399 7.58579C11.058 7.21071 10.5401 7 10 7C9.45992 7 8.94197 7.21071 8.56007 7.58579C8.17818 7.96086 7.96364 8.46957 7.96364 9C7.96364 9.53043 8.17818 10.0391 8.56007 10.4142C8.94197 10.7893 9.45992 11 10 11ZM10 11.8571C9.22846 11.8571 8.48852 11.5561 7.94296 11.0203C7.3974 10.4845 7.09091 9.75776 7.09091 9C7.09091 8.24224 7.3974 7.51551 7.94296 6.97969C8.48852 6.44388 9.22846 6.14286 10 6.14286C10.7715 6.14286 11.5115 6.44388 12.057 6.97969C12.6026 7.51551 12.9091 8.24224 12.9091 9C12.9091 9.75776 12.6026 10.4845 12.057 11.0203C11.5115 11.5561 10.7715 11.8571 10 11.8571Z" />
-            </svg>
-            <span class="toggle-text">Lihat Detail</span>
-          </button>
-
-          <!-- Detail -->
-          <div id="detail-{{ $schedule['id'] }}" class="hidden mt-4 p-4 border-t border-gray-300 transition-all duration-500 ease-in-out">
-            <p class="text-sm text-gray-700">
-              {{ $schedule['description'] ?? 'Tidak ada deskripsi.' }}
-            </p>
-          </div>
-        </article>
-        <!-- Card End -->
-      @endforeach
-    </div>
-  </div>
-</div>
-
-    <!-- Header Icons -->
-    <x-header.icon-header />
-    
 
 </main>
 @endsection

@@ -1,34 +1,4 @@
 
-@php
-$selectedStudent = [
-    'name' => 'Ahmad Fauzi',
-    'class' => 'Kelas Pelangi Ceria',
-    'attendance' => [
-        ['date' => '2025-05-23', 'theme' => 'Makan Nasi Padang Enak Sekali', 'status' => 'Hadir'],
-        ['date' => '2025-05-24', 'theme' => 'Berkebun', 'status' => 'Hadir'],
-        ['date' => '2025-05-25', 'theme' => 'Belajar Huruf', 'status' => 'Izin'],
-        ['date' => '2025-05-26', 'theme' => 'Belajar Angka', 'status' => 'Hadir'],
-        ['date' => '2025-05-27', 'theme' => 'Mewarnai Gambar', 'status' => 'Hadir'],
-        ['date' => '2025-05-28', 'theme' => 'Bermain di Taman', 'status' => 'Sakit'],
-        ['date' => '2025-05-29', 'theme' => 'Membuat Origami', 'status' => 'Hadir'],
-        ['date' => '2025-05-30', 'theme' => 'Mengenal Binatang', 'status' => 'Hadir'],
-        ['date' => '2025-06-01', 'theme' => 'Menonton Film Edukasi', 'status' => 'Alpha'],
-        ['date' => '2025-06-02', 'theme' => 'Menari Tradisional', 'status' => 'Hadir'],
-        ['date' => '2025-06-03', 'theme' => 'Menyanyi Lagu Anak', 'status' => 'Hadir'],
-        ['date' => '2025-06-04', 'theme' => 'Prakarya Sederhana', 'status' => 'Izin'],
-        ['date' => '2025-06-05', 'theme' => 'Mengenal Warna', 'status' => 'Hadir'],
-        ['date' => '2025-06-06', 'theme' => 'Berolahraga', 'status' => 'Hadir'],
-        ['date' => '2025-06-07', 'theme' => 'Membaca Cerita Anak', 'status' => 'Hadir'],
-        ['date' => '2025-06-08', 'theme' => 'Bermain Puzzle', 'status' => 'Hadir'],
-        ['date' => '2025-06-09', 'theme' => 'Mengenal Profesi', 'status' => 'Sakit'],
-        ['date' => '2025-06-10', 'theme' => 'Belajar Menyikat Gigi', 'status' => 'Hadir'],
-        ['date' => '2025-06-11', 'theme' => 'Simulasi Lalu Lintas', 'status' => 'Alpha'],
-        ['date' => '2025-06-12', 'theme' => 'Membuat Kolase', 'status' => 'Hadir'],
-        ['date' => '2025-06-13', 'theme' => 'Kegiatan Bebas Bermain Air', 'status' => 'Hadir'],
-    ],
-];
-@endphp
-
 @extends('layouts.dashboard')
 
 @section('content')
@@ -74,64 +44,80 @@ $selectedStudent = [
 
    <!-- Container Utama -->
 <div class="flex-1 w-full md:px-10 pt-2">
-    <!-- Info Siswa -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-        <h3 class="text-base sm:text-lg font-semibold text-sky-700">
-            Nama: {{ $selectedStudent['name'] }}
-        </h3>
-        <h3 class="text-base sm:text-lg font-semibold text-sky-700">
-            Kelas: {{ $selectedStudent['class'] }}
-        </h3>
-    </div>
-
-    <!-- Scroll horizontal dan vertikal -->
-    <div class="w-full overflow-x-auto">
-        <div class="inline-block min-w-full align-middle">
-            <div class="overflow-y-auto max-h-[500px] md:max-h-[400px] rounded-lg border border-gray-200 shadow-sm">
-                <table class="min-w-full table-auto text-sm text-slate-600">
-                    <!-- Header -->
-                    <thead class="bg-sky-200 text-sky-800 font-medium">
-                        <tr>
-                            <th class="text-center px-4 py-2">Tanggal</th>
-                            <th class="text-center px-4 py-2">Tema</th>
-                            <th class="text-center px-4 py-2">Keterangan</th>
-                        </tr>
-                    </thead>
-
-                    <!-- Body -->
-                    <tbody>
-                        @foreach ($selectedStudent['attendance'] as $record)
-                            <tr class="border-t border-gray-200">
-                                <td class="text-center px-4 py-2 whitespace-nowrap">
-                                    {{ \Carbon\Carbon::parse($record['date'])->translatedFormat('d F Y') }}
-                                </td>
-                                <td class="text-center px-4 py-2 whitespace-normal break-words">
-                                    {{ $record['theme'] }}
-                                </td>
-                                <td class="text-center px-4 py-2 whitespace-nowrap">
-                                    {{ $record['status'] }}
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+    @if($selectedStudent)
+        <!-- Info Siswa -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+            <h3 class="text-base sm:text-lg font-semibold text-sky-700">
+                Nama: {{ $selectedStudent['name'] }}
+            </h3>
+            <h3 class="text-base sm:text-lg font-semibold text-sky-700">
+                Kelas: {{ $selectedStudent['class'] }}
+            </h3>
         </div>
-    </div>
+
+        @if($attendanceData && count($attendanceData) > 0)
+            <!-- Scroll horizontal dan vertikal -->
+            <div class="w-full overflow-x-auto">
+                <div class="inline-block min-w-full align-middle">
+                    <div class="overflow-y-auto max-h-[500px] md:max-h-[400px] rounded-lg border border-gray-200 shadow-sm">
+                        <table class="min-w-full table-auto text-sm text-slate-600">
+                            <!-- Header -->
+                            <thead class="bg-sky-200 text-sky-800 font-medium">
+                                <tr>
+                                    <th class="text-center px-4 py-2">Tanggal</th>
+                                    <th class="text-center px-4 py-2">Tema</th>
+                                    <th class="text-center px-4 py-2">Keterangan</th>
+                                </tr>
+                            </thead>
+
+                            <!-- Body -->
+                            <tbody>
+                                @foreach ($attendanceData as $record)
+                                    <tr class="border-t border-gray-200">
+                                        <td class="text-center px-4 py-2 whitespace-nowrap">
+                                            {{ \Carbon\Carbon::parse($record['date'])->translatedFormat('d F Y') }}
+                                        </td>
+                                        <td class="text-center px-4 py-2 whitespace-normal break-words">
+                                            {{ $record['theme'] }}
+                                        </td>
+                                        <td class="text-center px-4 py-2 whitespace-nowrap">
+                                            {{ $record['status'] }}
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        @else
+            <div class="text-center py-12">
+                <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <h3 class="text-lg font-medium text-gray-700 mb-2">Belum Ada Data Presensi</h3>
+                <p class="text-gray-500">Tidak ada data presensi yang tersedia untuk anak ini.</p>
+            </div>
+        @endif
+    @else
+        <div class="text-center py-12">
+            <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+            <h3 class="text-lg font-medium text-gray-700 mb-2">Tidak Ada Data Anak</h3>
+            <p class="text-gray-500">Tidak ada data anak yang terdaftar untuk akun ini.</p>
+        </div>
+    @endif
 </div>
-
-
-
 
     <!-- Icon Header -->
     <x-header.icon-header />
 
 </div>
 
-
-    <!-- Header Icons -->
-    <x-header.icon-header />
-    
-
 </main>
 @endsection
+
+
+
+

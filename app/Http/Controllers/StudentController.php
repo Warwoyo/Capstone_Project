@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\DB;          // ← untuk DB::transaction
 use Illuminate\Support\Str;                 // ← untuk Str::random
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;     // ← untuk Storage operations
 
 use Illuminate\Http\Request;
 use App\Models\{Student, Classroom, User, RegistrationToken, UserContact, ParentProfile};
@@ -16,10 +17,21 @@ public function store(Request $request, Classroom $class)
 {
     DB::beginTransaction();
     try {
+        // Handle photo upload with custom naming
+        $photoPath = null;
+        if ($request->hasFile('photo')) {
+            $photoPath = Student::handlePhotoUpload($request->file('photo'), $request->name);
+        }
+
         // Simpan data siswa
-        $student = Student::create($request->only([
+        $studentData = $request->only([
             'student_number', 'name', 'birth_date', 'gender', 'medical_history'
-        ]));
+        ]);
+        if ($photoPath) {
+            $studentData['photo'] = $photoPath;
+        }
+        
+        $student = Student::create($studentData);
 
         // Hubungkan siswa dengan kelas
         $class->students()->attach($student->id);
@@ -111,24 +123,32 @@ public function store(Request $request, Classroom $class)
             'name'           => 'required|max:100',
             'birth_date'     => 'required|date',
             'gender'         => 'required|in:male,female',
+            'photo'          => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'father_name'    => 'required_if:tipe_data,ortu|max:100',
             'mother_name'    => 'required_if:tipe_data,ortu|max:100',
             'guardian_name'  => 'required_if:tipe_data,wali|max:100',
             'father_email'   => 'nullable|email|unique:parent_profiles,email,' .
-                                $student->father?->id,
+                                $student->parents->where('relation', 'father')->first()?->id,
             'mother_email'   => 'nullable|email|unique:parent_profiles,email,' .
-                                $student->mother?->id,
+                                $student->parents->where('relation', 'mother')->first()?->id,
             'guardian_email' => 'nullable|email|unique:parent_profiles,email,' .
-                                $student->guardian?->id,
+                                $student->parents->where('relation', 'guardian')->first()?->id,
             'father_phone'   => 'nullable|unique:parent_profiles,phone,' .
-                                $student->father?->id,
+                                $student->parents->where('relation', 'father')->first()?->id,
             'mother_phone'   => 'nullable|unique:parent_profiles,phone,' .
-                                $student->mother?->id,
+                                $student->parents->where('relation', 'mother')->first()?->id,
             'guardian_phone' => 'nullable|unique:parent_profiles,phone,' .
-                                $student->guardian?->id,
+                                $student->parents->where('relation', 'guardian')->first()?->id,
         ]);
 
         DB::transaction(function () use ($r, $student) {
+
+            /* ---------- Handle photo upload ---------- */
+            $photoPath = Student::handlePhotoUpload(
+                $r->file('photo'), 
+                $r->name, 
+                $student->photo
+            );
 
             /* ---------- update tabel students ---------- */
             $student->update([
@@ -136,9 +156,7 @@ public function store(Request $request, Classroom $class)
                 'name'            => $r->name,
                 'birth_date'      => $r->birth_date,
                 'gender'          => $r->gender,
-                'photo'           => $r->file('photo')
-                                        ? $r->file('photo')->store('students','public')
-                                        : $student->photo,
+                'photo'           => $photoPath,
                 'medical_history' => $r->medical_history,
             ]);
 

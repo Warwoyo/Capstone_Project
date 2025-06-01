@@ -456,3 +456,45 @@ Route::delete('/rapor/classes/{classId}/reports/{studentId}', [ClassroomControll
 // Attendance summary route
 Route::get('/ajax/classrooms/{classroom}/attendance-summary', [ClassroomController::class, 'getAttendanceSummary'])
     ->name('classroom.attendance.summary');
+
+// Debug route untuk storage
+Route::get('/debug/storage', function() {
+    $info = [
+        'storage_link_exists' => is_link(public_path('storage')),
+        'storage_link_target' => is_link(public_path('storage')) ? readlink(public_path('storage')) : null,
+        'public_storage_path' => public_path('storage'),
+        'app_storage_path' => storage_path('app/public'),
+        'students_directory_exists' => \Storage::disk('public')->exists('students'),
+        'students_files' => \Storage::disk('public')->files('students'),
+    ];
+    
+    return response()->json($info, 200, [], JSON_PRETTY_PRINT);
+})->name('debug.storage');
+
+// Debug route untuk foto siswa
+Route::get('/debug/student/{student}/photo', function(\App\Models\Student $student) {
+    return response()->json($student->getPhotoDebugInfo(), 200, [], JSON_PRETTY_PRINT);
+})->name('debug.student.photo');
+
+// Test route untuk timestamp format
+Route::get('/debug/timestamp', function() {
+    $testName = 'Ahmad Budi Santoso';
+    $extension = 'jpg';
+    
+    $info = [
+        'laravel_version' => app()->version(),
+        'now_methods' => [
+            'getTimestampMs_exists' => method_exists(now(), 'getTimestampMs'),
+            'getTimestamp' => now()->getTimestamp(),
+            'microtime' => microtime(true),
+            'microtime_ms' => (int)(microtime(true) * 1000),
+        ],
+        'filename_generation' => \App\Models\Student::generatePhotoFilename($testName, $extension)
+    ];
+    
+    if (method_exists(now(), 'getTimestampMs')) {
+        $info['now_methods']['getTimestampMs'] = now()->getTimestampMs();
+    }
+    
+    return response()->json($info, 200, [], JSON_PRETTY_PRINT);
+})->name('debug.timestamp');

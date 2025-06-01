@@ -6,6 +6,10 @@ use Illuminate\Http\Request;
 use App\Models\Student;
 use App\Models\Alumni;
 use App\Models\Announcement;
+use App\Models\ParentProfile;
+use App\Models\Observation;
+use App\Models\Syllabus;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -39,7 +43,7 @@ class DashboardController extends Controller
         \Log::info('User ID: ' . $user->id);
         
         // Ambil students melalui tabel student_user
-        $studentIds = \DB::table('student_user')->where('user_id', $user->id)->pluck('student_id');
+        $studentIds = DB::table('student_user')->where('user_id', $user->id)->pluck('student_id');
         \Log::info('Student IDs from student_user: ' . $studentIds->toJson());
         
         if ($studentIds->isEmpty()) {
@@ -95,8 +99,15 @@ class DashboardController extends Controller
         $user = auth()->user();
         
         // Ambil data anak melalui tabel student_user
-        $studentIds = \DB::table('student_user')->where('user_id', $user->id)->pluck('student_id');
-        $children = Student::whereIn('id', $studentIds)->with(['classrooms'])->get();
+        $studentIds = DB::table('student_user')->where('user_id', $user->id)->pluck('student_id');
+        $children = Student::whereIn('id', $studentIds)
+            ->with([
+                'classrooms',
+                'parentProfiles' => function($query) {
+                    $query->orderBy('relation');
+                }
+            ])
+            ->get();
         
         return view('Orangtua.children', compact('children'));
     }
@@ -105,78 +116,213 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
         
-        // Ambil students melalui tabel student_user
-        $studentIds = \DB::table('student_user')->where('user_id', $user->id)->pluck('student_id');
-        $students = Student::whereIn('id', $studentIds)->with(['classrooms.schedules.scheduleDetails'])->get();
+        // Get children of the authenticated parent
+        $studentIds = DB::table('student_user')->where('user_id', $user->id)->pluck('student_id');
+        $children = Student::whereIn('id', $studentIds)->with([
+            'classrooms.schedules' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            },
+            'classrooms.schedules.classroom'
+        ])->get();
         
-        $scheduleList = [];
-        foreach ($students as $student) {
-            foreach ($student->classrooms as $classroom) {
-                if ($classroom->schedules->isNotEmpty()) {
-                    $scheduleList = array_merge($scheduleList, $classroom->schedules->toArray());
+        // Flatten all schedules from all children's classrooms
+        $allSchedules = collect();
+        foreach ($children as $child) {
+            foreach ($child->classrooms as $classroom) {
+                foreach ($classroom->schedules as $schedule) {
+                    $schedule->student_name = $child->name;
+                    $schedule->classroom_name = $classroom->name;
+                    $allSchedules->push($schedule);
                 }
             }
         }
         
-        return view('Orangtua.schedule', compact('scheduleList'));
+        // Sort by creation date
+        $schedules = $allSchedules->sortByDesc('created_at');
+        
+        return view('Orangtua.schedule', compact('children', 'schedules'));
     }
 
     public function attendanceParent()
     {
-        $user = auth()->user();
-        
-        // Ambil students melalui tabel student_user
-        $studentIds = \DB::table('student_user')->where('user_id', $user->id)->pluck('student_id');
-        $students = Student::whereIn('id', $studentIds)->with(['attendances.schedule', 'classrooms'])->get();
-        
-        $attendanceData = [];
-        foreach ($students as $student) {
-            if ($student->attendances->isNotEmpty()) {
-                $attendanceData[] = [
-                    'student' => $student,
-                    'attendance' => $student->attendances
-                ];
+        try {
+            $user = auth()->user();
+            
+            // Ambil students melalui tabel student_user
+            $studentIds = DB::table('student_user')->where('user_id', $user->id)->pluck('student_id');
+            $students = Student::whereIn('id', $studentIds)->with(['attendances.schedule', 'classrooms'])->get();
+            
+            if ($students->isEmpty()) {
+                return view('Orangtua.attendance', [
+                    'selectedStudent' => null,
+                    'attendanceData' => []
+                ]);
             }
-        }
-        
-        // Untuk sementara, ambil data siswa pertama jika ada
-        $selectedStudent = null;
-        if (!empty($attendanceData)) {
-            $firstStudent = $attendanceData[0]['student'];
+
+            // Ambil siswa pertama
+            $firstStudent = $students->first();
             $primaryClassroom = $firstStudent->classrooms->first();
+            
+            // Format data presensi
+            $attendanceData = $firstStudent->attendances->map(function($record) {
+                return [
+                    'date' => $record->attendance_date->format('Y-m-d'),
+                    'theme' => $record->schedule->title ?? $record->description ?? 'Tidak ada tema',
+                    'status' => ucfirst($record->status)
+                ];
+            })->toArray();
+            
             $selectedStudent = [
                 'name' => $firstStudent->name,
-                'class' => $primaryClassroom->name ?? 'Tidak ada kelas',
-                'attendance' => $attendanceData[0]['attendance']->map(function($record) {
-                    return [
-                        'date' => $record->attendance_date,
-                        'theme' => $record->schedule->title ?? 'Tidak ada tema',
-                        'status' => $record->status
-                    ];
-                })->toArray()
+                'class' => $primaryClassroom->name ?? 'Tidak ada kelas'
             ];
+            
+            return view('Orangtua.attendance', [
+                'selectedStudent' => $selectedStudent,
+                'attendanceData' => $attendanceData
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in attendanceParent:', ['error' => $e->getMessage()]);
+            
+            return view('Orangtua.attendance', [
+                'selectedStudent' => null,
+                'attendanceData' => []
+            ]);
         }
-        
-        return view('Orangtua.attendance', compact('selectedStudent'));
     }
 
     public function syllabusParent()
     {
-        $user = auth()->user();
-        
-        // Ambil students melalui tabel student_user
-        $studentIds = \DB::table('student_user')->where('user_id', $user->id)->pluck('student_id');
-        $students = Student::whereIn('id', $studentIds)->with(['classrooms.syllabuses'])->get();
-        
-        $syllabusList = [];
-        foreach ($students as $student) {
-            foreach ($student->classrooms as $classroom) {
-                if ($classroom->syllabuses && $classroom->syllabuses->isNotEmpty()) {
-                    $syllabusList = array_merge($syllabusList, $classroom->syllabuses->toArray());
+        try {
+            $user = auth()->user();
+            
+            // Ambil students melalui tabel student_user
+            $studentIds = DB::table('student_user')->where('user_id', $user->id)->pluck('student_id');
+            $students = Student::whereIn('id', $studentIds)->with(['classrooms.syllabuses'])->get();
+            
+            if ($students->isEmpty()) {
+                return view('Orangtua.syllabus', [
+                    'syllabusList' => []
+                ]);
+            }
+
+            $syllabusList = [];
+            foreach ($students as $student) {
+                foreach ($student->classrooms as $classroom) {
+                    if ($classroom->syllabuses && $classroom->syllabuses->isNotEmpty()) {
+                        foreach ($classroom->syllabuses as $syllabus) {
+                            $syllabusList[] = [
+                                'id' => $syllabus->id,
+                                'title' => $syllabus->title,
+                                'file_name' => $syllabus->file_name,
+                                'file_path' => $syllabus->file_path,
+                                'created_at' => $syllabus->created_at->format('Y-m-d H:i:s'),
+                                'classroom_name' => $classroom->name
+                            ];
+                        }
+                    }
                 }
             }
+            
+            // Sort by created_at descending
+            usort($syllabusList, function($a, $b) {
+                return strtotime($b['created_at']) - strtotime($a['created_at']);
+            });
+            
+            return view('Orangtua.syllabus', [
+                'syllabusList' => $syllabusList
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in syllabusParent:', ['error' => $e->getMessage()]);
+            
+            return view('Orangtua.syllabus', [
+                'syllabusList' => []
+            ]);
         }
-        
-        return view('Orangtua.syllabus', compact('syllabusList'));
+    }
+
+    public function observationParent()
+    {
+        try {
+            $user = auth()->user();
+            
+            // Ambil students melalui tabel student_user
+            $studentIds = DB::table('student_user')->where('user_id', $user->id)->pluck('student_id');
+            $students = Student::whereIn('id', $studentIds)->with(['classrooms'])->get();
+            
+            if ($students->isEmpty()) {
+                return view('Orangtua.observation', [
+                    'observationList' => []
+                ]);
+            }
+
+            // Ambil semua classroom IDs dari anak-anak user
+            $classroomIds = $students
+                ->flatMap(function($student) {
+                    return $student->classrooms->pluck('id');
+                })
+                ->unique()
+                ->filter();
+
+            if ($classroomIds->isEmpty()) {
+                return view('Orangtua.observation', [
+                    'observationList' => []
+                ]);
+            }
+
+            // Ambil observations dari classroom yang relevan
+            $observations = \App\Models\Observation::whereIn('schedule_id', function($query) use ($classroomIds) {
+                    $query->select('id')
+                          ->from('schedules')
+                          ->whereIn('classroom_id', $classroomIds);
+                })
+                ->whereIn('student_id', $studentIds)
+                ->with(['schedule', 'student', 'scheduleDetail'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            // Format data untuk view
+            $observationList = $observations->map(function($observation) {
+                return [
+                    'id' => $observation->id,
+                    'title' => $observation->schedule->title ?? 'Observasi',
+                    'date' => $observation->created_at->format('d/m/Y'),
+                    'description' => $observation->observation_text ?? $observation->description ?? 'Tidak ada deskripsi observasi',
+                    'score_text' => $this->getScoreText($observation->score ?? 0),
+                    'student_name' => $observation->student->name ?? ''
+                ];
+            })->toArray();
+
+            return view('Orangtua.observation', [
+                'observationList' => $observationList
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in observationParent:', ['error' => $e->getMessage()]);
+            
+            return view('Orangtua.observation', [
+                'observationList' => []
+            ]);
+        }
+    }
+
+    /**
+     * Helper method untuk mengkonversi skor ke teks penilaian
+     */
+    private function getScoreText($score)
+    {
+        if ($score >= 4) {
+            return 'Sangat Baik (A)';
+        } elseif ($score >= 3) {
+            return 'Baik (B)';
+        } elseif ($score >= 2) {
+            return 'Cukup (C)';
+        } elseif ($score >= 1) {
+            return 'Kurang (D)';
+        } else {
+            return 'Belum dinilai';
+        }
     }
 }

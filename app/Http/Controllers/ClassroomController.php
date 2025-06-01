@@ -261,7 +261,8 @@ public function showClassroomDetail(Request $r, Classroom $classroom, string $ta
                 'parent_comment' => 'nullable|string|max:1000',
                 'physical_data' => 'nullable|array',
                 'attendance_data' => 'nullable|array',
-                'theme_comments' => 'nullable|array'
+                'theme_comments' => 'nullable|array',
+                'sub_theme_comments' => 'nullable|array'
             ]);
 
             // Check if classroom exists and user has permission
@@ -293,6 +294,7 @@ public function showClassroomDetail(Request $r, Classroom $classroom, string $ta
                 'physical_data' => json_encode($validatedData['physical_data'] ?? []),
                 'attendance_data' => json_encode($validatedData['attendance_data'] ?? []),
                 'theme_comments' => json_encode($validatedData['theme_comments'] ?? []),
+                'sub_theme_comments' => json_encode($validatedData['sub_theme_comments'] ?? []),
             ];
 
             if ($existingReport) {
@@ -374,6 +376,164 @@ public function showClassroomDetail(Request $r, Classroom $classroom, string $ta
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menghapus rapor: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get specific student report
+     */
+    public function getStudentReport($classId, $studentId, $templateId)
+    {
+        try {
+            $report = StudentReport::where([
+                'classroom_id' => $classId,
+                'student_id' => $studentId,
+                'template_id' => $templateId
+            ])->first();
+            
+            if (!$report) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Laporan tidak ditemukan'
+                ], 404);
+            }
+            
+            // Decode JSON fields
+            $report->scores = json_decode($report->scores, true) ?: [];
+            $report->physical_data = json_decode($report->physical_data, true) ?: [];
+            $report->attendance_data = json_decode($report->attendance_data, true) ?: [];
+            $report->theme_comments = json_decode($report->theme_comments, true) ?: [];
+            $report->sub_theme_comments = json_decode($report->sub_theme_comments, true) ?: [];
+            
+            return response()->json([
+                'success' => true,
+                'data' => $report
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Get student report error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat laporan siswa: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Generate PDF for student report
+     */
+    public function generateReportPDF($classId, $studentId, $templateId)
+    {
+        try {
+            // Get the report data
+            $report = StudentReport::where([
+                'classroom_id' => $classId,
+                'student_id' => $studentId,
+                'template_id' => $templateId
+            ])->with(['student', 'classroom'])->first();
+            
+            if (!$report) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Laporan tidak ditemukan'
+                ], 404);
+            }
+            
+            // Decode JSON fields
+            $report->scores = json_decode($report->scores, true) ?: [];
+            $report->physical_data = json_decode($report->physical_data, true) ?: [];
+            $report->attendance_data = json_decode($report->attendance_data, true) ?: [];
+            $report->theme_comments = json_decode($report->theme_comments, true) ?: [];
+            $report->sub_theme_comments = json_decode($report->sub_theme_comments, true) ?: [];
+            
+            // Get template data (mock for now since we don't have template table)
+            $template = (object) [
+                'id' => $templateId,
+                'title' => 'Template Rapor PAUD Semester Ganjil',
+                'semester_type' => 'ganjil',
+                'themes' => [
+                    (object) [
+                        'id' => 1,
+                        'code' => 'T01',
+                        'name' => 'Nilai Agama dan Moral',
+                        'sub_themes' => [
+                            (object) ['id' => 1, 'name' => 'Mengenal Tuhan melalui ciptaan-Nya', 'description' => 'Anak mampu mengenal dan mengagumi ciptaan Tuhan'],
+                            (object) ['id' => 2, 'name' => 'Mengucapkan doa sebelum dan sesudah melakukan kegiatan', 'description' => 'Anak terbiasa berdoa sebelum dan sesudah kegiatan'],
+                            (object) ['id' => 3, 'name' => 'Mengenal perilaku baik/sopan dan buruk', 'description' => 'Anak dapat membedakan perilaku yang baik dan buruk']
+                        ]
+                    ],
+                    (object) [
+                        'id' => 2,
+                        'code' => 'T02',
+                        'name' => 'Fisik Motorik',
+                        'sub_themes' => [
+                            (object) ['id' => 4, 'name' => 'Motorik Kasar', 'description' => 'Kemampuan menggunakan otot-otot besar tubuh'],
+                            (object) ['id' => 5, 'name' => 'Motorik Halus', 'description' => 'Kemampuan menggunakan otot-otot kecil/halus'],
+                            (object) ['id' => 6, 'name' => 'Kesehatan dan Perilaku Keselamatan', 'description' => 'Kebiasaan hidup sehat dan awareness keselamatan']
+                        ]
+                    ],
+                    (object) [
+                        'id' => 3,
+                        'code' => 'T03',
+                        'name' => 'Kognitif',
+                        'sub_themes' => [
+                            (object) ['id' => 7, 'name' => 'Belajar dan Pemecahan Masalah', 'description' => 'Kemampuan menganalisis dan memecahkan masalah sederhana'],
+                            (object) ['id' => 8, 'name' => 'Berfikir Logis', 'description' => 'Kemampuan berpikir secara sistematis dan logis'],
+                            (object) ['id' => 9, 'name' => 'Berfikir Simbolik', 'description' => 'Kemampuan memahami dan menggunakan simbol']
+                        ]
+                    ],
+                    (object) [
+                        'id' => 4,
+                        'code' => 'T04',
+                        'name' => 'Bahasa',
+                        'sub_themes' => [
+                            (object) ['id' => 10, 'name' => 'Memahami Bahasa', 'description' => 'Kemampuan memahami bahasa yang didengar'],
+                            (object) ['id' => 11, 'name' => 'Mengungkapkan Bahasa', 'description' => 'Kemampuan menyampaikan maksud dengan bahasa'],
+                            (object) ['id' => 12, 'name' => 'Keaksaraan', 'description' => 'Kemampuan mengenal huruf dan membaca dasar']
+                        ]
+                    ],
+                    (object) [
+                        'id' => 5,
+                        'code' => 'T05',
+                        'name' => 'Sosial Emosional',
+                        'sub_themes' => [
+                            (object) ['id' => 13, 'name' => 'Kesadaran Diri', 'description' => 'Kemampuan mengenal diri sendiri dan perasaan'],
+                            (object) ['id' => 14, 'name' => 'Rasa Tanggung Jawab untuk Diri dan Orang Lain', 'description' => 'Kemampuan bertanggung jawab terhadap diri dan lingkungan'],
+                            (object) ['id' => 15, 'name' => 'Perilaku Prososial', 'description' => 'Kemampuan berinteraksi dan membantu orang lain']
+                        ]
+                    ],
+                    (object) [
+                        'id' => 6,
+                        'code' => 'T06',
+                        'name' => 'Seni',
+                        'sub_themes' => [
+                            (object) ['id' => 16, 'name' => 'Mengekspresikan diri melalui gerakan', 'description' => 'Kemampuan mengekspresikan perasaan melalui gerakan tubuh'],
+                            (object) ['id' => 17, 'name' => 'Mengekspresikan diri melalui karya seni', 'description' => 'Kemampuan mengekspresikan ide melalui karya seni']
+                        ]
+                    ]
+                ]
+            ];
+            
+            // Prepare data for view
+            $data = [
+                'report' => $report,
+                'template' => $template,
+                'student' => $report->student,
+                'classroom' => $report->classroom,
+                'current_date' => now()->format('d F Y')
+            ];
+            
+            // Return the printable view directly
+            return view('reports.student-report-pdf', $data);
+            
+        } catch (\Exception $e) {
+            \Log::error('Generate report error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membuat laporan: ' . $e->getMessage()
             ], 500);
         }
     }

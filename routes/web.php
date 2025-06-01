@@ -323,23 +323,16 @@ Route::get('/testingx', function () {
     return view('testingx');
 });
 
-// Debug routes for rapor
+// Debug routes for rapor - simplified
 Route::group(['prefix' => 'rapor/debug'], function () {
     Route::get('/class/{classId}/assignments', function ($classId) {
         $assignments = \Illuminate\Support\Facades\DB::table('template_assignments')
-            ->where('class_id', $classId)
-            ->get();
-        
-        $templates = \Illuminate\Support\Facades\DB::table('template_assignments')
-            ->join('rapor_templates', 'template_assignments.template_id', '=', 'rapor_templates.id')
-            ->where('template_assignments.class_id', $classId)
-            ->select('rapor_templates.*', 'template_assignments.assigned_at')
+            ->where('classroom_id', $classId)
             ->get();
         
         return response()->json([
             'class_id' => $classId,
-            'raw_assignments' => $assignments,
-            'templates_with_details' => $templates,
+            'assignments' => $assignments,
             'count' => $assignments->count()
         ]);
     });
@@ -352,19 +345,17 @@ Route::post('/rapor/classes/{classId}/reports', [ClassroomController::class, 'sa
 Route::get('/rapor/classes/{classId}/reports', [ClassroomController::class, 'getClassReports'])
     ->name('rapor.classes.reports.index');
 
+Route::get('/rapor/classes/{classId}/reports/{studentId}/{templateId}', [ClassroomController::class, 'getStudentReport'])
+    ->name('rapor.classes.reports.show');
+
+Route::get('/rapor/classes/{classId}/reports/{studentId}/{templateId}/pdf', [ClassroomController::class, 'generateReportPDF'])
+    ->name('rapor.classes.reports.pdf');
+
 Route::delete('/rapor/classes/{classId}/reports/{studentId}', [ClassroomController::class, 'deleteStudentReport'])
     ->name('rapor.classes.reports.destroy');
 
-// Template management routes  
-Route::get('/rapor/templates', function() {
-    // Return empty array for now since we don't have templates table
-    return response()->json([]);
-});
-
-Route::get('/rapor/classes/{classId}/assigned-templates', function($classId) {
-    // Return empty array for now since we don't have template assignment system
-    return response()->json([]);
-});
+// Template management routes - these are handled by the proper TemplateController above
+// The routes in the rapor.templates group should handle these endpoints
 
 // Attendance summary route
 Route::get('/ajax/classrooms/{classroom}/attendance-summary', [ClassroomController::class, 'getAttendanceSummary'])

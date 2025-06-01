@@ -33,6 +33,8 @@ function raporApp(classId){
         parentComments:{}, // Add parent comments
         physicalData:{}, // Add physical data
         attendanceData:{}, // Add attendance data
+        savedReports:{}, // Add saved reports storage
+        viewingReport: null, // Add viewing report state
         newTemplateForm:{
             title:'',description:'',semester_type:'',
             themes:[{code:'',name:'',subThemes:[{code:'',name:''}]}]
@@ -64,16 +66,18 @@ function raporApp(classId){
         dedup(list){
             if (!Array.isArray(list)) return [];
             const filtered = list.filter(t => {
-                return t && 
+                const isValid = t && 
                        typeof t === 'object' && 
                        t.id && 
-                       typeof t.id === 'number' && 
+                       (typeof t.id === 'number' || typeof t.id === 'string') && 
                        t.title && 
                        typeof t.title === 'string' && 
-                       t.title.trim() !== '' &&
-                       t.semester_type &&
-                       typeof t.semester_type === 'string' &&
-                       t.semester_type.trim() !== '';
+                       t.title.trim() !== '';
+                       
+                if (!isValid) {
+                    console.log('Template filtered out in dedup:', t);
+                }
+                return isValid;
             });
             return uniqBy(filtered, t => t.id);
         },
@@ -101,17 +105,17 @@ function raporApp(classId){
                 
                 console.log('Starting init for class:', this.classId);
                 
-                // Load assigned templates first
+                // Load all templates first
+                let allTemplates = await this.loadTemplates();
+                console.log('Loaded all templates:', allTemplates);
+                
+                // Load assigned templates
                 const assignedList = await this.loadAssignedTemplates();
                 console.log('Loaded assigned templates:', assignedList);
                 
                 // Apply strict validation and deduplication
                 this.assignedTemplates = this.dedup(assignedList);
                 console.log('Deduplicated assigned templates:', this.assignedTemplates);
-                
-                // Load all templates
-                let allTemplates = await this.loadTemplates();
-                console.log('Loaded all templates:', allTemplates);
                 
                 // Ensure we have clean, deduplicated data
                 allTemplates = this.dedup(allTemplates);
@@ -122,6 +126,7 @@ function raporApp(classId){
                 this.templates = allTemplates.filter(t => !assignedIds.includes(t.id));
                 
                 console.log('Init complete:', {
+                    totalTemplates: allTemplates.length,
                     assignedTemplates: this.assignedTemplates.length,
                     availableTemplates: this.templates.length,
                     assignedIds: assignedIds,
@@ -139,17 +144,86 @@ function raporApp(classId){
         // ---------- data ----------
         async loadTemplates(){
             try {
+                console.log('Loading templates...');
+                
                 const data = await this.req('/rapor/templates');
+                console.log('Templates API response:', data);
+                
                 if (!Array.isArray(data)) {
                     console.warn('Templates API returned non-array:', data);
+                    
+                    // Check if it's wrapped in a data property
+                    if (data && data.data && Array.isArray(data.data)) {
+                        return this.dedup(data.data);
+                    }
+                    
                     return [];
                 }
-                const dedupedData = this.dedup(data);
-                console.log('Templates loaded:', dedupedData.length, 'unique items');
+                
+                console.log('Templates array received:', data.length, 'items');
+                
+                // Apply basic validation
+                const validTemplates = data.filter(t => {
+                    const isValid = t && 
+                           typeof t === 'object' && 
+                           t.id && 
+                           t.title;
+                           
+                    if (!isValid) {
+                        console.log('Invalid template filtered out:', t);
+                    }
+                    return isValid;
+                });
+                
+                console.log('Valid templates after filtering:', validTemplates.length);
+                console.log('Valid templates:', validTemplates.map(t => ({
+                    id: t.id, 
+                    title: t.title, 
+                    semester: t.semester_type,
+                    themes_count: (t.themes || []).length
+                })));
+                
+                const dedupedData = this.dedup(validTemplates);
+                console.log('Templates after deduplication:', dedupedData.length, 'unique items');
                 return dedupedData;
+                
             } catch (e) {
                 console.error('Failed to load templates:', e);
-                return [];
+                
+                // Try a direct simple call to see if endpoint exists
+                try {
+                    const response = await fetch('/rapor/templates', {
+                        credentials: 'same-origin',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': this.csrf(),
+                        }
+                    });
+                    
+                    console.log('Direct fetch status:', response.status);
+                    console.log('Direct fetch ok:', response.ok);
+                    
+                    if (response.ok) {
+                        const text = await response.text();
+                        console.log('Direct fetch response body:', text);
+                        
+                        try {
+                            const parsed = JSON.parse(text);
+                            console.log('Successfully parsed JSON:', parsed);
+                            return Array.isArray(parsed) ? parsed : [];
+                        } catch (parseError) {
+                            console.error('JSON parse error:', parseError);
+                            return [];
+                        }
+                    } else {
+                        const errorText = await response.text();
+                        console.error('HTTP error:', response.status, response.statusText, errorText);
+                        return [];
+                    }
+                } catch (directError) {
+                    console.error('Direct fetch failed:', directError);
+                    return [];
+                }
             }
         },
         
@@ -372,6 +446,75 @@ function raporApp(classId){
             }
         },
 
+        // Method to load existing reports for all students
+        async loadExistingReports() {
+            if (!this.selectedTemplate || !this.students.length) return;
+            
+            try {
+                console.log('Loading existing reports for template:', this.selectedTemplate.id);
+                
+                for (const student of this.students) {
+                    try {
+                        const reportResponse = await this.req(`/rapor/classes/${this.classId}/reports/${student.id}/${this.selectedTemplate.id}`);
+                        
+                        if (reportResponse.success && reportResponse.data) {
+                            const reportData = reportResponse.data;
+                            
+                            // Load scores
+                            if (reportData.scores) {
+                                this.scores[student.id] = { ...this.scores[student.id], ...reportData.scores };
+                            }
+                            
+                            // Load comments
+                            if (reportData.teacher_comment) {
+                                if (!this.teacherComments) this.teacherComments = {};
+                                this.teacherComments[student.id] = reportData.teacher_comment;
+                            }
+                            
+                            if (reportData.parent_comment) {
+                                if (!this.parentComments) this.parentComments = {};
+                                this.parentComments[student.id] = reportData.parent_comment;
+                            }
+                            
+                            // Load physical data
+                            if (reportData.physical_data) {
+                                if (!this.physicalData) this.physicalData = {};
+                                this.physicalData[student.id] = reportData.physical_data;
+                            }
+                            
+                            // Load theme comments
+                            if (reportData.theme_comments) {
+                                if (!this.themeComments) this.themeComments = {};
+                                Object.keys(reportData.theme_comments).forEach(themeId => {
+                                    const commentKey = student.id + '_' + themeId;
+                                    this.themeComments[commentKey] = reportData.theme_comments[themeId];
+                                });
+                            }
+                            
+                            // Load sub-theme comments
+                            if (reportData.sub_theme_comments) {
+                                if (!this.subThemeComments) this.subThemeComments = {};
+                                Object.keys(reportData.sub_theme_comments).forEach(subThemeId => {
+                                    const commentKey = student.id + '_' + subThemeId;
+                                    this.subThemeComments[commentKey] = reportData.sub_theme_comments[subThemeId];
+                                });
+                            }
+                            
+                            console.log(`Loaded existing report for ${student.name}:`, reportData);
+                        }
+                    } catch (e) {
+                        // Student doesn't have a report yet, that's fine
+                        console.log(`No existing report for ${student.name}:`, e.message);
+                    }
+                }
+                
+                console.log('Finished loading existing reports');
+                
+            } catch (e) {
+                console.warn('Failed to load some existing reports:', e);
+            }
+        },
+
         // ---------- ui actions ----------
         previewTemplate(t){
             this.currentTemplate = this.getTemplateData(t);
@@ -455,6 +598,10 @@ function raporApp(classId){
               });
             }
           });
+          
+          // Load existing reports for all students
+          await this.loadExistingReports();
+          
           this.mode = 'score';
         },
         
@@ -582,8 +729,69 @@ function raporApp(classId){
             return this.scores[studentId] || null;
         },
         
-        openStudentScoring(student) {
+        // Check if student has completed report
+        hasStudentReport(studentId) {
+            return this.scores[studentId] && Object.keys(this.scores[studentId]).length > 0;
+        },
+        
+        async openStudentScoring(student) {
             this.selectedStudent = student;
+            
+            // Try to load existing report data
+            try {
+                const existingReport = await this.req(`/rapor/classes/${this.classId}/reports/${student.id}/${this.selectedTemplate.id}`);
+                
+                if (existingReport.success && existingReport.data) {
+                    const reportData = existingReport.data;
+                    
+                    // Load existing scores
+                    if (reportData.scores) {
+                        this.scores[student.id] = reportData.scores;
+                    }
+                    
+                    // Load existing comments
+                    if (reportData.teacher_comment) {
+                        if (!this.teacherComments) this.teacherComments = {};
+                        this.teacherComments[student.id] = reportData.teacher_comment;
+                    }
+                    
+                    if (reportData.parent_comment) {
+                        if (!this.parentComments) this.parentComments = {};
+                        this.parentComments[student.id] = reportData.parent_comment;
+                    }
+                    
+                    // Load existing physical data
+                    if (reportData.physical_data) {
+                        if (!this.physicalData) this.physicalData = {};
+                        this.physicalData[student.id] = reportData.physical_data;
+                    }                            // Load existing attendance data (but don't override if we have current data)
+                            if (reportData.attendance_data && !this.attendanceData[student.id]) {
+                                this.attendanceData[student.id] = reportData.attendance_data;
+                            }
+                            
+                            // Load existing theme comments
+                            if (reportData.theme_comments) {
+                                if (!this.themeComments) this.themeComments = {};
+                                Object.keys(reportData.theme_comments).forEach(themeId => {
+                                    const commentKey = student.id + '_' + themeId;
+                                    this.themeComments[commentKey] = reportData.theme_comments[themeId];
+                                });
+                            }
+                            
+                            // Load existing sub-theme comments
+                            if (reportData.sub_theme_comments) {
+                                if (!this.subThemeComments) this.subThemeComments = {};
+                                Object.keys(reportData.sub_theme_comments).forEach(subThemeId => {
+                                    const commentKey = student.id + '_' + subThemeId;
+                                    this.subThemeComments[commentKey] = reportData.sub_theme_comments[subThemeId];
+                                });
+                            }
+                    
+                    console.log('Loaded existing report data for student:', student.name, reportData);
+                }
+            } catch (e) {
+                console.log('No existing report found for student, creating new:', e);
+            }
             
             // Initialize scores if not exists
             if (!this.scores[student.id]) {
@@ -597,6 +805,7 @@ function raporApp(classId){
             
             // Initialize additional data structures
             if (!this.themeComments) this.themeComments = {};
+            if (!this.subThemeComments) this.subThemeComments = {};
             if (!this.teacherComments) this.teacherComments = {};
             if (!this.parentComments) this.parentComments = {};
             if (!this.physicalData) this.physicalData = {};
@@ -641,7 +850,8 @@ function raporApp(classId){
                     parent_comment: this.parentComments[this.selectedStudent.id] || '',
                     physical_data: this.physicalData[this.selectedStudent.id] || {},
                     attendance_data: this.attendanceData[this.selectedStudent.id] || {},
-                    theme_comments: {}
+                    theme_comments: {},
+                    sub_theme_comments: {}
                 };
                 
                 // Add theme comments
@@ -652,7 +862,20 @@ function raporApp(classId){
                     }
                 });
                 
-                console.log('Saving student score with attendance data:', payload.attendance_data);
+                // Add sub-theme comments
+                this.selectedTemplate.themes.forEach(theme => {
+                    this.getSubThemes(theme).forEach(subTheme => {
+                        const commentKey = this.selectedStudent.id + '_' + subTheme.id;
+                        if (this.subThemeComments[commentKey] && this.subThemeComments[commentKey].trim() !== '') {
+                            payload.sub_theme_comments[subTheme.id] = this.subThemeComments[commentKey];
+                        }
+                    });
+                });
+                
+                console.log('Saving student score with payload:', payload);
+                console.log('Sub-theme comments being saved:', payload.sub_theme_comments);
+                console.log('All sub-theme comments data:', this.subThemeComments);
+                console.log('Current template themes:', this.selectedTemplate.themes);
                 
                 await this.req(
                     `/rapor/classes/${this.classId}/reports`,
@@ -686,12 +909,77 @@ function raporApp(classId){
                 this.selectedTemplate.themes.forEach(theme => {
                     const commentKey = studentId + '_' + theme.id;
                     delete this.themeComments[commentKey];
+                    
+                    // Remove sub-theme comments
+                    this.getSubThemes(theme).forEach(subTheme => {
+                        const subCommentKey = studentId + '_' + subTheme.id;
+                        delete this.subThemeComments[subCommentKey];
+                    });
                 });
                 
                 alert('Nilai siswa berhasil dihapus');
             } catch (e) {
                 console.error('Delete student score error:', e);
                 alert('Gagal menghapus nilai siswa: ' + e.message);
+            }
+        },
+
+        // Method to view a completed report
+        async viewStudentReport(student) {
+            if (!this.hasStudentReport(student.id)) {
+                alert('Siswa belum memiliki rapor');
+                return;
+            }
+            
+            try {
+                const reportResponse = await this.req(`/rapor/classes/${this.classId}/reports/${student.id}/${this.selectedTemplate.id}`);
+                
+                if (reportResponse.success && reportResponse.data) {
+                    this.viewingReport = {
+                        student: student,
+                        template: this.selectedTemplate,
+                        data: reportResponse.data
+                    };
+                    this.mode = 'view-report';
+                } else {
+                    alert('Gagal memuat data rapor');
+                }
+            } catch (e) {
+                console.error('Error loading report:', e);
+                alert('Gagal memuat rapor: ' + e.message);
+            }
+        },
+
+        // Method to close report view
+        closeReportView() {
+            this.viewingReport = null;
+            this.mode = 'score';
+        },
+
+        // Method to get score display for view mode
+        getScoreDisplay(scores, subThemeId) {
+            if (!scores || !scores[subThemeId]) return '-';
+            return scores[subThemeId];
+        },
+
+        // Method to download PDF report
+        async downloadReportPDF() {
+            if (!this.viewingReport) {
+                alert('Tidak ada laporan yang sedang dilihat');
+                return;
+            }
+            
+            try {
+                const { student, template } = this.viewingReport;
+                const pdfUrl = `/rapor/classes/${this.classId}/reports/${student.id}/${template.id}/pdf`;
+                
+                // Open the print-ready page in a new tab
+                window.open(pdfUrl, '_blank');
+                
+                console.log('Print page opened for:', student.name);
+            } catch (e) {
+                console.error('Error opening print page:', e);
+                alert('Gagal membuka halaman cetak: ' + e.message);
             }
         },
 
@@ -712,15 +1000,17 @@ function raporApp(classId){
 <div x-data="raporApp({{ $class->id }})" x-init="init()" class="p-4">
 
     {{-- STATE DEBUG --}}
-    <!-- <div x-show="true" class="mb-4 p-3 bg-gray-100 rounded text-xs">
+    <div x-show="true" class="mb-4 p-3 bg-gray-100 rounded text-xs">
         <div>Mode: <span x-text="mode"></span></div>
         <div>Loading: <span x-text="loading"></span></div>
+        <div>Error: <span x-text="error"></span></div>
         <div>Templates count: <span x-text="templates.length"></span></div>
         <div>Assigned Templates count: <span x-text="assignedTemplates.length"></span></div>
         <div>Template IDs: <span x-text="JSON.stringify(templates.map(t => t.id))"></span></div>
         <div>Assigned Template IDs: <span x-text="JSON.stringify(assignedTemplates.map(t => t.id))"></span></div>
         <div>Class ID: <span x-text="classId"></span></div>
-    </div> -->
+        <div>Raw Templates: <span x-text="JSON.stringify(templates.map(t => ({id: t.id, title: t.title, semester: t.semester_type})))"></span></div>
+    </div>
 
     {{-- LOADING --}}
     <div x-show="loading" class="flex justify-center items-center h-40 text-sky-600">Memuat…</div>
@@ -1001,14 +1291,19 @@ function raporApp(classId){
                 <div class="grid grid-cols-3 gap-4 p-3 border border-gray-200 bg-white">
                     <div class="text-sm text-center text-slate-600" x-text="student.name"></div>
                     <div class="text-sm text-center text-slate-600">
-                        <span x-text="getStudentScore(student.id) ? 'Sudah Dinilai' : 'Belum Dinilai'"></span>
+                        <span x-text="hasStudentReport(student.id) ? 'Sudah Dinilai' : 'Belum Dinilai'"></span>
                     </div>
                     <div class="flex flex-col gap-1 items-center">
                         <button class="w-20 text-xs font-medium bg-transparent rounded-lg border border-sky-300 text-slate-600 h-[25px]"
                                 @click="openStudentScoring(student)">
-                            <span x-text="getStudentScore(student.id) ? 'Edit' : 'Nilai'"></span>
+                            <span x-text="hasStudentReport(student.id) ? 'Edit' : 'Nilai'"></span>
                         </button>
-                        <button x-show="getStudentScore(student.id)" 
+                        <button x-show="hasStudentReport(student.id)" 
+                                class="w-20 text-xs font-medium bg-transparent rounded-lg border border-green-400 text-green-700 h-[25px]"
+                                @click="viewStudentReport(student)">
+                            Lihat
+                        </button>
+                        <button x-show="hasStudentReport(student.id)" 
                                 class="w-20 text-xs font-medium bg-transparent rounded-lg border border-red-400 text-red-700 h-[25px]"
                                 @click="deleteStudentScore(student.id)">
                             Hapus
@@ -1281,6 +1576,207 @@ function raporApp(classId){
         <div x-show="students.length === 0" class="text-center py-8 text-gray-500">
             <p>Belum ada siswa terdaftar di kelas ini</p>
             <p class="text-sm mt-2">Silakan tambahkan siswa terlebih dahulu</p>
+        </div>
+    </div>
+
+    {{-- ===================== VIEW REPORT MODE ===================== --}}
+    <div x-show="!loading && !error && mode==='view-report'" class="space-y-4">
+        <div class="flex justify-between items-center">
+            <h1 class="text-lg font-semibold text-sky-700">
+                Laporan Penilaian - <span x-text="viewingReport?.student?.name"></span>
+            </h1>
+            <button class="text-gray-600 hover:text-gray-800" @click="closeReportView()">
+                ← Kembali
+            </button>
+        </div>
+
+        <div x-show="viewingReport" class="space-y-4">
+            {{-- Student & Template Info --}}
+            <div class="bg-white border border-sky-200 rounded-lg p-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h3 class="font-semibold text-gray-800 mb-2">Data Siswa</h3>
+                        <p class="text-sm text-gray-600">Nama: <span class="font-medium" x-text="viewingReport?.student?.name"></span></p>
+                        <p class="text-sm text-gray-600" x-show="viewingReport?.student?.nisn">NISN: <span class="font-medium" x-text="viewingReport?.student?.nisn"></span></p>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-800 mb-2">Template Penilaian</h3>
+                        <p class="text-sm text-gray-600">Judul: <span class="font-medium" x-text="viewingReport?.template?.title"></span></p>
+                        <p class="text-sm text-gray-600">Semester: <span class="font-medium" x-text="viewingReport?.template?.semester_type"></span></p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Assessment Results Table --}}
+            <div class="bg-white border border-sky-200 rounded-lg overflow-hidden">
+                <div class="bg-sky-100 p-3">
+                    <h3 class="font-semibold text-sky-800">Hasil Penilaian</h3>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full border border-sky-600 rounded-xl text-xs md:text-sm bg-white">
+                        <thead class="bg-sky-100 text-sky-800">
+                            <tr>
+                                <th class="px-1 py-2 border border-sky-200 font-bold text-center" style="width: 40px;">No</th>
+                                <th class="px-3 py-2 border border-sky-200 font-bold text-left" style="width: 250px;">KOMPETENSI DASAR</th>
+                                <th class="px-3 py-2 border border-sky-200 font-bold text-center" style="width: 80px;">PENILAIAN</th>
+                                <th class="px-3 py-2 border border-sky-200 font-bold text-left" style="width: 300px;">CATATAN</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{-- Loop through themes and subthemes for view mode --}}
+                            <template x-for="(theme, themeIndex) in viewingReport?.template?.themes?.sort((a,b) => (a.order || a.id) - (b.order || b.id)) || []" :key="'view-theme-' + theme.id">
+                                <tr>
+                                    <td colspan="4" class="p-0 border-0">
+                                        {{-- Theme Header --}}
+                                        <table class="w-full border-collapse">
+                                            <tr class="bg-sky-50">
+                                                <td class="px-1 py-2 border border-sky-100 font-bold text-sky-700 text-center" style="width: 40px;" x-text="themeIndex + 1"></td>
+                                                <td class="px-3 py-2 border border-sky-100 font-bold text-sky-800" style="width: 250px;" x-text="theme.name"></td>
+                                                <td class="px-3 py-2 border border-sky-100 text-center font-bold text-sky-700" style="width: 80px;">TEMA</td>
+                                                <td class="px-3 py-2 border border-sky-100 bg-sky-100 text-sm" style="width: 300px;" x-text="viewingReport?.data?.theme_comments?.[theme.id] || '-'"></td>
+                                            </tr>
+                                        </table>
+                                        
+                                        {{-- Sub-theme Rows --}}
+                                        <table class="w-full border-collapse">
+                                            <template x-for="(subTheme, subIndex) in getSubThemes(theme).sort((a,b) => (a.order || a.id) - (b.order || b.id))" :key="'view-sub-' + theme.id + '-' + subTheme.id">
+                                                <tr :class="subIndex % 2 === 0 ? 'bg-gray-50' : 'bg-white'">
+                                                    <td class="px-1 py-2 border border-sky-100 text-center text-gray-600" style="width: 40px;" x-text="`${theme.code || 'T' + (themeIndex + 1)}.${subIndex + 1}`"></td>
+                                                    <td class="px-3 py-2 border border-sky-100" style="width: 250px;">
+                                                        <div class="font-medium" x-text="subTheme.name"></div>
+                                                        <div class="text-xs text-gray-500 mt-1" x-show="subTheme.description" x-text="subTheme.description"></div>
+                                                    </td>
+                                                    <td class="px-3 py-2 border border-sky-100 text-center font-semibold" style="width: 80px;"
+                                                        :class="{
+                                                            'text-red-600': getScoreDisplay(viewingReport?.data?.scores, subTheme.id) === 'BM',
+                                                            'text-yellow-600': getScoreDisplay(viewingReport?.data?.scores, subTheme.id) === 'MM',
+                                                            'text-blue-600': getScoreDisplay(viewingReport?.data?.scores, subTheme.id) === 'BSH',
+                                                            'text-green-600': getScoreDisplay(viewingReport?.data?.scores, subTheme.id) === 'BSB'
+                                                        }"
+                                                        x-text="getScoreDisplay(viewingReport?.data?.scores, subTheme.id)"></td>
+                                                    <td class="px-3 py-2 border border-sky-100 text-sm" style="width: 300px;" x-text="viewingReport?.data?.sub_theme_comments?.[subTheme.id] || '-'"></td>
+                                                </tr>
+                                            </template>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {{-- Physical & Attendance Data --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {{-- Physical Measurements --}}
+                <div class="bg-white border border-sky-200 rounded-lg p-4">
+                    <h4 class="font-medium text-gray-800 mb-3">Data Fisik</h4>
+                    <table class="w-full table-fixed border text-sm">
+                        <tr>
+                            <td class="border px-2 py-1 bg-gray-50 font-medium">Lingkar Kepala</td>
+                            <td class="border px-2 py-1" x-text="viewingReport?.data?.physical_data?.head_circumference || '-'"></td>
+                        </tr>
+                        <tr>
+                            <td class="border px-2 py-1 bg-gray-50 font-medium">Tinggi Badan</td>
+                            <td class="border px-2 py-1" x-text="viewingReport?.data?.physical_data?.height || '-'"></td>
+                        </tr>
+                        <tr>
+                            <td class="border px-2 py-1 bg-gray-50 font-medium">Berat Badan</td>
+                            <td class="border px-2 py-1" x-text="viewingReport?.data?.physical_data?.weight || '-'"></td>
+                        </tr>
+                    </table>
+                </div>
+
+                {{-- Attendance Data --}}
+                <div class="bg-white border border-sky-200 rounded-lg p-4">
+                    <h4 class="font-medium text-gray-800 mb-3">Data Kehadiran</h4>
+                    <table class="w-full table-fixed border text-sm">
+                        <tr>
+                            <td class="border px-2 py-1 bg-gray-50 font-medium">Sakit</td>
+                            <td class="border px-2 py-1" x-text="viewingReport?.data?.attendance_data?.sick || '0'"></td>
+                        </tr>
+                        <tr>
+                            <td class="border px-2 py-1 bg-gray-50 font-medium">Izin</td>
+                            <td class="border px-2 py-1" x-text="viewingReport?.data?.attendance_data?.permission || '0'"></td>
+                        </tr>
+                        <tr>
+                            <td class="border px-2 py-1 bg-gray-50 font-medium">Alpa</td>
+                            <td class="border px-2 py-1" x-text="viewingReport?.data?.attendance_data?.absent || '0'"></td>
+                        </tr>
+                        <tr class="bg-green-50">
+                            <td class="border px-2 py-1 font-medium text-green-700">Hadir</td>
+                            <td class="border px-2 py-1 font-medium text-green-700" x-text="viewingReport?.data?.attendance_data?.present || '0'"></td>
+                        </tr>
+                        <tr class="bg-blue-50">
+                            <td class="border px-2 py-1 font-medium text-blue-700">Total Sesi</td>
+                            <td class="border px-2 py-1 font-medium text-blue-700" x-text="viewingReport?.data?.attendance_data?.total_sessions || '0'"></td>
+                        </tr>
+                        <tr class="bg-yellow-50">
+                            <td class="border px-2 py-1 font-medium text-yellow-700">Persentase Kehadiran</td>
+                            <td class="border px-2 py-1 font-medium text-yellow-700" 
+                                x-text="viewingReport?.data?.attendance_data?.total_sessions > 0 ? Math.round((viewingReport?.data?.attendance_data?.present || 0) / viewingReport.data.attendance_data.total_sessions * 100) + '%' : '0%'"></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            {{-- Comments Section --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white border border-sky-200 rounded-lg p-4">
+                <div>
+                    <h4 class="font-medium text-gray-800 mb-3">Pesan Guru</h4>
+                    <div class="bg-gray-50 border rounded-lg p-3 min-h-[100px]">
+                        <p class="text-sm text-gray-700" x-text="viewingReport?.data?.teacher_comment || 'Tidak ada pesan dari guru'"></p>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-medium text-gray-800 mb-3">Pesan Orang Tua</h4>
+                    <div class="bg-gray-50 border rounded-lg p-3 min-h-[100px]">
+                        <p class="text-sm text-gray-700" x-text="viewingReport?.data?.parent_comment || 'Tidak ada pesan dari orang tua'"></p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Score Legend --}}
+            <div class="bg-white border border-sky-200 rounded-lg p-4">
+                <h4 class="font-medium text-gray-800 mb-3">Keterangan Penilaian</h4>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="w-8 h-8 bg-red-100 text-red-600 rounded flex items-center justify-center font-bold">BM</span>
+                        <span class="text-gray-700">Belum Muncul</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-8 h-8 bg-yellow-100 text-yellow-600 rounded flex items-center justify-center font-bold">MM</span>
+                        <span class="text-gray-700">Mulai Muncul</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-8 h-8 bg-blue-100 text-blue-600 rounded flex items-center justify-center font-bold">BSH</span>
+                        <span class="text-gray-700">Berkembang Sesuai Harapan</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-8 h-8 bg-green-100 text-green-600 rounded flex items-center justify-center font-bold">BSB</span>
+                        <span class="text-gray-700">Berkembang Sangat Baik</span>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Action Buttons --}}
+            <div class="flex justify-between gap-3 pt-4 bg-white border border-sky-200 rounded-lg p-4">
+                <button class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400" 
+                        @click="closeReportView()">
+                    Tutup
+                </button>
+                <div class="flex gap-2">
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700" 
+                            @click="openStudentScoring(viewingReport.student); closeReportView();">
+                        Edit Penilaian
+                    </button>
+                    <button class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700" 
+                            @click="downloadReportPDF()">
+                        Cetak Rapor
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 

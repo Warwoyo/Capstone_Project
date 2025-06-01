@@ -20,7 +20,8 @@ class StudentReport extends Model
         'parent_comment',
         'physical_data',
         'attendance_data',
-        'theme_comments'
+        'theme_comments',
+        'sub_theme_comments'
     ];
 
     protected $casts = [

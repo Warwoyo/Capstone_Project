@@ -1,46 +1,25 @@
 <!DOCTYPE html>
-  <html lang="id">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
-  <head>
-    <meta charset="UTF-8" />
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <title>@yield('title', 'Aplikasi')</title>
-    
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    @stack('scripts')
-    
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <title>@yield('title', 'PAUD Kartika Pradana')</title>
 
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <!-- Scripts -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
 
-    {{-- Tailwind CSS via Vite --}}
+<body class="font-sans antialiased">
+    <div class="min-h-screen bg-gray-100">
+        @yield('content')
+    </div>
+</body>
 
-    @vite('resources/css/app.css')
-
-    <script src="https://cdn.tailwindcss.com"></script>
-  </head>
-
-  <body class="bg-white text-gray-800 min-h-screen flex flex-col">
-
-    @stack('alpine')   {{-- placeholder --}}
-    
-    <main class="flex-1">
-
-      @yield('content')
-
-    </main>
-
-    <footer class="py-4 text-center text-sm text-gray-500">
-      &copy; {{ date('Y') }} Aplikasi by Radiance
-    </footer>
-    
-    @vite('resources/js/app.js')
-  </body>
 </html>

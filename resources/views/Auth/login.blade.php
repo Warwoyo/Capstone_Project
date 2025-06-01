@@ -34,10 +34,13 @@
           name="identifier"
           id="identifier"
           placeholder="08... / email"
-          class="w-full px-4 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 bg-gray-200"
-          value="{{ old('phone_number') }}"
+          class="w-full px-4 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 bg-gray-200 @error('identifier') border-red-500 @enderror"
+          value="{{ old('identifier') }}"
           required
         >
+        @error('identifier')
+          <p class="text-sm text-red-500 mt-1">{{ $message }}</p>
+        @enderror
         <p id="phoneError" class="text-sm text-orange-500 mt-1 hidden">Nomor telepon tidak valid.</p>
       </div>
 
@@ -49,9 +52,12 @@
           name="password"
           id="password"
           placeholder="Masukkan Kata Sandi"
-          class="w-full px-4 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 bg-gray-200"
+          class="w-full px-4 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 bg-gray-200 @error('password') border-red-500 @enderror"
           required
         >
+        @error('password')
+          <p class="text-sm text-red-500 mt-1">{{ $message }}</p>
+        @enderror
         <p id="passwordError" class="text-sm text-orange-500 mt-1 hidden">Kata sandi tidak boleh kosong.</p>
       </div>
 

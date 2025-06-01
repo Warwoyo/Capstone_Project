@@ -11,7 +11,7 @@ class User extends Authenticatable
     use HasFactory;
 
     protected $fillable = [
-        'name','email','role','password'
+        'name','email','role','password','temp_password'
     ];
 
     /* === RELASI === */

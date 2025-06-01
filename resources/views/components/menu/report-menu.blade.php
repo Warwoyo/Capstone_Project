@@ -999,19 +999,6 @@ function raporApp(classId){
 {{-- ROOT COMPONENT --}}
 <div x-data="raporApp({{ $class->id }})" x-init="init()" class="p-4">
 
-    {{-- STATE DEBUG --}}
-    <div x-show="true" class="mb-4 p-3 bg-gray-100 rounded text-xs">
-        <div>Mode: <span x-text="mode"></span></div>
-        <div>Loading: <span x-text="loading"></span></div>
-        <div>Error: <span x-text="error"></span></div>
-        <div>Templates count: <span x-text="templates.length"></span></div>
-        <div>Assigned Templates count: <span x-text="assignedTemplates.length"></span></div>
-        <div>Template IDs: <span x-text="JSON.stringify(templates.map(t => t.id))"></span></div>
-        <div>Assigned Template IDs: <span x-text="JSON.stringify(assignedTemplates.map(t => t.id))"></span></div>
-        <div>Class ID: <span x-text="classId"></span></div>
-        <div>Raw Templates: <span x-text="JSON.stringify(templates.map(t => ({id: t.id, title: t.title, semester: t.semester_type})))"></span></div>
-    </div>
-
     {{-- LOADING --}}
     <div x-show="loading" class="flex justify-center items-center h-40 text-sky-600">Memuat…</div>
 

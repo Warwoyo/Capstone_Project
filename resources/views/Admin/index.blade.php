@@ -134,7 +134,7 @@
     </div>
 
     <!-- Teachers Management -->
-    <div x-show="activeTab === 'teachers'" class="flex-1 w-full pt-4">
+    <div x-show="activeTab === 'teachers'" x-cloak class="flex-1 w-full pt-4">
         <div x-show="mode === 'view'">
             <div class="p-1 md:p-5">
                 <div class="flex justify-between items-center mb-4">
@@ -206,11 +206,11 @@
 
 
 <!-- Add Teacher Form -->
-<div x-show="mode === 'add'" class="flex-1 w-full pt-1">
-  <article class="grid grid-cols-1 gap-6 mx-auto w-full bg-white rounded-lg max-w-[1241px] max-md:grid-cols-1">
+<div x-show="mode === 'add'" x-cloak class="flex-1 w-full pt-1">
+  <article class="grid grid-cols-1 w-full bg-white rounded-lg max-w-[1241px] max-md:grid-cols-1">
     
     {{-- Header --}}
-    <div class="flex justify-between items-center mb-4">
+    <div class="flex justify-between items-center">
         <h2 class="text-lg font-semibold text-gray-800">Tambah Guru Baru</h2>
         <button @click="mode = 'view'" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
             Kembali
@@ -218,7 +218,7 @@
     </div>
 
     {{-- Form --}}
-    <form method="POST" action="{{ route('admin.users.create') }}" class="w-full mx-auto space-y-4 max-w-4xl p-4">
+    <form method="POST" action="{{ route('admin.users.create') }}" class="w-full mx-auto space-y-2 max-w-4xl p-4">
       @csrf
       <input type="hidden" name="role" value="teacher">
 
@@ -231,7 +231,7 @@
           id="name"
           value="{{ old('name') }}"
           placeholder="Nama Lengkap Guru"
-          class="w-full px-4 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
+          class="w-full px-4 py-2 mt-2 border border-sky-500 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500"
           required
         >
         @error('name')
@@ -248,7 +248,7 @@
           id="email"
           value="{{ old('email') }}"
           placeholder="email@example.com"
-          class="w-full px-4 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
+          class="w-full px-4 py-2 mt-2 border border-sky-500 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500"
           required
         >
         @error('email')
@@ -264,7 +264,7 @@
           name="password"
           id="password"
           placeholder="Masukkan Kata Sandi"
-          class="w-full px-4 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
+          class="w-full px-4 py-2 mt-2 border border-sky-500 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500"
           required
         >
         @error('password')
@@ -279,7 +279,7 @@
           Simpan Guru
         </button>
         <button type="button" @click="mode = 'view'"
-          class="flex-1 px-4 py-2 bg-gray-500 text-white font-medium rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
+          class="flex-1 px-4 py-2 bg-red-500 text-white font-medium rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
           Batal
         </button>
       </div>
@@ -287,7 +287,7 @@
   </article>    </div>
 
 <!-- Edit Teacher Form -->
-<div x-show="mode === 'edit'" class="flex-1 w-full pt-1">
+<div x-show="mode === 'edit'" x-cloak class="flex-1 w-full pt-1">
   <article class="grid grid-cols-1 gap-6 mx-auto w-full bg-white rounded-lg max-w-[1241px] max-md:grid-cols-1">
     
     {{-- Header --}}
@@ -299,7 +299,7 @@
     </div>
 
     {{-- Form --}}
-    <form method="POST" class="w-full mx-auto space-y-4 max-w-4xl p-4" onsubmit="this.action = `/admin/users/${editingTeacher}`">
+    <form method="POST" class="w-full mx-auto space-y-2 max-w-4xl p-4" onsubmit="this.action = `/admin/users/${editingTeacher}`">
       @csrf
       @method('PUT')
 
@@ -311,7 +311,7 @@
           name="name"
           id="edit_name"
           placeholder="Nama Lengkap Guru"
-          class="w-full px-4 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
+          class="w-full px-4 py-2 mt-2 border border-sky-500 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500"
           required
         >
       </div>
@@ -324,7 +324,7 @@
           name="email"
           id="edit_email"
           placeholder="email@example.com"
-          class="w-full px-4 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
+          class="w-full px-4 py-2 mt-2 border border-sky-500 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500"
           required
         >
       </div>
@@ -336,7 +336,7 @@
           Update Guru
         </button>
         <button type="button" @click="mode = 'view'"
-          class="flex-1 px-4 py-2 bg-gray-500 text-white font-medium rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
+          class="flex-1 px-4 py-2 bg-red-500 text-white font-medium rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
           Batal
         </button>
       </div>

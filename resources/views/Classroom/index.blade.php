@@ -81,7 +81,7 @@
     <div class="w-full md:w-1/2">
     <form method="POST" action="{{ route('Classroom.store') }}" enctype="multipart/form-data" class="flex flex-col gap-3.5">
         @csrf
-        <div class="flex flex-col gap-8 max-md:gap-5 max-sm:gap-0">
+        <div class="flex flex-col gap-3 max-md:gap-5 max-sm:gap-0">
             <!-- Form Input Nama Kelas -->
             <div class="flex flex-col gap-1.5">
                 <label class="text-xs text-slate-600 max-sm:text-sm">
@@ -97,7 +97,7 @@
             </div>
 
             <!-- Form Upload Gambar -->
-            <div class="flex flex-col gap-1.5 max-md:w-full max-sm:w-full">
+            <!-- <div class="flex flex-col gap-1.5 max-md:w-full max-sm:w-full">
                 <label class="text-xs text-slate-600 max-sm:text-sm">Gambar</label>
                 <label class="cursor-pointer">
                     <div class="flex items-center px-2 py-0 text-xs font-medium text-gray-400 bg-white rounded-3xl border border-sky-600 border-dashed h-[40px] w-full">
@@ -106,7 +106,7 @@
                     </div>
                     <input type="file" name="photo" class="hidden" />
                 </label>
-            </div>
+            </div> -->
 
             <!-- Wali Kelas -->
             <div class="flex flex-col gap-1.5">
@@ -132,18 +132,13 @@
         </label>
         <textarea
             name="description"
-            class="p-2.5 text-xs font-medium text-gray-500 h-[80px] bg-gray-50 rounded-3xl resize-none border border-sky-600"
+            class="p-2.5 text-xs font-medium text-gray-500 h-[111px] bg-gray-50 rounded-3xl resize-none border border-sky-600"
             placeholder="Masukkan deskripsi kelas..."
         ></textarea>
     </div>
 
     <!-- Toolbar (kosmetik, non-fungsional untuk sekarang) -->
-    <div class="flex flex-col px-4 py-0 bg-gray-50 rounded-3xl border-sky-600 border-solid border-[1.5px]">
-        <div class="flex gap-3 items-center px-0 py-2.5 border-b border-gray-200">
-            <button class="text-lg text-black font-bold">B</button>
-            <button class="text-lg text-black underline">U</button>
-        </div>
-    </div>
+    
 
     <!-- Tombol Submit -->
     <div class="mt-4 flex justify-center">

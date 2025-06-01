@@ -839,7 +839,7 @@ function raporApp(classId){
 </style>
 
 {{-- ROOT COMPONENT --}}
-<div x-data="raporApp({{ $class->id }})" x-init="init()" class="p-4">
+<div x-data="raporApp({{ $class->id }})" x-init="init()" class="p-2">
 
     {{-- LOADING --}}
     <div x-show="loading" class="flex justify-center items-center h-40 text-sky-600">Memuat…</div>
@@ -851,7 +851,7 @@ function raporApp(classId){
     </div>
 
  {{-- ===================== MAIN VIEW ===================== --}}
-    <div x-show="!loading && !error && mode==='view'" class="space-y-4">
+    <div x-show="!loading && !error && mode==='view'" x-cloak  class="space-y-3 overflow-y-auto max-h-[60vh] md:max-h-[55vh] hide-scrollbar">
         {{-- Header --}}
         <div class="flex justify-between items-center">
             <h1 class="text-lg font-semibold text-sky-700">Template Rapor Kelas</h1>
@@ -910,7 +910,7 @@ function raporApp(classId){
         </div>
 
         {{-- Available Templates Section --}}
-        <div x-show="templates.length > 0" class="space-y-3">
+      <div x-show="templates.length > 0" class="space-y-3 overflow-y-auto max-h-[60vh] md:max-h-[47vh] hide-scrollbar">
             <h3 class="text-sm font-medium text-gray-700">Template Tersedia:</h3>
             
             {{-- Templates Grid --}}
@@ -984,7 +984,7 @@ function raporApp(classId){
     </div>
 
     {{-- ===================== TEMPLATE SELECTION FOR REPORT ===================== --}}
-    <div x-show="!loading && !error && mode==='select-template'" class="space-y-4">
+    <div x-show="!loading && !error && mode==='select-template'" x-cloak  class="space-y-3 overflow-y-auto max-h-[60vh] md:max-h-[55vh] hide-scrollbar">>
         <div class="flex justify-between items-center">
             <h1 class="text-lg font-semibold text-sky-700">Pilih Template untuk Rapor</h1>
             <button class="text-gray-600 hover:text-gray-800" @click="mode='view'">
@@ -1015,7 +1015,7 @@ function raporApp(classId){
     </div>
 
     {{-- ===================== TEMPLATE PREVIEW ===================== --}}
-    <div x-show="!loading && !error && mode==='preview'" class="space-y-4">
+    <div x-show="!loading && !error && mode==='preview'" x-cloak class="space-y-3 overflow-y-auto max-h-[60vh] md:max-h-[55vh] hide-scrollbar">
         <div class="flex justify-between items-center">
             <h1 class="text-lg font-semibold text-sky-700">Preview Template</h1>
             <button class="text-gray-600 hover:text-gray-800" @click="cancelPreview()">
@@ -1078,7 +1078,7 @@ function raporApp(classId){
     </div>
 
     {{-- ===================== SCORING VIEW ===================== --}}
-    <div x-show="!loading && !error && mode==='score'" class="space-y-4">
+    <div x-show="!loading && !error && mode==='score'" x-cloak  class="space-y-3 overflow-y-auto max-h-[60vh] md:max-h-[55vh] hide-scrollbar">>
         <div class="flex justify-between items-center">
             <h1 class="text-lg font-semibold text-sky-700">
                 Penilaian Siswa - <span x-text="selectedTemplate?.title"></span>
@@ -1391,7 +1391,7 @@ function raporApp(classId){
     </div>
 
     {{-- ===================== VIEW REPORT MODE ===================== --}}
-    <div x-show="!loading && !error && mode==='view-report'" class="space-y-4">
+    <div x-show="!loading && !error && mode==='view-report'" x-cloak class="space-y-4">
         <div class="flex justify-between items-center">
             <h1 class="text-lg font-semibold text-sky-700">
                 Laporan Penilaian - <span x-text="viewingReport?.student?.name"></span>
@@ -1592,7 +1592,7 @@ function raporApp(classId){
     </div>
 
     {{-- ===================== ADD TEMPLATE FORM ===================== --}}
-    <div x-show="!loading && !error && mode==='add'" class="space-y-4">
+    <div x-show="!loading && !error && mode==='add'" x-cloak class="space-y-4">
         <div class="flex justify-between items-center">
             <h1 class="text-lg font-semibold text-sky-700">Tambah Template Rapor</h1>
         </div>

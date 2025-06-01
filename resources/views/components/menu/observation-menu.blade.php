@@ -8,7 +8,7 @@
      class="flex-1 w-full">
 
     <!-- View Schedules for Observation -->
-    <div x-show="mode === 'view'" class="flex-1 w-full">
+    <div x-show="mode === 'view'" x-cloak class="flex-1 w-full">
         <div class="overflow-y-auto hide-scrollbar max-h-[63vh] md:max-h-[56vh]">
             @if(count($scheduleList) > 0)
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 items-start">
@@ -53,7 +53,7 @@
     </div>
 
     <!-- Select Schedule Detail -->
-    <div x-show="mode === 'select-detail'" class="flex-1 w-full">
+    <div x-show="mode === 'select-detail'" x-cloak class="flex-1 w-full">
         <div class="mb-2">
             <button @click="mode = 'view'" class="text-sky-600 text-sm hover:underline">← Kembali ke Jadwal</button>
             <h3 class="text-lg font-bold text-sky-800 mt-2" id="selectedScheduleTitle">Pilih Sub Tema</h3>
@@ -71,7 +71,7 @@
     </div>
 
     <!-- Student Scoring -->
-    <div x-show="mode === 'scoring'" class="flex-1 w-full">
+    <div x-show="mode === 'scoring'" x-cloak class="flex-1 w-full">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-2 gap-2">
     
     <!-- Tombol kembali -->

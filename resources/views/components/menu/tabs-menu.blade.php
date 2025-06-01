@@ -36,7 +36,7 @@
     @endif
 
     @php
-        $tabActions = ['observasi', 'jadwal', 'peserta', 'rapor'];
+        $tabActions = ['observasi', 'jadwal'];
     @endphp
 
     @if (in_array($tab, $tabActions))
@@ -51,7 +51,7 @@
 </div>
 
 
-    <div class="flex flex-col md:flex-row md:gap-6 gap-4 mt-0 md:mt-2">
+    <div class=" w-full">
         @php
             $tabMapping = [
                 'pengumuman' => 'announcement',

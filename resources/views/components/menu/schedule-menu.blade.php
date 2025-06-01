@@ -3,9 +3,8 @@
 
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
-<div x-data="{ mode: @entangle('mode') }" class="flex-1 w-full">
     <!-- View Data -->
-    <div x-show="mode === 'view'" class="flex-1 w-full">
+    <div x-show="mode === 'view'" x-cloak class="flex-1 w-full">
         <div class="overflow-y-auto hide-scrollbar max-h-[63vh] md:max-h-[56vh]">
            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 items-start">
                 
@@ -88,7 +87,7 @@
     </div>
 
     <!-- Add/Edit Form -->
-    <div x-show="mode === 'add' || mode === 'edit'" class="flex-1 w-full">
+    <div x-show="mode === 'add' || mode === 'edit'" x-cloak class="flex-1 w-full">
         
         <form id="scheduleForm" class="flex flex-col gap-3.5 ">
             @csrf

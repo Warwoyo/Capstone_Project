@@ -11,7 +11,7 @@
 >
 
     {{-- ========== VIEW LIST ========== --}}
-    <div x-show="mode==='view'" class="flex-1 w-full">
+    <div x-show="mode==='view'" x-cloak class="flex-1 w-full">
         <div class="overflow-y-auto hide-scrollbar max-h-[62vh] md:max-h-[56vh]">
             {{-- Header --}}
             <div class="pl-2 flex items-center bg-sky-200 h-10 rounded-t-lg">
@@ -100,7 +100,7 @@
     </div>
 
     {{-- ========== ADD FORM (BARU) ========== --}}
-    <div x-show="mode==='add'" class="flex-1" x-data="{ modeOrtu:'ortu' }">
+    <div x-show="mode==='add'" x-cloak class="flex-1" x-data="{ modeOrtu:'ortu' }">
         <div class="overflow-y-auto hide-scrollbar max-h-[62vh] md:max-h-[56vh]">
         <form method="POST"
               action="{{ route('students.store',['class'=>$class->id]) }}"

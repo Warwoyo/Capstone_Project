@@ -851,7 +851,7 @@ function raporApp(classId){
     </div>
 
  {{-- ===================== MAIN VIEW ===================== --}}
-    <div x-show="!loading && !error && mode==='view'" x-cloak  class="space-y-3 overflow-y-auto max-h-[60vh] md:max-h-[55vh] hide-scrollbar">
+    <div x-show="!loading && !error && mode==='view'" x-cloak class="space-y-3 overflow-y-auto max-h-[60vh] md:max-h-[55vh] hide-scrollbar">
         {{-- Header --}}
         <div class="flex justify-between items-center">
             <h1 class="text-lg font-semibold text-sky-700">Template Rapor Kelas</h1>
@@ -984,7 +984,7 @@ function raporApp(classId){
     </div>
 
     {{-- ===================== TEMPLATE SELECTION FOR REPORT ===================== --}}
-    <div x-show="!loading && !error && mode==='select-template'" x-cloak  class="space-y-3 overflow-y-auto max-h-[60vh] md:max-h-[55vh] hide-scrollbar">>
+    <div x-show="!loading && !error && mode==='select-template'" x-cloak class="space-y-3 overflow-y-auto max-h-[60vh] md:max-h-[55vh] hide-scrollbar">>
         <div class="flex justify-between items-center">
             <h1 class="text-lg font-semibold text-sky-700">Pilih Template untuk Rapor</h1>
             <button class="text-gray-600 hover:text-gray-800" @click="mode='view'">
@@ -1065,11 +1065,11 @@ function raporApp(classId){
 
             {{-- Action Buttons --}}
             <div class="flex justify-end gap-3 pt-4 border-t">
-                <button class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400" 
+                <button class="bg-red-500 text-white px-4 py-2 rounded-full text-sm" 
                         @click="cancelPreview()">
                     Batal
                 </button>
-                <button class="px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700" 
+                <button class="px-6 py-2 bg-sky-600 text-white rounded-full hover:bg-sky-700" 
                         @click="confirmAssignTemplate()">
                     Gunakan Template Ini
                 </button>
@@ -1078,7 +1078,7 @@ function raporApp(classId){
     </div>
 
     {{-- ===================== SCORING VIEW ===================== --}}
-    <div x-show="!loading && !error && mode==='score'" x-cloak  class="space-y-3 overflow-y-auto max-h-[60vh] md:max-h-[55vh] hide-scrollbar">>
+    <div x-show="!loading && !error && mode==='score'" x-cloak class="space-y-3 overflow-y-auto max-h-[60vh] md:max-h-[55vh] hide-scrollbar">>
         <div class="flex justify-between items-center">
             <h1 class="text-lg font-semibold text-sky-700">
                 Penilaian Siswa - <span x-text="selectedTemplate?.title"></span>

@@ -37,7 +37,7 @@
     @endif
 
     @php
-        $tabActions = ['observasi', 'jadwal'];
+        $tabActions = ['jadwal'];
     @endphp
 
     @if (in_array($tab, $tabActions))

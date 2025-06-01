@@ -56,6 +56,9 @@ class Classroom extends Model
         );
     }
     
+    /**
+     * Get the syllabuses for the classroom
+     */
     public function syllabuses()
     {
         return $this->hasMany(Syllabus::class);

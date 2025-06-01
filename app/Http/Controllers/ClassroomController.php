@@ -8,7 +8,11 @@ use App\Models\{
     Report,
     User,
     Schedule,
-    StudentReport
+    StudentReport,
+    Syllabus,
+    Attendance,
+    Announcement,
+    ObservationScore
 };
 
 class ClassroomController extends Controller
@@ -175,8 +179,9 @@ public function showClassroomDetail(Request $r, Classroom $classroom, string $ta
 
         /* ── SILABUS (opsional) ── */
         case 'silabus':
+            $data['syllabusList'] = $classroom->syllabuses()->latest()->get();
+            break;
             $data['syllabusList'] = $classroom->syllabuses()->get();
-            $data['semester'] = $semester ?? null;
             break;
     }
 

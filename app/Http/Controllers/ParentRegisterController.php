@@ -37,6 +37,43 @@ class ParentRegisterController extends Controller
             ])->withInput();
         }
 
+        // Check if phone number already exists in user_contacts
+        if ($r->phone_number) {
+            // Only check if there's a valid user-contact relationship
+            $existingContact = \App\Models\UserContact::where('phone_number', $r->phone_number)
+                ->whereExists(function ($query) {
+                    $query->select('id')
+                        ->from('users')
+                        ->whereColumn('users.id', 'user_contacts.user_id');
+                })
+                ->first();
+                
+            if ($existingContact) {
+                return back()->withErrors([
+                    'phone_number' => 'Nomor telepon sudah terdaftar. Silakan gunakan nomor lain atau login jika Anda sudah memiliki akun.',
+                ])->withInput();
+            }
+            
+            // Clean up any orphaned contacts for this phone number
+            \App\Models\UserContact::where('phone_number', $r->phone_number)
+                ->whereNotExists(function ($query) {
+                    $query->select('id')
+                        ->from('users')
+                        ->whereColumn('users.id', 'user_contacts.user_id');
+                })
+                ->delete();
+        }
+
+        // Check if email already exists
+        if ($r->email) {
+            $existingUser = User::where('email', $r->email)->first();
+            if ($existingUser) {
+                return back()->withErrors([
+                    'email' => 'Email sudah terdaftar. Silakan gunakan email lain atau login jika Anda sudah memiliki akun.',
+                ])->withInput();
+            }
+        }
+
         /** 2. Cari parent profil yg cocok */
         $parent = ParentProfile::where('student_id', $token->student_id)
             ->where(function ($q) use ($r) {
@@ -65,31 +102,62 @@ class ParentRegisterController extends Controller
                     // Skip kalau sudah punya user
                     if ($p->user_id) return;
 
-                    $user = User::create([
-                        'name'     => $p->name,
-                        'email'    => $p->email,           // boleh null
-                        'role'     => 'parent',
-                        'password' => Hash::make($r->password),
-                    ]);
-
-                    // simpan kontak telepon
-                    if ($p->phone) {
-                        $user->contacts()->create([
-                            'phone_number' => $p->phone,
-                            'is_primary'   => true,
-                            'verified_at'  => now(),
+                    try {
+                        $user = User::create([
+                            'name'     => $p->name,
+                            'email'    => $p->email,           // boleh null
+                            'role'     => 'parent',
+                            'password' => Hash::make($r->password),
                         ]);
-                    }
 
-                    $p->update(['user_id' => $user->id]);
-                    $user->students()->attach($p->student_id);
+                        // simpan kontak telepon
+                        if ($p->phone) {
+                            try {
+                                $user->contacts()->create([
+                                    'phone_number' => $p->phone,
+                                    'is_primary'   => true,
+                                    'verified_at'  => now(),
+                                ]);
+                            } catch (\Illuminate\Database\QueryException $e) {
+                                // If phone number already exists, skip creating contact
+                                // This handles edge cases where multiple parents have same phone
+                                if ($e->getCode() == 23000) {
+                                    // Duplicate entry error - continue without creating contact
+                                    \Log::warning("Duplicate phone number skipped for user {$user->id}: {$p->phone}");
+                                } else {
+                                    throw $e; // Re-throw other database errors
+                                }
+                            }
+                        }
+
+                        $p->update(['user_id' => $user->id]);
+                        $user->students()->attach($p->student_id);
+                        
+                    } catch (\Exception $e) {
+                        // Log the error and re-throw to rollback transaction
+                        \Log::error("Failed to create user for parent profile {$p->id}: " . $e->getMessage());
+                        throw $e;
+                    }
                 });
 
             $token->update(['used_at' => now()]);
         });
 
         // Auto-login akun yg baru dibuat (parent pendaftar)
-        Auth::attempt(['email' => $parent->email, 'password' => $r->password]);
+        $loginCredentials = [];
+        if ($parent->email) {
+            $loginCredentials = ['email' => $parent->email, 'password' => $r->password];
+        } else {
+            // If no email, find the user by ID and login directly
+            $parentUser = User::where('id', $parent->user_id)->first();
+            if ($parentUser) {
+                Auth::login($parentUser);
+            }
+        }
+        
+        if (!empty($loginCredentials)) {
+            Auth::attempt($loginCredentials);
+        }
 
         return redirect()->route('dashboard.index')
             ->with('success', 'Akun berhasil dibuat. Selamat datang di aplikasi sekolah!');

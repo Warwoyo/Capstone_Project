@@ -27,6 +27,23 @@ use App\Http\Controllers\{
 Route::get ('/parent/register', [ParentRegisterController::class, 'create'])->name('parent.register.form');
 Route::post('/parent/register', [ParentRegisterController::class, 'store'])->name('parent.register');
 
+// Cleanup route for orphaned contacts (temporary solution)
+Route::get('/cleanup-contacts', function() {
+    $orphanedContacts = \App\Models\UserContact::whereNotExists(function ($query) {
+        $query->select('id')
+            ->from('users')
+            ->whereColumn('users.id', 'user_contacts.user_id');
+    })->get();
+    
+    $count = $orphanedContacts->count();
+    
+    foreach ($orphanedContacts as $contact) {
+        $contact->delete();
+    }
+    
+    return "Cleaned up {$count} orphaned contacts. You can now try registration again.";
+});
+
 /*
 |--------------------------------------------------------------------------
 | GUEST-ONLY (belum login)
@@ -34,7 +51,7 @@ Route::post('/parent/register', [ParentRegisterController::class, 'store'])->nam
 */
 Route::middleware('guest')->group(function () {
     Route::get ('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/login', [App\Http\Controllers\Auth\CustomLoginController::class, 'login']);
 });
 
 /*
@@ -46,7 +63,14 @@ Route::middleware('auth')->group(function () {
 
     /* ── Auth misc ────────────────────────────────────────────────────── */
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-    Route::get ('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+    
+    // Teacher password change routes (accessible by teachers with temp passwords)
+    Route::get('/teacher/change-password', [App\Http\Controllers\Auth\TeacherPasswordController::class, 'showChangePasswordForm'])->name('teacher.password.form');
+    Route::post('/teacher/change-password', [App\Http\Controllers\Auth\TeacherPasswordController::class, 'changePassword'])->name('teacher.password.change');
+    
+    // Apply temp password middleware to dashboard and other protected routes
+    Route::middleware([\App\Http\Middleware\CheckTempPassword::class])->group(function () {
+        Route::get ('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
 
     /* ── ANNOUNCEMENTS ────────────────────────────────────────────────── */
     // A. Viewable by **all** logged-in users
@@ -61,23 +85,78 @@ Route::middleware('auth')->group(function () {
             ->shallow();
     });
 
-    /* ── PARENT-ONLY ─────────────────────────────────────────────────── */
+    /* ── PARENT-ONLY (VIEW ACCESS ONLY) ─────────────────────────────── */
     Route::middleware('role:parent')->group(function () {
-        Route::get('/orangtua/anak/data-anak',           [DashboardController::class, 'childrenParent']     )->name('orangtua.children');
-        Route::get('/orangtua/anak/observasi',           [DashboardController::class, 'observationParent']  )->name('orangtua.observation');
-        Route::get('/orangtua/anak/jadwal',              [DashboardController::class, 'scheduleParent']     )->name('orangtua.schedule');
-        Route::get('/orangtua/anak/presensi',            [DashboardController::class, 'attendanceParent']   )->name('orangtua.attendance');
-        Route::get('/orangtua/anak/riwayat-pengumuman',  [DashboardController::class, 'announcementParent'] )->name('orangtua.announcement');
-        Route::get('/orangtua/anak/silabus',             [DashboardController::class, 'syllabusParent']     )->name('orangtua.syllabus');
-        
-        // Parents can view their children's reports
-        Route::get('/orangtua/anak/rapor', [ReportController::class, 'parentView'])
-            ->name('orangtua.rapor');
-        Route::get('/orangtua/anak/rapor/{student}', [ReportController::class, 'parentViewDetail'])
-            ->name('orangtua.rapor.detail');
+        Route::prefix('orangtua')->name('orangtua.')->group(function () {
+            // Dashboard orangtua
+            Route::get('/dashboard', [DashboardController::class, 'parentDashboard'])->name('dashboard');
+            
+            // Data anak (view only)
+            Route::get('/anak/data-anak', [DashboardController::class, 'childrenParent'])->name('children');
+            
+            // Jadwal pembelajaran anak (view only)
+            Route::get('/anak/jadwal', [DashboardController::class, 'scheduleParent'])->name('schedule');
+            
+            // Presensi anak (view only)
+            Route::get('/anak/presensi', [DashboardController::class, 'attendanceParent'])->name('attendance');
+            Route::get('/anak/presensi/{student}', [DashboardController::class, 'attendanceParentDetail'])->name('attendance.detail');
+            
+            // Observasi perkembangan anak (view only)
+            Route::get('/anak/observasi', [DashboardController::class, 'observationParent'])->name('observation');
+            Route::get('/anak/observasi/{student}', [DashboardController::class, 'observationParentDetail'])->name('observation.detail');
+            
+            // Pengumuman (view only)
+            Route::get('/anak/pengumuman', [DashboardController::class, 'announcementParent'])->name('announcement');
+            Route::get('/anak/pengumuman/{announcement}', [DashboardController::class, 'announcementParentDetail'])->name('announcement.detail');
+            
+            // Silabus pembelajaran (view only)
+            Route::get('/anak/silabus', [DashboardController::class, 'syllabusParent'])->name('syllabus');
+            Route::get('/anak/silabus/{syllabus}', [DashboardController::class, 'syllabusParentDetail'])->name('syllabus.detail');
+            
+            // Rapor anak (view only)
+            Route::get('/anak/rapor', [ReportController::class, 'parentView'])->name('rapor');
+            Route::get('/anak/rapor/{student}', [ReportController::class, 'parentViewDetail'])->name('rapor.detail');
+            Route::get('/anak/rapor/{student}/download', [ReportController::class, 'parentDownloadReport'])->name('rapor.download');
+            
+            // Kelas anak (view classroom info)
+            Route::get('/anak/kelas', [DashboardController::class, 'classroomParent'])->name('classroom');
+            Route::get('/anak/kelas/{classroom}', [DashboardController::class, 'classroomParentDetail'])->name('classroom.detail');
+        });
     });
 
-    /* ── ADMIN & TEACHER ONLY ─────────────────────────────────────────── */
+    /* ── ADMIN-ONLY ROUTES ──────────────────────────────────────────── */
+    Route::middleware('role:admin')->group(function () {
+        // User management (admin only) - redirects to main admin page
+        Route::get('/admin/users', [AdminController::class, 'fetchParentList'])->name('admin.users');
+        Route::post('/admin/users', [AdminController::class, 'createUser'])->name('admin.users.create');
+        Route::put('/admin/users/{user}', [AdminController::class, 'updateUser'])->name('admin.users.update');
+        Route::delete('/admin/users/{user}', [AdminController::class, 'deleteUser'])->name('admin.users.delete');
+        
+        // Parent registration management
+        Route::get('/admin/orangtua', [AdminController::class, 'fetchParentList'])->name('Admin.index');
+        Route::post('/admin/orangtua/{parent}/reset-token', [AdminController::class, 'resetParentToken'])->name('admin.parents.reset-token');
+        Route::post('/admin/orangtua/generate-token', [AdminController::class, 'generateNewToken'])->name('admin.parents.generate-token');
+        Route::delete('/admin/orangtua/token/{token}/delete', [AdminController::class, 'deleteUnusedToken'])->name('admin.parents.delete-token');
+        
+        // Teacher password reset
+        Route::post('/admin/guru/{teacher}/reset-password', [AdminController::class, 'resetTeacherPassword'])->name('admin.teachers.reset-password');
+        
+        // System settings
+        Route::get('/admin/settings', [AdminController::class, 'settings'])->name('admin.settings');
+        Route::post('/admin/settings', [AdminController::class, 'updateSettings'])->name('admin.settings.update');
+    });
+
+    /* ── TEACHER-ONLY ROUTES ─────────────────────────────────────────── */
+    Route::middleware('role:teacher')->group(function () {
+        // Teacher can only manage their assigned classrooms
+        Route::get('/teacher/classrooms', [ClassroomController::class, 'teacherClassrooms'])->name('teacher.classrooms');
+        
+        // Teacher-specific attendance and observation routes
+        Route::get('/teacher/attendance', [AttendanceController::class, 'teacherIndex'])->name('teacher.attendance');
+        Route::get('/teacher/observations', [ObservationController::class, 'teacherIndex'])->name('teacher.observations');
+    });
+
+    /* ── ADMIN & TEACHER ONLY (CRUD ACCESS) ─────────────────────────────── */
     Route::middleware('role:admin,teacher')->group(function () {
         
         /* ── CLASSROOMS ──────────────────────────────────────────────── */
@@ -284,14 +363,21 @@ Route::middleware('auth')->group(function () {
         });
     });
 
-    /* ── ALL AUTHENTICATED USERS CAN VIEW ─────────────────────────────── */
+    /* ── SHARED VIEW ACCESS (ALL AUTHENTICATED USERS) ─────────────────────────────── */
     Route::middleware('role:admin,teacher,parent')->group(function () {
-        // Classrooms index (viewable by all)
+        // Classrooms index (viewable by all authenticated users)
         Route::get('/classrooms', [ClassroomController::class, 'index'])->name('classrooms.index');
         
+        // View announcements (read-only access for all users)
+        Route::get('/announcements', [AnnouncementController::class, 'publicIndex'])->name('announcements.public');
+        Route::get('/announcements/{announcement}', [AnnouncementController::class, 'publicShow'])->name('announcements.public.show');
+        
         // View report templates (read-only for parents)
-        Route::get('/rapor/templates/view', [TemplateController::class, 'viewOnly'])
-            ->name('rapor.templates.view');
+        Route::get('/rapor/templates/view', [TemplateController::class, 'viewOnly'])->name('rapor.templates.view');
+        
+        // View syllabus (all users can view)
+        Route::get('/syllabus', [SyllabusController::class, 'publicIndex'])->name('syllabus.public');
+        Route::get('/syllabus/{syllabus}', [SyllabusController::class, 'view'])->name('syllabus.view');
     });
 
     /* ── CLASSROOM TAB DETAIL ─────────────────────────────────────────── */
@@ -303,6 +389,8 @@ Route::middleware('auth')->group(function () {
         ->name('classroom.student-detail');
     Route::get('/classrooms/{class}/peserta', [ClassroomController::class, 'studentsTab'])
         ->name('classroom.tab.peserta');
+
+    }); // Close temp password middleware group
 
 });
 

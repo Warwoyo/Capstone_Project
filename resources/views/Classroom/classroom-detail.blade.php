@@ -1,5 +1,4 @@
 
-
 @extends('layouts.dashboard')
 
 @section('content')
@@ -66,3 +65,4 @@
 </div>
 </main>
 
+@endsection

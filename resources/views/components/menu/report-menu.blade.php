@@ -66,18 +66,13 @@ function raporApp(classId){
         dedup(list){
             if (!Array.isArray(list)) return [];
             const filtered = list.filter(t => {
-                const isValid = t && 
+                return t && 
                        typeof t === 'object' && 
                        t.id && 
                        (typeof t.id === 'number' || typeof t.id === 'string') && 
                        t.title && 
                        typeof t.title === 'string' && 
                        t.title.trim() !== '';
-                       
-                if (!isValid) {
-                    console.log('Template filtered out in dedup:', t);
-                }
-                return isValid;
             });
             return uniqBy(filtered, t => t.id);
         },
@@ -103,40 +98,24 @@ function raporApp(classId){
                 this.loading = true;
                 this.error = null;
                 
-                console.log('Starting init for class:', this.classId);
-                
                 // Load all templates first
                 let allTemplates = await this.loadTemplates();
-                console.log('Loaded all templates:', allTemplates);
                 
                 // Load assigned templates
                 const assignedList = await this.loadAssignedTemplates();
-                console.log('Loaded assigned templates:', assignedList);
-                
+
                 // Apply strict validation and deduplication
                 this.assignedTemplates = this.dedup(assignedList);
-                console.log('Deduplicated assigned templates:', this.assignedTemplates);
-                
+
                 // Ensure we have clean, deduplicated data
                 allTemplates = this.dedup(allTemplates);
-                console.log('Deduplicated all templates:', allTemplates);
                 
                 // Filter out assigned templates from available templates
                 const assignedIds = this.assignedTemplates.map(t => t.id);
                 this.templates = allTemplates.filter(t => !assignedIds.includes(t.id));
                 
-                console.log('Init complete:', {
-                    totalTemplates: allTemplates.length,
-                    assignedTemplates: this.assignedTemplates.length,
-                    availableTemplates: this.templates.length,
-                    assignedIds: assignedIds,
-                    assignedTitles: this.assignedTemplates.map(t => t.title),
-                    availableTitles: this.templates.map(t => t.title)
-                });
-                
             } catch (e) {
-                console.error('Init error:', e);
-                this.error = 'Gagal memuat data: ' + e.message;
+                this.error = 'Gagal memuat data';
             }
             this.loading = false;
         },
@@ -144,86 +123,27 @@ function raporApp(classId){
         // ---------- data ----------
         async loadTemplates(){
             try {
-                console.log('Loading templates...');
-                
                 const data = await this.req('/rapor/templates');
-                console.log('Templates API response:', data);
                 
                 if (!Array.isArray(data)) {
-                    console.warn('Templates API returned non-array:', data);
-                    
-                    // Check if it's wrapped in a data property
                     if (data && data.data && Array.isArray(data.data)) {
                         return this.dedup(data.data);
                     }
-                    
                     return [];
                 }
-                
-                console.log('Templates array received:', data.length, 'items');
                 
                 // Apply basic validation
                 const validTemplates = data.filter(t => {
-                    const isValid = t && 
+                    return t && 
                            typeof t === 'object' && 
                            t.id && 
                            t.title;
-                           
-                    if (!isValid) {
-                        console.log('Invalid template filtered out:', t);
-                    }
-                    return isValid;
                 });
                 
-                console.log('Valid templates after filtering:', validTemplates.length);
-                console.log('Valid templates:', validTemplates.map(t => ({
-                    id: t.id, 
-                    title: t.title, 
-                    semester: t.semester_type,
-                    themes_count: (t.themes || []).length
-                })));
-                
-                const dedupedData = this.dedup(validTemplates);
-                console.log('Templates after deduplication:', dedupedData.length, 'unique items');
-                return dedupedData;
+                return this.dedup(validTemplates);
                 
             } catch (e) {
-                console.error('Failed to load templates:', e);
-                
-                // Try a direct simple call to see if endpoint exists
-                try {
-                    const response = await fetch('/rapor/templates', {
-                        credentials: 'same-origin',
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': this.csrf(),
-                        }
-                    });
-                    
-                    console.log('Direct fetch status:', response.status);
-                    console.log('Direct fetch ok:', response.ok);
-                    
-                    if (response.ok) {
-                        const text = await response.text();
-                        console.log('Direct fetch response body:', text);
-                        
-                        try {
-                            const parsed = JSON.parse(text);
-                            console.log('Successfully parsed JSON:', parsed);
-                            return Array.isArray(parsed) ? parsed : [];
-                        } catch (parseError) {
-                            console.error('JSON parse error:', parseError);
-                            return [];
-                        }
-                    } else {
-                        const errorText = await response.text();
-                        console.error('HTTP error:', response.status, response.statusText, errorText);
-                        return [];
-                    }
-                } catch (directError) {
-                    console.error('Direct fetch failed:', directError);
-                    return [];
-                }
+                return [];
             }
         },
         
@@ -232,10 +152,8 @@ function raporApp(classId){
             try{
                 // Try the main endpoint first
                 let assigned = await this.req(`/rapor/classes/${this.classId}/assigned-templates`);
-                console.log('Raw assigned templates response:', assigned);
                 
                 if (!assigned) {
-                    console.log('No assigned templates response');
                     return [];
                 }
                 
@@ -248,39 +166,26 @@ function raporApp(classId){
                 } else if (assigned.templates && Array.isArray(assigned.templates)) {
                     templatesArray = assigned.templates;
                 } else {
-                    console.log('Unexpected response format:', assigned);
                     return [];
                 }
                 
-                console.log('Templates array extracted:', templatesArray);
-                
                 // Filter and validate assigned templates
                 const validAssigned = templatesArray.filter(t => {
-                    const isValid = t && 
+                    return t && 
                            typeof t === 'object' && 
                            t.id && 
                            t.title && 
                            typeof t.title === 'string' && 
                            t.title.trim() !== '';
-                    
-                    if (!isValid) {
-                        console.warn('Invalid assigned template filtered out:', t);
-                    }
-                    return isValid;
                 });
-                
-                console.log('Valid assigned templates found:', validAssigned.length);
-                console.log('Assigned templates:', validAssigned);
                 
                 // Remove duplicates based on template ID
                 const uniqueAssigned = validAssigned.filter((template, index, self) =>
                     index === self.findIndex(t => t.id === template.id)
                 );
-                
-                console.log('Unique assigned templates:', uniqueAssigned.length);
+
                 return uniqueAssigned;
             }catch(e){ 
-                console.error('Error loading assigned templates:', e);
                 return []; 
             }
         },
@@ -294,37 +199,27 @@ function raporApp(classId){
                 try {
                     const response = await this.req(`/ajax/classrooms/${this.classId}/students`);
                     students = response.data || response || [];
-                    console.log('Students loaded via AJAX endpoint:', students.length);
                 } catch (e1) {
-                    console.log('AJAX endpoint failed, trying alternative...');
-                    
                     // Try alternative endpoint
                     try {
                         students = await this.req(`/classroom/${this.classId}/students`);
-                        console.log('Students loaded via alternative endpoint:', students.length);
                     } catch (e2) {
-                        console.log('Alternative endpoint failed, trying rapor endpoint...');
-                        
                         // Try rapor endpoint
                         try {
                             const response = await this.req(`/rapor/classes/${this.classId}/students`);
                             students = response.data || response || [];
-                            console.log('Students loaded via rapor endpoint:', students.length);
                         } catch (e3) {
-                            console.error('All student endpoints failed:', e3);
                             students = [];
                         }
                     }
                 }
                 
                 this.students = Array.isArray(students) ? students : [];
-                console.log('Final students array:', this.students.length, 'students');
                 
                 // Load attendance data for each student
                 await this.loadStudentAttendanceData();
                 
             } catch (e) {
-                console.error('Failed to load students:', e);
                 this.students = [];
             }
         },
@@ -332,15 +227,12 @@ function raporApp(classId){
         // New method to load attendance data for students
         async loadStudentAttendanceData() {
             try {
-                console.log('Loading attendance data for class:', this.classId);
-                
                 // Try to get raw attendance records from the database
                 let attendanceRecords = [];
                 
                 try {
                     // Try the summary endpoint first
                     const summaryResponse = await this.req(`/ajax/classrooms/${this.classId}/attendance-summary`);
-                    console.log('Summary response:', summaryResponse);
                     
                     if (summaryResponse && summaryResponse.data) {
                         // Use summary data if available
@@ -361,22 +253,17 @@ function raporApp(classId){
                         return;
                     }
                 } catch (e1) {
-                    console.log('Summary endpoint failed, trying raw attendance data...');
+                    // Silent fallback
                 }
                 
                 // If summary fails, get raw attendance records and calculate manually
                 try {
                     const rawResponse = await this.req(`/ajax/classrooms/${this.classId}/attendances`);
                     attendanceRecords = rawResponse.data || rawResponse || [];
-                    console.log('Raw attendance records:', attendanceRecords);
                 } catch (e2) {
-                    console.log('Raw attendance endpoint failed, trying alternative...');
-                    
                     try {
                         attendanceRecords = await this.req(`/attendance/classroom/${this.classId}`);
-                        console.log('Alternative attendance records:', attendanceRecords);
                     } catch (e3) {
-                        console.error('All attendance endpoints failed:', e3);
                         attendanceRecords = [];
                     }
                 }
@@ -387,8 +274,6 @@ function raporApp(classId){
                     const studentRecords = attendanceRecords.filter(record => 
                         record.student_id === student.id || record.student_id == student.id
                     );
-                    
-                    console.log(`Records for student ${student.name}:`, studentRecords);
                     
                     // Count each status type
                     const sickCount = studentRecords.filter(r => 
@@ -417,20 +302,9 @@ function raporApp(classId){
                         present: presentCount,
                         total_sessions: totalSessions
                     };
-                    
-                    console.log(`Calculated attendance for ${student.name}:`, {
-                        sick: sickCount,
-                        permission: permissionCount,
-                        absent: absentCount,
-                        present: presentCount,
-                        total_sessions: totalSessions,
-                        records: studentRecords.map(r => r.status)
-                    });
                 });
                 
             } catch (e) {
-                console.warn('Failed to load attendance data, using defaults:', e);
-                
                 // Initialize with default values if loading fails
                 this.students.forEach(student => {
                     if (!this.attendanceData[student.id]) {
@@ -451,8 +325,6 @@ function raporApp(classId){
             if (!this.selectedTemplate || !this.students.length) return;
             
             try {
-                console.log('Loading existing reports for template:', this.selectedTemplate.id);
-                
                 for (const student of this.students) {
                     try {
                         const reportResponse = await this.req(`/rapor/classes/${this.classId}/reports/${student.id}/${this.selectedTemplate.id}`);
@@ -499,19 +371,14 @@ function raporApp(classId){
                                     this.subThemeComments[commentKey] = reportData.sub_theme_comments[subThemeId];
                                 });
                             }
-                            
-                            console.log(`Loaded existing report for ${student.name}:`, reportData);
                         }
                     } catch (e) {
                         // Student doesn't have a report yet, that's fine
-                        console.log(`No existing report for ${student.name}:`, e.message);
                     }
                 }
                 
-                console.log('Finished loading existing reports');
-                
             } catch (e) {
-                console.warn('Failed to load some existing reports:', e);
+                // Silent error handling
             }
         },
 
@@ -550,8 +417,7 @@ function raporApp(classId){
                 
                 alert('Template berhasil ditetapkan');
             } catch (e) {
-                console.error('Assignment error:', e);
-                alert('Gagal menetapkan template: ' + e.message);
+                alert('Gagal menetapkan template');
             }
         },
         
@@ -578,13 +444,10 @@ function raporApp(classId){
                   this.selectedTemplate = this.getTemplateData(freshTemplate);
               }
           } catch (e) {
-              console.warn('Could not refresh template data, using existing:', e);
+              // Silent error if template refresh fails
           }
           
           this.currentTemplate = this.selectedTemplate;
-          
-          console.log('Selected template for scoring:', this.selectedTemplate);
-          console.log('Template themes ordered:', this.selectedTemplate.themes?.map((t, i) => ({index: i, code: t.code, name: t.name})));
           
           // initialize empty scores map
           this.scores = {};
@@ -624,8 +487,7 @@ function raporApp(classId){
                 
                 alert('Template berhasil dihapus');
             } catch (e) {
-                console.error('Delete error:', e);
-                alert('Gagal menghapus template: ' + e.message);
+                alert('Gagal menghapus template');
             }
         },
 
@@ -647,8 +509,7 @@ function raporApp(classId){
                 
                 alert('Template berhasil dihapus dari kelas');
             } catch (e) {
-                console.error('Remove assigned template error:', e);
-                alert('Gagal menghapus template: ' + e.message);
+                alert('Gagal menghapus template');
             }
         },
 
@@ -696,8 +557,7 @@ function raporApp(classId){
                 this.resetForm();
                 alert('Template ditambahkan');
             } catch (e) {
-                console.error('Save template error:', e);
-                alert('Gagal menyimpan template: ' + e.message);
+                alert('Gagal menyimpan template');
             }
         },
         
@@ -719,8 +579,7 @@ function raporApp(classId){
               this.selectedTemplate = null;
               this.currentTemplate = null;
           } catch (e) {
-              console.error('Save scores error:', e);
-              alert('Gagal menyimpan rapor: ' + e.message);
+              alert('Gagal menyimpan rapor');
           }
         },
 
@@ -764,33 +623,33 @@ function raporApp(classId){
                     if (reportData.physical_data) {
                         if (!this.physicalData) this.physicalData = {};
                         this.physicalData[student.id] = reportData.physical_data;
-                    }                            // Load existing attendance data (but don't override if we have current data)
-                            if (reportData.attendance_data && !this.attendanceData[student.id]) {
-                                this.attendanceData[student.id] = reportData.attendance_data;
-                            }
-                            
-                            // Load existing theme comments
-                            if (reportData.theme_comments) {
-                                if (!this.themeComments) this.themeComments = {};
-                                Object.keys(reportData.theme_comments).forEach(themeId => {
-                                    const commentKey = student.id + '_' + themeId;
-                                    this.themeComments[commentKey] = reportData.theme_comments[themeId];
-                                });
-                            }
-                            
-                            // Load existing sub-theme comments
-                            if (reportData.sub_theme_comments) {
-                                if (!this.subThemeComments) this.subThemeComments = {};
-                                Object.keys(reportData.sub_theme_comments).forEach(subThemeId => {
-                                    const commentKey = student.id + '_' + subThemeId;
-                                    this.subThemeComments[commentKey] = reportData.sub_theme_comments[subThemeId];
-                                });
-                            }
+                    }
                     
-                    console.log('Loaded existing report data for student:', student.name, reportData);
+                    // Load existing attendance data (but don't override if we have current data)
+                    if (reportData.attendance_data && !this.attendanceData[student.id]) {
+                        this.attendanceData[student.id] = reportData.attendance_data;
+                    }
+                    
+                    // Load existing theme comments
+                    if (reportData.theme_comments) {
+                        if (!this.themeComments) this.themeComments = {};
+                        Object.keys(reportData.theme_comments).forEach(themeId => {
+                            const commentKey = student.id + '_' + themeId;
+                            this.themeComments[commentKey] = reportData.theme_comments[themeId];
+                        });
+                    }
+                    
+                    // Load existing sub-theme comments
+                    if (reportData.sub_theme_comments) {
+                        if (!this.subThemeComments) this.subThemeComments = {};
+                        Object.keys(reportData.sub_theme_comments).forEach(subThemeId => {
+                            const commentKey = student.id + '_' + subThemeId;
+                            this.subThemeComments[commentKey] = reportData.sub_theme_comments[subThemeId];
+                        });
+                    }
                 }
             } catch (e) {
-                console.log('No existing report found for student, creating new:', e);
+                // No existing report found, create new
             }
             
             // Initialize scores if not exists
@@ -830,12 +689,6 @@ function raporApp(classId){
                     total_sessions: 0
                 };
             }
-            
-            console.log(`Opened scoring for ${student.name}:`, {
-                scores: this.scores[student.id],
-                attendance: this.attendanceData[student.id],
-                physical: this.physicalData[student.id]
-            });
         },
         
         async saveStudentScore() {
@@ -872,11 +725,6 @@ function raporApp(classId){
                     });
                 });
                 
-                console.log('Saving student score with payload:', payload);
-                console.log('Sub-theme comments being saved:', payload.sub_theme_comments);
-                console.log('All sub-theme comments data:', this.subThemeComments);
-                console.log('Current template themes:', this.selectedTemplate.themes);
-                
                 await this.req(
                     `/rapor/classes/${this.classId}/reports`,
                     {
@@ -889,8 +737,7 @@ function raporApp(classId){
                 alert('Penilaian berhasil disimpan');
                 this.selectedStudent = null;
             } catch (e) {
-                console.error('Save student score error:', e);
-                alert('Gagal menyimpan penilaian: ' + e.message);
+                alert('Gagal menyimpan penilaian');
             }
         },
         
@@ -919,8 +766,7 @@ function raporApp(classId){
                 
                 alert('Nilai siswa berhasil dihapus');
             } catch (e) {
-                console.error('Delete student score error:', e);
-                alert('Gagal menghapus nilai siswa: ' + e.message);
+                alert('Gagal menghapus nilai siswa');
             }
         },
 
@@ -945,8 +791,7 @@ function raporApp(classId){
                     alert('Gagal memuat data rapor');
                 }
             } catch (e) {
-                console.error('Error loading report:', e);
-                alert('Gagal memuat rapor: ' + e.message);
+                alert('Gagal memuat rapor');
             }
         },
 
@@ -975,11 +820,8 @@ function raporApp(classId){
                 
                 // Open the print-ready page in a new tab
                 window.open(pdfUrl, '_blank');
-                
-                console.log('Print page opened for:', student.name);
             } catch (e) {
-                console.error('Error opening print page:', e);
-                alert('Gagal membuka halaman cetak: ' + e.message);
+                alert('Gagal membuka halaman cetak');
             }
         },
 
@@ -1315,24 +1157,6 @@ function raporApp(classId){
 
             {{-- Scoring Table --}}
             <div class="bg-white border border-sky-200 rounded-lg overflow-hidden">
-                <!-- {{-- Debug info --}}
-                <div x-show="true" class="p-2 bg-yellow-100 text-xs">
-                    <div>Template ID: <span x-text="selectedTemplate?.id"></span></div>
-                    <div>Template has themes: <span x-text="selectedTemplate?.themes ? 'Yes' : 'No'"></span></div>
-                    <div>Themes count: <span x-text="selectedTemplate?.themes?.length || 0"></span></div>
-                    <div>Current template themes: <span x-text="currentTemplate?.themes?.length || 0"></span></div>
-                    <div>Themes data: <span x-text="JSON.stringify(selectedTemplate?.themes?.map(t => ({name: t.name, subCount: getSubThemes(t).length})) || [])"></span></div>
-                    <div>Raw theme structure: <span x-text="JSON.stringify(selectedTemplate?.themes?.[0] || {})"></span></div>
-                    <div>Sub-themes check: <span x-text="selectedTemplate?.themes?.[0] ? JSON.stringify(getSubThemes(selectedTemplate.themes[0])) : 'No themes'"></span></div>
-                    <div>All themes with sub-themes: <span x-text="JSON.stringify(selectedTemplate?.themes?.map(t => ({code: t.code, name: t.name, subs: getSubThemes(t).map(s => ({code: s.code, name: s.name}))})) || [])"></span></div>
-                    <div>DEBUG: First theme sub_themes: <span x-text="JSON.stringify(selectedTemplate?.themes?.[0]?.sub_themes || 'none')"></span></div>
-                    <div>DEBUG: First theme subThemes: <span x-text="JSON.stringify(selectedTemplate?.themes?.[0]?.subThemes || 'none')"></span></div>
-                    <div>DEBUG: getSubThemes result for first theme: <span x-text="selectedTemplate?.themes?.[0] ? JSON.stringify(getSubThemes(selectedTemplate.themes[0])) : 'no theme'"></span></div>
-                    <div class="mt-2 text-green-700">ATTENDANCE DEBUG:</div>
-                    <div>Selected student attendance: <span x-text="selectedStudent ? JSON.stringify(attendanceData[selectedStudent.id] || 'no data') : 'no student'"></span></div>
-                    <div>Total attendance data loaded: <span x-text="Object.keys(attendanceData).length"></span> students</div>
-                </div>
-                 -->
                 <div class="overflow-x-auto">
                     <table class="min-w-full border border-sky-600 rounded-xl text-xs md:text-sm bg-white">
                         <thead class="bg-sky-100 text-sky-800">

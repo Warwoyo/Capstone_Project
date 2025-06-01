@@ -271,6 +271,15 @@ Route::middleware('auth')->group(function () {
 
             // Add route for attendance summary AJAX
             Route::get('/classrooms/{classroom}/attendance-summary', [ClassroomController::class, 'getAttendanceSummary']);
+            
+            // Add route for students in classroom
+            Route::get('/classrooms/{classroom}/students', function ($classroomId) {
+                $classroom = \App\Models\Classroom::with('students')->findOrFail($classroomId);
+                return response()->json([
+                    'success' => true,
+                    'data' => $classroom->students
+                ]);
+            });
         });
     });
 
@@ -335,3 +344,28 @@ Route::group(['prefix' => 'rapor/debug'], function () {
         ]);
     });
 });
+
+// Additional rapor routes for saving student reports
+Route::post('/rapor/classes/{classId}/reports', [ClassroomController::class, 'saveStudentReport'])
+    ->name('rapor.classes.reports.store');
+
+Route::get('/rapor/classes/{classId}/reports', [ClassroomController::class, 'getClassReports'])
+    ->name('rapor.classes.reports.index');
+
+Route::delete('/rapor/classes/{classId}/reports/{studentId}', [ClassroomController::class, 'deleteStudentReport'])
+    ->name('rapor.classes.reports.destroy');
+
+// Template management routes  
+Route::get('/rapor/templates', function() {
+    // Return empty array for now since we don't have templates table
+    return response()->json([]);
+});
+
+Route::get('/rapor/classes/{classId}/assigned-templates', function($classId) {
+    // Return empty array for now since we don't have template assignment system
+    return response()->json([]);
+});
+
+// Attendance summary route
+Route::get('/ajax/classrooms/{classroom}/attendance-summary', [ClassroomController::class, 'getAttendanceSummary'])
+    ->name('classroom.attendance.summary');

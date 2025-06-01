@@ -244,4 +244,137 @@ public function showClassroomDetail(Request $r, Classroom $classroom, string $ta
             ], 500);
         }
     }
+
+    /**
+     * Save student report scores and data
+     */
+    public function saveStudentReport(Request $request, $classId)
+    {
+        try {
+            \Log::info('Save student report request data:', $request->all());
+            
+            $validatedData = $request->validate([
+                'template_id' => 'required|integer',
+                'student_id' => 'required|integer|exists:students,id',
+                'scores' => 'nullable|array',
+                'teacher_comment' => 'nullable|string|max:1000',
+                'parent_comment' => 'nullable|string|max:1000',
+                'physical_data' => 'nullable|array',
+                'attendance_data' => 'nullable|array',
+                'theme_comments' => 'nullable|array'
+            ]);
+
+            // Check if classroom exists and user has permission
+            $classroom = Classroom::findOrFail($classId);
+            
+            // Check if student belongs to this classroom
+            $studentInClass = $classroom->students()->where('students.id', $validatedData['student_id'])->exists();
+            if (!$studentInClass) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Siswa tidak terdaftar di kelas ini'
+                ], 400);
+            }
+
+            // Check if report already exists
+            $existingReport = StudentReport::where([
+                'classroom_id' => $classId,
+                'student_id' => $validatedData['student_id'],
+                'template_id' => $validatedData['template_id']
+            ])->first();
+
+            $reportData = [
+                'classroom_id' => $classId,
+                'student_id' => $validatedData['student_id'],
+                'template_id' => $validatedData['template_id'],
+                'scores' => json_encode($validatedData['scores'] ?? []),
+                'teacher_comment' => $validatedData['teacher_comment'] ?? '',
+                'parent_comment' => $validatedData['parent_comment'] ?? '',
+                'physical_data' => json_encode($validatedData['physical_data'] ?? []),
+                'attendance_data' => json_encode($validatedData['attendance_data'] ?? []),
+                'theme_comments' => json_encode($validatedData['theme_comments'] ?? []),
+            ];
+
+            if ($existingReport) {
+                // Update existing report
+                $existingReport->update($reportData);
+                $report = $existingReport;
+                \Log::info('Updated existing report:', ['report_id' => $report->id]);
+            } else {
+                // Create new report
+                $report = StudentReport::create($reportData);
+                \Log::info('Created new report:', ['report_id' => $report->id]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Rapor berhasil disimpan',
+                'data' => $report
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation error in save student report:', $e->errors());
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak valid',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Save student report error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan rapor: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get all reports for a classroom
+     */
+    public function getClassReports($classId)
+    {
+        try {
+            $reports = \App\Models\StudentReport::with(['student', 'template'])
+                ->where('classroom_id', $classId)
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $reports
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat rapor: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete student report
+     */
+    public function deleteStudentReport($classId, $studentId)
+    {
+        try {
+            $deleted = \App\Models\StudentReport::where([
+                'classroom_id' => $classId,
+                'student_id' => $studentId
+            ])->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Rapor berhasil dihapus',
+                'deleted_count' => $deleted
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus rapor: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

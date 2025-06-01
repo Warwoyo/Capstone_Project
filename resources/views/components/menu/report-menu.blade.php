@@ -51,6 +51,7 @@ function raporApp(classId){
             headers: {
               'Accept': 'application/json',
               'X-CSRF-TOKEN': this.csrf(),
+              'Content-Type': 'application/json',
               ...headers
             },
             ...rest

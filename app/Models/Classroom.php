@@ -55,4 +55,9 @@ class Classroom extends Model
             'id' // Local key on schedule_details table
         );
     }
+    
+    public function syllabuses()
+    {
+        return $this->hasMany(Syllabus::class);
+    }
 }

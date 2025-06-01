@@ -176,6 +176,7 @@ public function showClassroomDetail(Request $r, Classroom $classroom, string $ta
         /* ── SILABUS (opsional) ── */
         case 'silabus':
             $data['syllabusList'] = $classroom->syllabuses()->get();
+            $data['semester'] = $semester ?? null;
             break;
     }
 

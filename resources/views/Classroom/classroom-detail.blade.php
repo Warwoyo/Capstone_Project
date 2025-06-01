@@ -61,7 +61,8 @@
         :observation="$observationList"
         :active-date="$activeDate"
         :classroom-id="$class->id" 
+        :syllabusList="$syllabusList"
     />
 </div>
 </main>
-@endsection
+

@@ -13,7 +13,8 @@ use App\Http\Controllers\{
     AttendanceController,
     ObservationController,
     TemplateController,
-    ReportController
+    ReportController,
+    SyllabusController
 };
 
 /*
@@ -303,6 +304,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/classrooms/{class}/peserta', [ClassroomController::class, 'studentsTab'])
         ->name('classroom.tab.peserta');
 
+});
+
+// Syllabus routes
+Route::middleware(['auth'])->group(function () {
+    Route::post('/syllabus/store/{classroom}', [SyllabusController::class, 'store'])->name('syllabus.store');
+    Route::get('/syllabus/view/{syllabus}', [SyllabusController::class, 'view'])->name('syllabus.view');
+    Route::delete('/syllabus/{syllabus}', [SyllabusController::class, 'destroy'])->name('syllabus.destroy');
 });
 
 /*

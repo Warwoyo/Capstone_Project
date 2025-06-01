@@ -11,6 +11,7 @@
    'selectedSchedule'   => null,
    'selectedDescription'=> null,
    'classroomId'=> null,
+   'syllabusList' => null,
 ])
 
 
@@ -123,11 +124,8 @@
      @elseif (strtolower($tab) === 'silabus')
         <x-dynamic-component 
             :component="'menu.' . $englishTab . '-menu'" 
-            :studentList="$student" 
-            :class="$class" 
-            :semesterList="$semester"
-            :label="ucfirst($tab)" 
-           
+            :classroom="$class" 
+            :syllabusList="$syllabusList"
         />
 
         

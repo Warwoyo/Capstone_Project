@@ -15,9 +15,17 @@ class Syllabus extends Model
         'classroom_id',
         'title',
         'file_path',
-        'file_name'
+        'file_name',
     ];
 
+    protected $casts = [
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    /**
+     * Get the classroom that owns the syllabus
+     */
     public function classroom()
     {
         return $this->belongsTo(Classroom::class);

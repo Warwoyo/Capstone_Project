@@ -59,7 +59,7 @@
                             <!-- Action Buttons -->
                             <div class="flex justify-end gap-4 mt-4">
                                 <button 
-                                    onclick="editSchedule({{ $schedule['id'] }})"
+                                    onclick="editSchedule({{ $schedule['id'] }}); return false;"
                                     class="flex gap-1 items-center px-3 py-1.5 text-xs font-medium text-sky-800 hover:bg-sky-50 rounded-full transition-colors"
                                 >
                                     <svg width="16" height="16" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -89,12 +89,15 @@
         </div>
     </div>
 
-    <!-- Add/Edit Form -->
-    <div x-show="mode === 'add' || mode === 'edit'" x-cloak class="flex-1 w-full">
+    <!-- Add Form -->
+    <div x-show="mode === 'add'" x-cloak class="flex-1 w-full">
+        <div class="mb-4">
+            <h3 class="text-lg font-semibold text-sky-800">Tambah Jadwal Baru</h3>
+            <p class="text-sm text-gray-600">Isi form di bawah untuk menambah jadwal pembelajaran baru</p>
+        </div>
         
-        <form id="scheduleForm" class="flex flex-col gap-3.5 ">
+        <form id="addScheduleForm" class="flex flex-col gap-3.5 ">
             @csrf
-            <input type="hidden" name="schedule_id" id="scheduleId">
             <div class="flex flex-wrap gap-1 md:gap-6 w-full">
                 <!-- Left Column -->
                 <div class="flex-1 min-w-[300px]">
@@ -107,7 +110,7 @@
                             <input
                                 type="text"
                                 name="title"
-                                placeholder="Judul Tema Utama"
+                                placeholder="Masukkan judul tema pembelajaran"
                                 class="px-4 py-0 h-10 text-sm font-medium text-gray-700 bg-white rounded-3xl border border-sky-600 w-full"
                                 required
                             />
@@ -121,7 +124,7 @@
                             <textarea 
                                 name="description" 
                                 class="p-2.5 text-xs font-medium text-gray-700 bg-white rounded-3xl border border-sky-600 w-full resize-none"
-                                placeholder="Masukkan deskripsi tema..." 
+                                placeholder="Masukkan deskripsi tema pembelajaran..." 
                                 rows="3"
                                 required></textarea>
                         </div>
@@ -135,8 +138,8 @@
                 </button>
                 <button 
                     type="button" 
-                    id="submitSchedule" 
-                    onclick="submitScheduleForm()"
+                    id="submitAddSchedule" 
+                    onclick="submitAddScheduleForm()"
                     class="px-4 py-2 bg-sky-600 text-white font-semibold rounded-full hover:bg-sky-700 transition-colors"
                 >
                     Simpan Jadwal
@@ -149,13 +152,12 @@
                 <div class="flex-1 min-w-[300px] overflow-y-auto hide-scrollbar max-h-[50vh] md:max-h-[55vh]">
                     <div class="flex flex-col max-md:gap-5 max-sm:gap-0">
                         <div class=" sticky top-0 flex items-center mb-1 ml-auto md:mr-2">
-                           {{--<label class="text-sm font-medium text-slate-700">Sub Tema</label>--}} 
-                            <button type="button" id="addSubTheme" class="px-3 py-1 bg-sky-600 text-white text-xs rounded-full hover:bg-sky-700 transition-colors">
+                            <button type="button" id="addSubThemeAdd" class="px-3 py-1 bg-sky-600 text-white text-xs rounded-full hover:bg-sky-700 transition-colors">
                                 + Tambah Sub Tema
                             </button>
                         </div>
                         
-                        <div id="subThemesContainer" class="space-y-4 max-h overflow-y-auto pr-2 ">
+                        <div id="addSubThemesContainer" class="space-y-4 max-h overflow-y-auto pr-2 ">
                             <!-- Sub themes will be added here -->
                         </div>
                     </div>
@@ -172,11 +174,110 @@
                 </button>
                 <button 
                     type="button" 
-                    id="submitScheduleMobile"
-                    onclick="submitScheduleForm()"
+                    id="submitAddScheduleMobile"
+                    onclick="submitAddScheduleForm()"
                     class="px-4 py-2 bg-sky-600 text-white font-semibold rounded-full hover:bg-sky-700 transition-colors"
                 >
                     Simpan Jadwal
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Edit Form -->
+    <div x-show="mode === 'edit'" x-cloak class="flex-1 w-full">
+        <div class="mb-4">
+            <h3 class="text-lg font-semibold text-sky-800">Edit Jadwal</h3>
+            <p class="text-sm text-gray-600">Ubah data jadwal pembelajaran yang sudah ada</p>
+        </div>
+        
+        <form id="editScheduleForm" class="flex flex-col gap-3.5 ">
+            @csrf
+            <input type="hidden" name="schedule_id" id="editScheduleId">
+            <div class="flex flex-wrap gap-1 md:gap-6 w-full">
+                <!-- Left Column -->
+                <div class="flex-1 min-w-[300px]">
+                    <div class="flex flex-col gap-4 max-md:gap-5 max-sm:gap-0">
+                        <!-- Title Input -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-xs text-slate-600 max-sm:text-sm">
+                                <span>Judul Tema</span><span class="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                name="title"
+                                id="editTitle"
+                                placeholder="Masukkan judul tema pembelajaran"
+                                class="px-4 py-0 h-10 text-sm font-medium text-gray-700 bg-white rounded-3xl border border-sky-600 w-full"
+                                required
+                            />
+                        </div>
+
+                        <!-- Description -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-xs text-slate-600 max-sm:text-sm">
+                                <span>Deskripsi</span><span class="text-red-500">*</span>
+                            </label>
+                            <textarea 
+                                name="description" 
+                                id="editDescription"
+                                class="p-2.5 text-xs font-medium text-gray-700 bg-white rounded-3xl border border-sky-600 w-full resize-none"
+                                placeholder="Masukkan deskripsi tema pembelajaran..." 
+                                rows="3"
+                                required></textarea>
+                        </div>
+                         <div class="hidden md:flex gap-4 mx-auto mb-2">
+                <button 
+                    type="button" 
+                    @click="mode = 'view'"
+                    class="px-4 py-2 text-sky-600 border border-sky-600 font-semibold rounded-full hover:bg-sky-50 transition-colors"
+                >
+                    Batal
+                </button>
+                <button 
+                    type="button" 
+                    id="submitEditSchedule" 
+                    onclick="submitEditScheduleForm()"
+                    class="px-4 py-2 bg-sky-600 text-white font-semibold rounded-full hover:bg-sky-700 transition-colors"
+                >
+                    Update Jadwal
+                </button>
+            </div>
+                    </div>
+                </div>
+
+                <!-- Right Column - Sub Themes -->
+                <div class="flex-1 min-w-[300px] overflow-y-auto hide-scrollbar max-h-[50vh] md:max-h-[55vh]">
+                    <div class="flex flex-col max-md:gap-5 max-sm:gap-0">
+                        <div class=" sticky top-0 flex items-center mb-1 ml-auto md:mr-2">
+                           {{--<label class="text-sm font-medium text-slate-700">Sub Tema</label>--}} 
+                            <button type="button" id="addSubThemeEdit" class="px-3 py-1 bg-sky-600 text-white text-xs rounded-full hover:bg-sky-700 transition-colors">
+                                + Tambah Sub Tema
+                            </button>
+                        </div>
+                        
+                        <div id="editSubThemesContainer" class="space-y-4 max-h overflow-y-auto pr-2 ">
+                            <!-- Sub themes will be added here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+           <div class="flex md:hidden gap-4 mx-auto mt-2">
+                <button 
+                    type="button" 
+                    @click="mode = 'view'"
+                    class="px-4 py-2 text-sky-600 border border-sky-600 font-semibold rounded-full hover:bg-sky-50 transition-colors"
+                >
+                    Batal
+                </button>
+                <button 
+                    type="button" 
+                    id="submitEditScheduleMobile"
+                    onclick="submitEditScheduleForm()"
+                    class="px-4 py-2 bg-sky-600 text-white font-semibold rounded-full hover:bg-sky-700 transition-colors"
+                >
+                    Update Jadwal
                 </button>
             </div>
         </form>
@@ -242,15 +343,7 @@
 
 
 <script>
-let originalFormHtml = '';
-let addSubTheme; // Declare globally
-
 document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('scheduleForm');
-    if (form) {
-        // Store the template element instead of innerHTML
-        originalFormHtml = form.cloneNode(true);
-    }
     initScheduleForm();
 });
 
@@ -261,15 +354,22 @@ function formatDate(dateString) {
 }
 
 function initScheduleForm() {
-    const addButton = document.getElementById('addSubTheme');
-    const container = document.getElementById('subThemesContainer');
-    const template = document.getElementById('subThemeTemplate');
-    const form = document.getElementById('scheduleForm');
+    // Initialize Add Form
+    initAddForm();
+    // Initialize Edit Form
+    initEditForm();
+}
 
-    // Define addSubTheme as a global function
-    addSubTheme = function(existingData = null) {
+function initAddForm() {
+    const addButton = document.getElementById('addSubThemeAdd');
+    const container = document.getElementById('addSubThemesContainer');
+    const template = document.getElementById('subThemeTemplate');
+    const form = document.getElementById('addScheduleForm');
+
+    // Define addSubTheme for add form
+    window.addSubThemeAdd = function(existingData = null) {
         if (!template || !container) {
-            console.error('Required elements not found');
+            console.error('Required elements not found for add form');
             return;
         }
 
@@ -286,9 +386,14 @@ function initScheduleForm() {
                 
                 // Set existing values if editing
                 if (existingData) {
-                    const fieldName = name.match(/\[(.*?)\]/)[1];
-                    if (existingData[fieldName]) {
-                        input.value = existingData[fieldName];
+                    if (name.includes('[title]')) {
+                        input.value = existingData.title || '';
+                    } else if (name.includes('[start_date]')) {
+                        input.value = existingData.start_date || '';
+                    } else if (name.includes('[end_date]')) {
+                        input.value = existingData.end_date || '';
+                    } else if (name.includes('[week]')) {
+                        input.value = existingData.week || '';
                     }
                 }
             }
@@ -301,12 +406,11 @@ function initScheduleForm() {
                 if (container.children.length > 1) {
                     this.closest('.sub-theme-item').remove();
                 } else {
-                    // Trigger custom alert instead of browser alert
                     window.dispatchEvent(new CustomEvent('open-confirmation', {
                         detail: {
                             label: 'sub tema terakhir',
                             action: 'menghapus',
-                            target: null // No action needed, just show message
+                            target: null
                         }
                     }));
                 }
@@ -315,7 +419,6 @@ function initScheduleForm() {
 
         container.appendChild(clone);
 
-        // Scroll ke sub tema terakhir yang baru ditambahkan
         const lastSubTheme = container.lastElementChild;
         if (lastSubTheme) {
             lastSubTheme.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -324,14 +427,14 @@ function initScheduleForm() {
 
     // Add first sub-theme by default if container is empty
     if (container && container.children.length === 0) {
-        addSubTheme();
+        window.addSubThemeAdd();
     }
 
     // Add sub-theme button click handler
     if (addButton) {
         addButton.addEventListener('click', function(e) {
             e.preventDefault();
-            addSubTheme();
+            window.addSubThemeAdd();
         });
     }
 
@@ -339,7 +442,89 @@ function initScheduleForm() {
     if (form) {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
-            submitScheduleForm();
+            submitAddScheduleForm();
+        });
+    }
+}
+
+function initEditForm() {
+    const editButton = document.getElementById('addSubThemeEdit');
+    const container = document.getElementById('editSubThemesContainer');
+    const template = document.getElementById('subThemeTemplate');
+    const form = document.getElementById('editScheduleForm');
+
+    // Define addSubTheme for edit form
+    window.addSubThemeEdit = function(existingData = null) {
+        if (!template || !container) {
+            console.error('Required elements not found for edit form');
+            return;
+        }
+
+        const clone = template.content.cloneNode(true);
+        const index = container.children.length;
+        
+        // Add unique names to form fields
+        const inputs = clone.querySelectorAll('input');
+        inputs.forEach(input => {
+            const name = input.getAttribute('name');
+            if (name) {
+                const newName = name.replace('[]', `[${index}]`);
+                input.setAttribute('name', newName);
+                
+                // Set existing values if editing
+                if (existingData) {
+                    if (name.includes('[title]')) {
+                        input.value = existingData.title || '';
+                    } else if (name.includes('[start_date]')) {
+                        input.value = existingData.start_date || '';
+                    } else if (name.includes('[end_date]')) {
+                        input.value = existingData.end_date || '';
+                    } else if (name.includes('[week]')) {
+                        input.value = existingData.week || '';
+                    }
+                }
+            }
+        });
+
+        // Add remove button handler
+        const removeButton = clone.querySelector('.remove-sub-theme');
+        if (removeButton) {
+            removeButton.addEventListener('click', function() {
+                if (container.children.length > 1) {
+                    this.closest('.sub-theme-item').remove();
+                } else {
+                    window.dispatchEvent(new CustomEvent('open-confirmation', {
+                        detail: {
+                            label: 'sub tema terakhir',
+                            action: 'menghapus',
+                            target: null
+                        }
+                    }));
+                }
+            });
+        }
+
+        container.appendChild(clone);
+
+        const lastSubTheme = container.lastElementChild;
+        if (lastSubTheme) {
+            lastSubTheme.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+    };
+
+    // Add sub-theme button click handler
+    if (editButton) {
+        editButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.addSubThemeEdit();
+        });
+    }
+
+    // Form submission handler
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitEditScheduleForm();
         });
     }
 }
@@ -398,14 +583,31 @@ function loadSubSchedules(scheduleId, callback) {
 
 
 function editSchedule(id) {
-    const form = document.getElementById('scheduleForm');
-    if (!form) {
-        console.error('Form element not found');
-        return;
+    console.log('Edit button clicked for schedule:', id);
+    
+    // Switch to edit mode using Alpine.js
+    const component = document.querySelector('[x-data]');
+    if (component && component._x_dataStack) {
+        component._x_dataStack[0].mode = 'edit';
+    }
+    
+    // Or try direct Alpine method if available
+    if (window.Alpine) {
+        const alpineComponent = Alpine.$data(component);
+        if (alpineComponent) {
+            alpineComponent.mode = 'edit';
+        }
     }
 
-    form.innerHTML = '<div class="animate-pulse"><div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div></div>';
+    // First, let's test if sub-themes endpoint works
+    fetch(`/schedules/${id}/sub-themes`)
+        .then(response => response.json())
+        .then(subData => {
+            console.log('Sub-themes from sub-themes endpoint:', subData);
+        })
+        .catch(err => console.log('Sub-themes endpoint error:', err));
 
+    // Fetch schedule data and populate edit form
     fetch(`/schedules/${id}/edit`)
         .then(response => {
             if (!response.ok) {
@@ -420,53 +622,74 @@ function editSchedule(id) {
                 throw new Error(data.message || 'Failed to load schedule data');
             }
 
-            // Restore form HTML by cloning the original template
-            const newForm = originalFormHtml.cloneNode(true);
-            form.parentNode.replaceChild(newForm, form);
+            console.log('Populating edit form with data:', data);
+            console.log('Sub themes count:', data.sub_themes ? data.sub_themes.length : 0);
+            console.log('Sub themes data:', data.sub_themes);
             
-            // Re-initialize the form
-            initScheduleForm();
-
-            // Get the new form reference after replacement
-            const updatedForm = document.getElementById('scheduleForm');
-
-            // Populate form fields
-            updatedForm.querySelector('[name="title"]').value = data.title;
-            updatedForm.querySelector('[name="description"]').value = data.description;
-            updatedForm.querySelector('#scheduleId').value = id;
+            // Populate main form fields
+            const titleInput = document.getElementById('editTitle');
+            const descInput = document.getElementById('editDescription');
+            const scheduleIdInput = document.getElementById('editScheduleId');
             
-            // Clear and populate sub-themes
-            const container = document.getElementById('subThemesContainer');
+            if (titleInput) {
+                titleInput.value = data.title || '';
+                console.log('Title set to:', titleInput.value);
+            }
+            if (descInput) {
+                descInput.value = data.description || '';
+                console.log('Description set to:', descInput.value);
+            }
+            if (scheduleIdInput) {
+                scheduleIdInput.value = id;
+            }
+            
+            // Clear and populate sub-themes for edit form
+            const container = document.getElementById('editSubThemesContainer');
             if (container) {
                 container.innerHTML = '';
+                
                 if (data.sub_themes && data.sub_themes.length > 0) {
-                    data.sub_themes.forEach(sub => addSubTheme(sub));
+                    console.log('Adding sub themes to edit form:', data.sub_themes);
+                    data.sub_themes.forEach((sub, index) => {
+                        console.log(`Adding sub theme ${index}:`, sub);
+                        window.addSubThemeEdit(sub);
+                    });
                 } else {
-                    addSubTheme();
+                    console.log('No sub themes found, adding empty one to edit form');
+                    // Let's try to get sub-themes from the sub-themes endpoint instead
+                    fetch(`/schedules/${id}/sub-themes`)
+                        .then(response => response.json())
+                        .then(subData => {
+                            console.log('Trying to use sub-themes from endpoint:', subData);
+                            if (subData.sub_themes && subData.sub_themes.length > 0) {
+                                container.innerHTML = '';
+                                subData.sub_themes.forEach((sub, index) => {
+                                    console.log(`Adding sub theme from endpoint ${index}:`, sub);
+                                    window.addSubThemeEdit(sub);
+                                });
+                            } else {
+                                window.addSubThemeEdit();
+                            }
+                        })
+                        .catch(err => {
+                            console.log('Failed to load from sub-themes endpoint:', err);
+                            window.addSubThemeEdit();
+                        });
                 }
             }
             
-            // Update Alpine.js mode
-            if (window.Alpine) {
-                // Use Alpine's nextTick to ensure DOM is ready
-                window.Alpine.nextTick(() => {
-                    window.Alpine.store('mode', 'edit');
-                });
-            }
+            console.log('Edit form successfully populated for schedule:', id);
         })
         .catch(error => {
-            console.error('Error:', error);
-            // Trigger custom alert for error message
-            window.dispatchEvent(new CustomEvent('open-confirmation', {
+            console.error('Error loading schedule data:', error);
+            
+            // Show error alert
+            window.dispatchEvent(new CustomEvent('open-success', {
                 detail: {
-                    label: 'data jadwal',
-                    action: 'memuat',
-                    target: null // No action needed, just show error
+                    message: 'Gagal memuat data jadwal: ' + error.message,
+                    isError: true
                 }
             }));
-            if (window.Alpine) {
-                window.Alpine.store('mode', 'view');
-            }
         });
 }
 
@@ -482,28 +705,10 @@ function deleteSchedule(id) {
     }));
 }
 
-function submitScheduleForm() {
-    const form = document.getElementById('scheduleForm');
-    const scheduleId = form.querySelector('#scheduleId').value;
-    const actionText = scheduleId ? 'memperbarui' : 'menyimpan';
-    
-    // Show confirmation before saving
-    window.dispatchEvent(new CustomEvent('open-confirmation', {
-        detail: {
-            label: 'jadwal',
-            action: actionText,
-            target: {
-                submit: () => performSubmitSchedule()
-            }
-        }
-    }));
-}
-
-function performSubmitSchedule() {
-    const form = document.getElementById('scheduleForm');
-    const submitBtn = document.getElementById('submitSchedule');
-    const submitBtnMobile = document.getElementById('submitScheduleMobile');
-    const scheduleId = form.querySelector('#scheduleId').value;
+function submitAddScheduleForm() {
+    const form = document.getElementById('addScheduleForm');
+    const submitBtn = document.getElementById('submitAddSchedule');
+    const submitBtnMobile = document.getElementById('submitAddScheduleMobile');
     
     // Handle both desktop and mobile buttons
     if (submitBtn) {
@@ -523,7 +728,7 @@ function performSubmitSchedule() {
         sub_themes: []
     };
 
-    // Get all sub-themes
+    // Get all sub-themes from add form
     const subThemes = form.querySelectorAll('.sub-theme-item');
     subThemes.forEach((item, index) => {
         data.sub_themes.push({
@@ -543,12 +748,8 @@ function performSubmitSchedule() {
     // Get CSRF token
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-    // Determine if this is an edit or create operation
-    const url = scheduleId ? `/schedules/${scheduleId}` : '{{ route("schedules.store") }}';
-    const method = scheduleId ? 'PUT' : 'POST';
-
-    fetch(url, {
-        method: method,
+    fetch('{{ route("schedules.store") }}', {
+        method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': csrfToken,
@@ -566,10 +767,9 @@ function performSubmitSchedule() {
     })
     .then(data => {
         if (data.success) {
-            // Show success alert
             window.dispatchEvent(new CustomEvent('open-success', {
                 detail: {
-                    message: scheduleId ? 'Berhasil memperbarui jadwal' : 'Berhasil menyimpan jadwal'
+                    message: 'Berhasil menyimpan jadwal'
                 }
             }));
             setTimeout(() => {
@@ -581,7 +781,6 @@ function performSubmitSchedule() {
     })
     .catch(error => {
         console.error('Error details:', error);
-        // Show error alert
         window.dispatchEvent(new CustomEvent('open-success', {
             detail: {
                 message: 'Gagal menyimpan jadwal. Silakan coba lagi.',
@@ -597,6 +796,107 @@ function performSubmitSchedule() {
         }
         if (submitBtnMobile) {
             submitBtnMobile.textContent = 'Simpan Jadwal';
+            submitBtnMobile.disabled = false;
+        }
+    });
+}
+
+function submitEditScheduleForm() {
+    const form = document.getElementById('editScheduleForm');
+    const submitBtn = document.getElementById('submitEditSchedule');
+    const submitBtnMobile = document.getElementById('submitEditScheduleMobile');
+    const scheduleId = document.getElementById('editScheduleId').value;
+    
+    if (!scheduleId) {
+        window.dispatchEvent(new CustomEvent('open-success', {
+            detail: {
+                message: 'ID jadwal tidak ditemukan. Silakan coba lagi.',
+                isError: true
+            }
+        }));
+        return;
+    }
+    
+    // Handle both desktop and mobile buttons
+    if (submitBtn) {
+        submitBtn.textContent = 'Memperbarui...';
+        submitBtn.disabled = true;
+    }
+    if (submitBtnMobile) {
+        submitBtnMobile.textContent = 'Memperbarui...';
+        submitBtnMobile.disabled = true;
+    }
+
+    // Get form data and convert to proper structure
+    const formData = new FormData(form);
+    const data = {
+        title: formData.get('title'),
+        description: formData.get('description'),
+        sub_themes: []
+    };
+
+    // Get all sub-themes from edit form
+    const subThemes = form.querySelectorAll('.sub-theme-item');
+    subThemes.forEach((item, index) => {
+        data.sub_themes.push({
+            title: formData.get(`sub_themes[${index}][title]`),
+            start_date: formData.get(`sub_themes[${index}][start_date]`),
+            end_date: formData.get(`sub_themes[${index}][end_date]`),
+            week: formData.get(`sub_themes[${index}][week]`)
+        });
+    });
+
+    // Get CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    fetch(`/schedules/${scheduleId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(error => {
+                throw new Error(error.message || `HTTP error! status: ${response.status}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            window.dispatchEvent(new CustomEvent('open-success', {
+                detail: {
+                    message: 'Berhasil memperbarui jadwal'
+                }
+            }));
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            throw new Error(data.message || 'Gagal memperbarui jadwal');
+        }
+    })
+    .catch(error => {
+        console.error('Error details:', error);
+        window.dispatchEvent(new CustomEvent('open-success', {
+            detail: {
+                message: 'Gagal memperbarui jadwal. Silakan coba lagi.',
+                isError: true
+            }
+        }));
+    })
+    .finally(() => {
+        // Reset button states
+        if (submitBtn) {
+            submitBtn.textContent = 'Update Jadwal';
+            submitBtn.disabled = false;
+        }
+        if (submitBtnMobile) {
+            submitBtnMobile.textContent = 'Update Jadwal';
             submitBtnMobile.disabled = false;
         }
     });

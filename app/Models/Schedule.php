@@ -19,6 +19,15 @@ class Schedule extends Model
         'updated_at' => 'datetime'
     ];
 
+    protected static function boot()
+    {
+        parent::boot();
+        
+        static::deleting(function($schedule) {
+            $schedule->scheduleDetails()->delete();
+        });
+    }
+
     public function classroom(): BelongsTo
     {
         return $this->belongsTo(Classroom::class);

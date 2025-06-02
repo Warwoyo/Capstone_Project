@@ -12,7 +12,7 @@
 
     {{-- ========== VIEW LIST ========== --}}
     <div x-show="mode==='view'" x-cloak class="flex-1 w-full">
-        <div class="overflow-y-auto hide-scrollbar max-h-[62vh] md:max-h-[56vh]">
+        <div class="overflow-y-auto hide-scrollbar max-h-[62vh] md:max-h-[64vh]">
             {{-- Header --}}
             <div class="pl-2 flex items-center bg-sky-200 h-10 rounded-t-lg">
                 @foreach (['Nama','Kelas','Token','Aksi'] as $h)
@@ -65,46 +65,48 @@
                     $flat['photo_exists'] = $stu->photo ? $stu->photoExists() : false;
                 @endphp
 
-                <div class="flex items-center px-3 py-1 border border-gray-200">
-                    <div class="flex-1 text-sm text-center flex items-center justify-center">
-                        @if($stu->photo && $stu->photoExists())
-                            <img src="{{ asset('storage/'.$stu->photo) }}" alt="{{ $stu->name }}" 
-                                 class="w-8 h-8 rounded-full object-cover mr-2"
-                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
-                            <span class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2 text-xs" style="display:none;">
-                                {{ substr($stu->name, 0, 1) }}
-                            </span>
-                        @elseif($stu->photo)
-                            <span class="w-8 h-8 rounded-full bg-red-200 flex items-center justify-center mr-2 text-xs text-red-600" title="Foto tidak ditemukan">
-                                ❌
-                            </span>
-                        @else
-                            <span class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2 text-xs">
-                                {{ substr($stu->name, 0, 1) }}
-                            </span>
-                        @endif
-                        {{ $stu->name }}
-                    </div>
-                    <div class="flex-1 text-sm text-center">{{ $class->name ?? $stu->classroom_id }}</div>
-                    <div class="flex-1 text-sm text-center">
-                        {{ $stu->registrationTokens->pluck('token')->implode('/') ?: '-' }}
-                    </div>
-                    <div class="flex-1 text-center">
-                        <button
-                            class="w-20 text-xs border border-sky-300 rounded-lg"
-                            @click="
-                                editData = {{ json_encode($flat,JSON_UNESCAPED_UNICODE) }};
-                                mode     = 'edit';
-                                modeOrtu = editData.tipe_data;
-                            "
-                        >Edit</button>
-                        <form method="POST" action="{{ route('students.destroy',[$class->id,$stu->id]) }}"
-                              class="inline" onsubmit="return confirm('Hapus siswa?')">
-                            @csrf @method('DELETE')
-                            <button class="w-20 text-xs bg-red-500 text-white rounded-lg mt-1">Hapus</button>
-                        </form>
-                    </div>
-                </div>        
+               <div class="flex flex-wrap items-center px-3 py-1 border border-gray-200">
+    <div class="flex-1 min-w-0 text-sm text-center flex  overflow-hidden">
+        @if($stu->photo && $stu->photoExists())
+            <img src="{{ asset('storage/'.$stu->photo) }}" alt="{{ $stu->name }}" 
+                 class="w-8 h-8 rounded-full object-cover mr-2"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+            <!-- <span class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2 text-xs" style="display:none;">
+                {{ substr($stu->name, 0, 1) }}
+            </span> -->
+        @elseif($stu->photo)
+            <!-- <span class="w-8 h-8 rounded-full bg-red-200 flex items-center justify-center mr-2 text-xs text-red-600" title="Foto tidak ditemukan">
+                ❌
+            </span> -->
+        @else
+            <!-- <span class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2 text-xs">
+                {{ substr($stu->name, 0, 1) }}
+            </span> -->
+        @endif
+        <span class="truncate max-w-[100px] md:max-w-full" title="{{ $stu->name }}">
+            {{ $stu->name }}
+        </span>
+    </div>
+    <div class="flex-1 min-w-0 text-sm text-center truncate">{{ $class->name ?? $stu->classroom_id }}</div>
+    <div class="flex-1 min-w-0 text-sm text-center truncate">
+        {{ $stu->registrationTokens->pluck('token')->implode('/') ?: '-' }}
+    </div>
+    <div class="flex-1 min-w-0 text-center">
+        <button
+            class="w-20 text-xs border border-sky-300 rounded-lg"
+            @click="
+                editData = {{ json_encode($flat,JSON_UNESCAPED_UNICODE) }};
+                mode     = 'edit';
+                modeOrtu = editData.tipe_data;
+            "
+        >Edit</button>
+        <form method="POST" action="{{ route('students.destroy',[$class->id,$stu->id]) }}"
+              class="inline" onsubmit="return confirm('Hapus siswa?')">
+            @csrf @method('DELETE')
+            <button class="w-20 text-xs bg-red-500 text-white rounded-lg mt-1">Hapus</button>
+        </form>
+    </div>
+</div>       
             @empty
                 <div class="text-center py-4 text-gray-400">Belum ada data siswa.</div>
             @endforelse
@@ -121,7 +123,7 @@
 
     {{-- ========== ADD FORM (BARU) ========== --}}
     <div x-show="mode==='add'" x-cloak class="flex-1" x-data="{ modeOrtu:'ortu' }">
-        <div class="overflow-y-auto hide-scrollbar max-h-[62vh] md:max-h-[56vh]">
+        <div class="overflow-y-auto hide-scrollbar max-h-[67vh] md:max-h-[64vh]">
         <form method="POST"
               action="{{ route('students.store',['class'=>$class->id]) }}"
               enctype="multipart/form-data"
@@ -254,7 +256,7 @@
             </div>
 
             {{-- ===== AKSI ===== --}}
-            <div class="flex gap-3">
+            <div class="flex gap-3 mb-1">
                 <button type="submit"
                         class="px-6 py-2 bg-sky-600 text-white rounded-full hover:bg-sky-700">
                     Simpan

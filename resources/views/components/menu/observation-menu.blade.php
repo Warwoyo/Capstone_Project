@@ -9,7 +9,7 @@
 
     <!-- View Schedules for Observation -->
     <div x-show="mode === 'view'" x-cloak class="flex-1 w-full">
-        <div class="overflow-y-auto hide-scrollbar max-h-[63vh] md:max-h-[56vh]">
+        <div class="overflow-y-auto hide-scrollbar max-h-[68vh] md:max-h-[64vh]">
             @if(count($scheduleList) > 0)
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 items-start">
                     @foreach ($scheduleList as $schedule)

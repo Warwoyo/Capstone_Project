@@ -6,7 +6,7 @@
 <main class="flex mx-auto w-full max-w-full h-screen bg-white">
 
     <!-- Main Content -->
-<div class="flex-1 p-5 max-md:p-2.5 max-sm:p-2.5">
+<div class="flex-1 p-5 max-md:p-2.5 max-sm:p-2.5 overflow-y-auto hide-scrollbar max-h-[100vh] md:max-h-[100vh]">
 
     {{-- Header --}}
     <header class="flex gap-3 items-center flex-wrap mt-11 md:mt-0">

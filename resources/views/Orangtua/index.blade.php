@@ -2,11 +2,12 @@
 @extends('layouts.dashboard')
 
 @section('content')
-<main class="flex mx-auto w-full max-w-full h-screen bg-white">
+<main class="flex mx-auto w-full max-w-full h-screen bg-white flex-1 p-5 max-md:p-2.5 max-sm:p-2.5 overflow-y-auto hide-scrollbar max-h-[100vh] md:max-h-[100vh]">
     <div class="flex-1 p-5 max-md:p-2.5 max-sm:p-2.5">
         {{-- Header --}}
         <header class="flex gap-3 items-center flex-wrap mt-11 md:mt-0">
             <img 
+           
                 src="https://cdn.builder.io/api/v1/image/assets/TEMP/7c611c0665bddb8f69e3b35c80f5477a6f0b559e?placeholderIfAbsent=true" 
                 alt="PAUD Logo" 
                 class="h-12 w-auto max-w-[60px]"
@@ -33,12 +34,11 @@
         </div>
 
         {{-- Announcement Card --}}
-        <div class="mt-4">
-            <div class="text-lg font-semibold text-sky-700 mb-2">Pengumuman Terbaru</div>
+        <div class="mt-2">
             @if(!empty($announcementList) && count($announcementList) > 0)
                 <x-card.announcement-card 
                     :announcementList="$announcementList" 
-                    maxHeight="max-h-[50vh] md:max-h-[40vh]" 
+                
                 />
             @else
                 <div class="bg-gray-100 rounded-lg p-4 text-center">

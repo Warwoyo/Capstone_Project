@@ -22,7 +22,7 @@
             }
         });
     "
-    class="flex-1 p-5 max-md:p-2.5 max-sm:p-2.5"
+    class="flex-1 p-5 max-md:p-2.5 max-sm:p-2.5 overflow-y-auto hide-scrollbar max-h-[100vh] md:max-h-[100vh]"
 >
 
     {{-- Header Logo --}}

@@ -32,7 +32,7 @@
   <!-- List Container -->
   <div class="overflow-y-auto hide-scrollbar">
    {{-- Announcement Card --}}
-<x-card.announcement-card :announcementList="$announcementList" maxHeight="max-h-[80vh] md:max-h-[70vh]" />
+<x-card.announcement-card :announcementList="$announcementList" maxHeight="max-h-[80vh] md:max-h-[70vh]" isHidden="hidden" />
 
    
 </div>

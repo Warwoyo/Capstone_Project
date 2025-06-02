@@ -48,12 +48,9 @@
             <!-- Error State -->
             <div x-show="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                 <span x-text="error"></span>
-                <div class="mt-2 space-x-2">
+                <div class="mt-2">
                     <button @click="loadReports()" class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">
                         Coba Lagi
-                    </button>
-                    <button @click="debugInfo()" class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
-                        Debug Info
                     </button>
                 </div>
             </div>
@@ -64,7 +61,10 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
                 <h3 class="text-lg font-medium text-gray-700 mb-2">Belum Ada Raport</h3>
-                <p class="text-gray-500">Raport untuk anak Anda belum tersedia. Silakan hubungi guru atau sekolah untuk informasi lebih lanjut.</p>
+                <p class="text-gray-500 mb-4">Raport untuk anak Anda belum tersedia. Silakan hubungi guru atau sekolah untuk informasi lebih lanjut.</p>
+                
+                <!-- Link to check children data -->
+
             </div>
 
             <!-- Reports Grid -->
@@ -140,7 +140,6 @@ function parentReportApp() {
             this.error = null;
             
             try {
-                // Get current user's children reports
                 const response = await fetch('/api/parent/reports', {
                     method: 'GET',
                     headers: {
@@ -150,28 +149,21 @@ function parentReportApp() {
                     },
                 });
                 
-                console.log('Response status:', response.status);
-                console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-                
                 if (!response.ok) {
-                    // Try to get error details from response
                     let errorMessage = `Error ${response.status}: ${response.statusText}`;
                     try {
                         const errorData = await response.json();
-                        console.log('Error response data:', errorData);
                         errorMessage = errorData.message || errorMessage;
                     } catch (e) {
-                        console.log('Could not parse error response as JSON');
+                        // Could not parse error response
                     }
                     
                     if (response.status === 403) {
                         this.error = 'Akses ditolak. Anda harus login sebagai orang tua.';
                     } else if (response.status === 404) {
-                        this.error = 'Endpoint API tidak ditemukan. Pastikan route /api/parent/reports sudah dibuat.';
+                        this.error = 'Endpoint API tidak ditemukan.';
                     } else if (response.status === 500) {
-                        // For 500 errors, provide more detailed debugging info
-                        this.error = `Server Error 500: ${errorMessage}. Periksa log Laravel di storage/logs/laravel.log untuk detail error.`;
-                        console.error('Server Error Details:', errorMessage);
+                        this.error = 'Terjadi kesalahan pada server. Silakan coba lagi nanti.';
                     } else {
                         this.error = errorMessage;
                     }
@@ -179,40 +171,20 @@ function parentReportApp() {
                 }
                 
                 const data = await response.json();
-                console.log('API Response:', data);
                 
                 if (data.success) {
                     this.reports = data.data || [];
-                    console.log('Loaded reports:', this.reports);
-                    
-                    // Debug info
-                    if (data.debug) {
-                        console.log('Debug info:', data.debug);
-                    }
-                    
-                    if (this.reports.length === 0) {
-                        console.log('No reports found - checking debug info');
-                        if (data.debug) {
-                            console.log(`Parent ID: ${data.debug.parent_id}`);
-                            console.log(`Children count: ${data.debug.children_count}`);
-                            console.log(`Children IDs: ${JSON.stringify(data.debug.children_ids)}`);
-                            console.log(`Reports count: ${data.debug.reports_count}`);
-                            console.log(`Total reports in DB: ${data.debug.total_reports_in_db}`);
-                        }
-                    }
                 } else {
                     this.error = data.message || 'Gagal memuat data raport';
-                    console.error('API returned success: false with message:', data.message);
                 }
                 
             } catch (error) {
-                console.error('Error loading reports:', error);
                 if (error.name === 'TypeError' && error.message.includes('fetch')) {
                     this.error = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
                 } else if (error.name === 'SyntaxError') {
                     this.error = 'Respons server tidak valid. Silakan hubungi administrator.';
                 } else {
-                    this.error = `Gagal memuat data raport: ${error.message}`;
+                    this.error = 'Gagal memuat data raport. Silakan coba lagi.';
                 }
             } finally {
                 this.loading = false;
@@ -227,25 +199,10 @@ function parentReportApp() {
         
         downloadPDF(report) {
             try {
-                // Use the same PDF generation approach as teacher/admin
-                const pdfUrl = `/rapor/classes/${report.classroom.id}/reports/${report.student.id}/${report.template.id}/pdf`;
-                
-                // Add template verification parameters
-                const urlWithParams = new URL(pdfUrl, window.location.origin);
-                urlWithParams.searchParams.set('template_id', report.template.id);
-                urlWithParams.searchParams.set('student_id', report.student.id);
-                urlWithParams.searchParams.set('class_id', report.classroom.id);
-                urlWithParams.searchParams.set('template_title', encodeURIComponent(report.template.title));
-                urlWithParams.searchParams.set('for_parent', 'true'); // Special flag for parent access
-                
-                // Open PDF in new tab
-                window.open(urlWithParams.toString(), '_blank');
-                
+                const pdfUrl = `/api/parent/reports/${report.student.id}/${report.template.id}/pdf`;
+                window.open(pdfUrl, '_blank');
             } catch (e) {
-                console.error('Error downloading PDF:', e);
-                // Fallback to old method
-                const fallbackUrl = `/parent/reports/${report.student.id}/${report.template.id}/pdf`;
-                window.open(fallbackUrl, '_blank');
+                alert('Gagal membuka PDF. Silakan coba lagi.');
             }
         },
         
@@ -261,31 +218,6 @@ function parentReportApp() {
             };
             
             return date.toLocaleDateString('id-ID', options);
-        },
-        
-        async debugInfo() {
-            try {
-                const response = await fetch('/api/parent/reports/debug', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept': 'application/json',
-                    },
-                });
-                
-                if (response.ok) {
-                    const debugData = await response.json();
-                    console.log('Debug Data:', debugData);
-                    alert('Debug info logged to console. Check browser console for details.');
-                } else {
-                    console.error('Debug request failed:', response.status, response.statusText);
-                    alert('Debug request failed. Check console for details.');
-                }
-            } catch (error) {
-                console.error('Debug error:', error);
-                alert('Debug error. Check console for details.');
-            }
         }
     }
 }

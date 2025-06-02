@@ -539,3 +539,9 @@ Route::middleware(['auth'])->group(function () {
     // Debug route for testing
     Route::get('/debug/parent-reports', [App\Http\Controllers\ParentReportController::class, 'debugReports'])->name('debug.parent.reports');
 });
+
+// Parent Routes - untuk akses rapor orang tua
+Route::middleware(['auth', 'role:parent'])->group(function () {
+    Route::get('/orangtua/anak/rapor', [App\Http\Controllers\ParentReportController::class, 'index'])->name('orangtua.rapor');
+    Route::get('/parent/children', [App\Http\Controllers\ParentReportController::class, 'showChildren'])->name('parent.children');
+});

@@ -75,7 +75,7 @@
 
     {{-- Module List --}}
     <div 
-        class="overflow-y-auto hide-scrollbar max-h-[59vh] md:max-h-[49vh]" 
+        class="overflow-y-auto hide-scrollbar max-h-[62vh] md:max-h-[54vh]" 
         x-show="!isAdding"
         x-transition
     >

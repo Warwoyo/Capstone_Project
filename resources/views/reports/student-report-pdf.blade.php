@@ -3,299 +3,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rapor {{ $student->name }}</title>
+    <title>Raport {{ $student->name }} - {{ $template->title }}</title>
     <style>
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         body {
             font-family: 'Arial', sans-serif;
             font-size: 12px;
             line-height: 1.4;
             color: #333;
+            background: white;
         }
-
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
         .header {
             text-align: center;
             margin-bottom: 30px;
-            border-bottom: 2px solid #1e40af;
-            padding-bottom: 15px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
         }
-
+        
         .header h1 {
-            font-size: 18px;
+            font-size: 24px;
             font-weight: bold;
-            color: #1e40af;
+            margin-bottom: 5px;
+            color: #2c5aa0;
+        }
+        
+        .header h2 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        .student-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .student-info div {
+            flex: 1;
+        }
+        
+        .student-info h3 {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c5aa0;
+        }
+        
+        .info-row {
             margin-bottom: 5px;
         }
-
-        .header h2 {
-            font-size: 14px;
-            color: #374151;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            font-size: 11px;
-            color: #6b7280;
-        }
-
-        .student-info {
-            display: table;
-            width: 100%;
-            margin-bottom: 20px;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-        }
-
-        .student-info-row {
-            display: table-row;
-        }
-
-        .student-info-cell {
-            display: table-cell;
-            padding: 8px 12px;
-            border-bottom: 1px solid #e5e7eb;
-            vertical-align: top;
-        }
-
-        .student-info-cell:first-child {
-            background-color: #f3f4f6;
+        
+        .info-label {
+            display: inline-block;
+            width: 120px;
             font-weight: bold;
-            width: 25%;
         }
-
-        .assessment-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-            border: 1px solid #374151;
+        
+        .scores-section {
+            margin-bottom: 30px;
         }
-
-        .assessment-table th {
-            background-color: #1e40af;
-            color: white;
-            padding: 8px;
-            text-align: center;
-            font-weight: bold;
-            border: 1px solid #374151;
-        }
-
-        .assessment-table td {
-            border: 1px solid #374151;
-            padding: 6px 8px;
-            vertical-align: top;
-        }
-
+        
         .theme-header {
-            background-color: #dbeafe;
+            background: #2c5aa0;
+            color: white;
+            padding: 10px;
             font-weight: bold;
-            color: #1e40af;
-        }
-
-        .subtheme-row {
-            background-color: #ffffff;
-        }
-
-        .subtheme-row:nth-child(even) {
-            background-color: #f9fafb;
-        }
-
-        .score-cell {
-            text-align: center;
-            font-weight: bold;
-        }
-
-        .score-bm { color: #dc2626; }
-        .score-mm { color: #d97706; }
-        .score-bsh { color: #2563eb; }
-        .score-bsb { color: #16a34a; }
-
-        .competency-name {
-            font-weight: 500;
-        }
-
-        .competency-desc {
-            font-size: 10px;
-            color: #6b7280;
-            font-style: italic;
-            margin-top: 2px;
-        }
-
-        .data-section {
-            margin-bottom: 20px;
-        }
-
-        .data-section h3 {
             font-size: 14px;
-            font-weight: bold;
-            color: #1e40af;
+            margin-top: 20px;
             margin-bottom: 10px;
-            border-bottom: 1px solid #d1d5db;
-            padding-bottom: 5px;
         }
-
-        .data-grid {
-            display: table;
-            width: 100%;
-        }
-
-        .data-row {
-            display: table-row;
-        }
-
-        .data-cell {
-            display: table-cell;
-            width: 50%;
-            padding: 0 10px;
-            vertical-align: top;
-        }
-
-        .info-table {
+        
+        .scores-table {
             width: 100%;
             border-collapse: collapse;
-            border: 1px solid #d1d5db;
+            margin-bottom: 20px;
         }
-
-        .info-table th,
-        .info-table td {
-            border: 1px solid #d1d5db;
-            padding: 6px 8px;
+        
+        .scores-table th,
+        .scores-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
             text-align: left;
         }
-
-        .info-table th {
-            background-color: #f3f4f6;
+        
+        .scores-table th {
+            background: #f8f9fa;
             font-weight: bold;
-            width: 40%;
+            font-size: 11px;
         }
-
+        
+        .scores-table td {
+            font-size: 11px;
+        }
+        
+        .score-value {
+            text-align: center;
+            font-weight: bold;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        
+        .score-BM { background: #ffeaa7; color: #d63031; }
+        .score-MM { background: #fab1a0; color: #e17055; }
+        .score-BSH { background: #81ecec; color: #00b894; }
+        .score-BSB { background: #55a3ff; color: #0984e3; }
+        
         .comments-section {
-            margin-top: 20px;
+            margin-bottom: 30px;
         }
-
+        
         .comment-box {
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            padding: 10px;
-            min-height: 60px;
-            background-color: #f9fafb;
-            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            background: #f9f9f9;
         }
-
+        
         .comment-title {
             font-weight: bold;
-            color: #374151;
-            margin-bottom: 5px;
+            color: #2c5aa0;
+            margin-bottom: 10px;
         }
-
-        .legend {
-            margin-top: 20px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
+        
+        .physical-data {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .physical-item {
+            flex: 1;
+            text-align: center;
+            border: 1px solid #ddd;
             padding: 10px;
-            background-color: #f8fafc;
+            margin: 0 5px;
+            border-radius: 5px;
+            background: #f8f9fa;
         }
-
-        .legend h4 {
-            font-size: 12px;
-            font-weight: bold;
-            margin-bottom: 8px;
-            color: #374151;
+        
+        .attendance-summary {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
         }
-
-        .legend-grid {
-            display: table;
-            width: 100%;
+        
+        .attendance-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 10px;
         }
-
-        .legend-row {
-            display: table-row;
-        }
-
-        .legend-cell {
-            display: table-cell;
-            width: 25%;
-            padding: 3px;
+        
+        .attendance-item {
             text-align: center;
-        }
-
-        .legend-badge {
-            display: inline-block;
-            width: 30px;
-            height: 20px;
-            line-height: 20px;
+            padding: 10px;
+            background: white;
             border-radius: 3px;
-            font-weight: bold;
-            color: white;
-            margin-right: 5px;
-            font-size: 10px;
+            border: 1px solid #ddd;
         }
-
-        .legend-bm { background-color: #dc2626; }
-        .legend-mm { background-color: #d97706; }
-        .legend-bsh { background-color: #2563eb; }
-        .legend-bsb { background-color: #16a34a; }
-
+        
         .footer {
-            margin-top: 30px;
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .signature-box {
             text-align: center;
-            font-size: 10px;
-            color: #6b7280;
-            border-top: 1px solid #d1d5db;
-            padding-top: 10px;
-        }
-
-        .signature-section {
-            margin-top: 30px;
-            display: table;
-            width: 100%;
-        }
-
-        .signature-row {
-            display: table-row;
-        }
-
-        .signature-cell {
-            display: table-cell;
-            width: 50%;
-            text-align: center;
+            border: 1px solid #ddd;
             padding: 20px;
+            width: 200px;
+            height: 100px;
         }
-
-        .signature-line {
-            border-bottom: 1px solid #374151;
-            width: 150px;
-            margin: 40px auto 5px;
-        }
-
-        @page {
-            margin: 20mm;
-        }
-
-        @media print {
-            body {
-                -webkit-print-color-adjust: exact;
-                color-adjust: exact;
-            }
-            
-            .no-print {
-                display: none !important;
-            }
-            
-            .page-break {
-                page-break-before: always;
-            }
-        }
-
+        
         .print-button {
             position: fixed;
             top: 20px;
             right: 20px;
-            background-color: #1e40af;
+            background: #2c5aa0;
             color: white;
             border: none;
             padding: 10px 20px;
@@ -304,221 +211,205 @@
             font-size: 14px;
             z-index: 1000;
         }
-
+        
         .print-button:hover {
-            background-color: #1d4ed8;
+            background: #1e3a75;
+        }
+        
+        @media print {
+            .print-button {
+                display: none;
+            }
+            
+            body {
+                font-size: 11px;
+            }
+            
+            .container {
+                padding: 0;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Print Button (hidden when printing) -->
-    <button class="print-button no-print" onclick="window.print()">🖨️ Cetak Rapor</button>
-
-    <!-- Header -->
-    <div class="header">
-        <h1>LAPORAN PERKEMBANGAN ANAK DIDIK</h1>
-        <h2>PENDIDIKAN ANAK USIA DINI (PAUD)</h2>
-        <p>{{ $classroom->name ?? 'PAUD KARTIKA' }}</p>
-        <p>Semester: {{ ucfirst($template->semester_type ?? 'Ganjil') }} - Tahun Ajaran {{ date('Y') }}/{{ date('Y')+1 }}</p>
-    </div>
-
-    <!-- Student Information -->
-    <div class="student-info">
-        <div class="student-info-row">
-            <div class="student-info-cell">Nama Lengkap</div>
-            <div class="student-info-cell">: {{ $student->name }}</div>
-            <div class="student-info-cell">Tempat, Tanggal Lahir</div>
-            <div class="student-info-cell">: {{ $student->birth_place ?? '-' }}, {{ $student->birth_date ? \Carbon\Carbon::parse($student->birth_date)->format('d F Y') : '-' }}</div>
+    <button class="print-button" onclick="window.print()">Cetak PDF</button>
+    
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>RAPORT PAUD</h1>
+            <h2>{{ $template->title }}</h2>
+            <p>Semester {{ ucfirst($template->semester_type) }} - Tahun Ajaran {{ date('Y') }}/{{ date('Y') + 1 }}</p>
         </div>
-        <div class="student-info-row">
-            <div class="student-info-cell">NISN</div>
-            <div class="student-info-cell">: {{ $student->nisn ?? '-' }}</div>
-            <div class="student-info-cell">Jenis Kelamin</div>
-            <div class="student-info-cell">: {{ $student->gender == 'L' ? 'Laki-laki' : ($student->gender == 'P' ? 'Perempuan' : '-') }}</div>
-        </div>
-        <div class="student-info-row">
-            <div class="student-info-cell">Kelas</div>
-            <div class="student-info-cell">: {{ $classroom->name }}</div>
-            <div class="student-info-cell">Tanggal Rapor</div>
-            <div class="student-info-cell">: {{ $current_date }}</div>
-        </div>
-    </div>
 
-    <!-- Assessment Results -->
-    <table class="assessment-table">
-        <thead>
-            <tr>
-                <th style="width: 8%;">No</th>
-                <th style="width: 45%;">KOMPETENSI DASAR</th>
-                <th style="width: 12%;">PENILAIAN</th>
-                <th style="width: 35%;">CATATAN</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($template->themes as $themeIndex => $theme)
-                <!-- Theme Header -->
-                <tr class="theme-header">
-                    <td style="text-align: center;">{{ $themeIndex + 1 }}</td>
-                    <td><strong>{{ $theme->name }}</strong></td>
-                    <td style="text-align: center;"><strong>TEMA</strong></td>
-                    <td>{{ $report->theme_comments[$theme->id] ?? '-' }}</td>
-                </tr>
-                
-                <!-- Sub-themes -->
-                @foreach($theme->sub_themes as $subIndex => $subTheme)
-                    <tr class="subtheme-row">
-                        <td style="text-align: center;">{{ $theme->code ?? 'T'.($themeIndex + 1) }}.{{ $subIndex + 1 }}</td>
-                        <td>
-                            <div class="competency-name">{{ $subTheme->name }}</div>
-                            @if(!empty($subTheme->description))
-                                <div class="competency-desc">{{ $subTheme->description }}</div>
-                            @endif
-                        </td>
-                        <td class="score-cell">
-                            @php
-                                $score = $report->scores[$subTheme->id] ?? '-';
-                                $scoreClass = match($score) {
-                                    'BM' => 'score-bm',
-                                    'MM' => 'score-mm', 
-                                    'BSH' => 'score-bsh',
-                                    'BSB' => 'score-bsb',
-                                    default => ''
-                                };
-                            @endphp
-                            <span class="{{ $scoreClass }}">{{ $score }}</span>
-                        </td>
-                        <td>{{ $report->sub_theme_comments[$subTheme->id] ?? '-' }}</td>
-                    </tr>
+        <!-- Student Information -->
+        <div class="student-info">
+            <div>
+                <h3>Data Siswa</h3>
+                <div class="info-row">
+                    <span class="info-label">Nama:</span>
+                    <span>{{ $student->name }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">NISN:</span>
+                    <span>{{ $student->nisn ?? '-' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Tanggal Lahir:</span>
+                    <span>{{ $student->birth_date ? \Carbon\Carbon::parse($student->birth_date)->format('d F Y') : '-' }}</span>
+                </div>
+            </div>
+            <div>
+                <h3>Data Kelas</h3>
+                <div class="info-row">
+                    <span class="info-label">Kelas:</span>
+                    <span>{{ $classroom->name }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Tanggal Cetak:</span>
+                    <span>{{ $current_date }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Physical Data -->
+        @if(!empty($report->physical_data))
+        <div class="physical-data">
+            <div class="physical-item">
+                <strong>Tinggi Badan</strong><br>
+                {{ $report->physical_data['height'] ?? '-' }} cm
+            </div>
+            <div class="physical-item">
+                <strong>Berat Badan</strong><br>
+                {{ $report->physical_data['weight'] ?? '-' }} kg
+            </div>
+            <div class="physical-item">
+                <strong>Lingkar Kepala</strong><br>
+                {{ $report->physical_data['head_circumference'] ?? '-' }} cm
+            </div>
+        </div>
+        @endif
+
+        <!-- Attendance Summary -->
+        @if(!empty($report->attendance_data))
+        <div class="attendance-summary">
+            <h3 style="margin-bottom: 10px; color: #2c5aa0;">Ringkasan Kehadiran</h3>
+            <div class="attendance-grid">
+                <div class="attendance-item">
+                    <strong>Hadir</strong><br>
+                    {{ $report->attendance_data['present'] ?? 0 }} hari
+                </div>
+                <div class="attendance-item">
+                    <strong>Sakit</strong><br>
+                    {{ $report->attendance_data['sick'] ?? 0 }} hari
+                </div>
+                <div class="attendance-item">
+                    <strong>Izin</strong><br>
+                    {{ $report->attendance_data['permission'] ?? 0 }} hari
+                </div>
+                <div class="attendance-item">
+                    <strong>Alpha</strong><br>
+                    {{ $report->attendance_data['absent'] ?? 0 }} hari
+                </div>
+            </div>
+        </div>
+        @endif
+
+        <!-- Scores Section -->
+        <div class="scores-section">
+            <h3 style="color: #2c5aa0; margin-bottom: 20px; font-size: 16px;">Penilaian Perkembangan</h3>
+            
+            @if(isset($template->themes) && count($template->themes) > 0)
+                @foreach($template->themes as $theme)
+                    <div class="theme-header">
+                        {{ $theme->code }} - {{ $theme->name }}
+                    </div>
+                    
+                    @if(isset($theme->sub_themes) && count($theme->sub_themes) > 0)
+                        <table class="scores-table">
+                            <thead>
+                                <tr>
+                                    <th width="5%">No</th>
+                                    <th width="60%">Indikator Perkembangan</th>
+                                    <th width="15%">Penilaian</th>
+                                    <th width="20%">Keterangan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($theme->sub_themes as $index => $subTheme)
+                                    @php
+                                        $score = $report->scores[$subTheme->id] ?? null;
+                                        $comment = $report->sub_theme_comments[$subTheme->id] ?? '';
+                                    @endphp
+                                    <tr>
+                                        <td>{{ $index + 1 }}</td>
+                                        <td>{{ $subTheme->name }}</td>
+                                        <td class="score-value score-{{ $score }}">
+                                            {{ $score ?? '-' }}
+                                        </td>
+                                        <td>{{ $comment }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @endif
+                    
+                    @if(isset($report->theme_comments[$theme->id]))
+                        <div class="comment-box">
+                            <div class="comment-title">Catatan {{ $theme->name }}:</div>
+                            <p>{{ $report->theme_comments[$theme->id] }}</p>
+                        </div>
+                    @endif
                 @endforeach
-            @endforeach
-        </tbody>
-    </table>
+            @endif
+        </div>
 
-    <!-- Physical & Attendance Data -->
-    <div class="data-section">
-        <div class="data-grid">
-            <div class="data-row">
-                <div class="data-cell">
-                    <h3>Data Fisik</h3>
-                    <table class="info-table">
-                        <tr>
-                            <th>Lingkar Kepala</th>
-                            <td>{{ $report->physical_data['head_circumference'] ?? '-' }} cm</td>
-                        </tr>
-                        <tr>
-                            <th>Tinggi Badan</th>
-                            <td>{{ $report->physical_data['height'] ?? '-' }} cm</td>
-                        </tr>
-                        <tr>
-                            <th>Berat Badan</th>
-                            <td>{{ $report->physical_data['weight'] ?? '-' }} kg</td>
-                        </tr>
-                    </table>
-                </div>
-                <div class="data-cell">
-                    <h3>Data Kehadiran</h3>
-                    <table class="info-table">
-                        <tr>
-                            <th>Sakit</th>
-                            <td>{{ $report->attendance_data['sick'] ?? 0 }} hari</td>
-                        </tr>
-                        <tr>
-                            <th>Izin</th>
-                            <td>{{ $report->attendance_data['permission'] ?? 0 }} hari</td>
-                        </tr>
-                        <tr>
-                            <th>Alpa</th>
-                            <td>{{ $report->attendance_data['absent'] ?? 0 }} hari</td>
-                        </tr>
-                        <tr style="background-color: #dcfce7;">
-                            <th>Hadir</th>
-                            <td><strong>{{ $report->attendance_data['present'] ?? 0 }} hari</strong></td>
-                        </tr>
-                        <tr style="background-color: #dbeafe;">
-                            <th>Total Sesi</th>
-                            <td><strong>{{ $report->attendance_data['total_sessions'] ?? 0 }} hari</strong></td>
-                        </tr>
-                        @php
-                            $attendancePercentage = ($report->attendance_data['total_sessions'] ?? 0) > 0 
-                                ? round(($report->attendance_data['present'] ?? 0) / $report->attendance_data['total_sessions'] * 100) 
-                                : 0;
-                        @endphp
-                        <tr style="background-color: #fef3c7;">
-                            <th>Persentase Kehadiran</th>
-                            <td><strong>{{ $attendancePercentage }}%</strong></td>
-                        </tr>
-                    </table>
-                </div>
+        <!-- Teacher and Parent Comments -->
+        <div class="comments-section">
+            @if(!empty($report->teacher_comment))
+            <div class="comment-box">
+                <div class="comment-title">Catatan Guru:</div>
+                <p>{{ $report->teacher_comment }}</p>
+            </div>
+            @endif
+
+            @if(!empty($report->parent_comment))
+            <div class="comment-box">
+                <div class="comment-title">Catatan Orang Tua:</div>
+                <p>{{ $report->parent_comment }}</p>
+            </div>
+            @endif
+        </div>
+
+        <!-- Legend -->
+        <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+            <h4 style="margin-bottom: 10px; color: #2c5aa0;">Keterangan Penilaian:</h4>
+            <div style="display: flex; gap: 20px;">
+                <span><strong>BM:</strong> Belum Muncul</span>
+                <span><strong>MM:</strong> Mulai Muncul</span>
+                <span><strong>BSH:</strong> Berkembang Sesuai Harapan</span>
+                <span><strong>BSB:</strong> Berkembang Sangat Baik</span>
             </div>
         </div>
-    </div>
 
-    <!-- Comments Section -->
-    <div class="comments-section">
-        <div class="data-grid">
-            <div class="data-row">
-                <div class="data-cell">
-                    <div class="comment-title">Pesan Guru:</div>
-                    <div class="comment-box">
-                        {{ $report->teacher_comment ?: 'Tidak ada pesan dari guru.' }}
-                    </div>
-                </div>
-                <div class="data-cell">
-                    <div class="comment-title">Pesan Orang Tua:</div>
-                    <div class="comment-box">
-                        {{ $report->parent_comment ?: 'Tidak ada pesan dari orang tua.' }}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Assessment Legend -->
-    <div class="legend">
-        <h4>Keterangan Penilaian:</h4>
-        <div class="legend-grid">
-            <div class="legend-row">
-                <div class="legend-cell">
-                    <span class="legend-badge legend-bm">BM</span>
-                    <small>Belum Muncul</small>
-                </div>
-                <div class="legend-cell">
-                    <span class="legend-badge legend-mm">MM</span>
-                    <small>Mulai Muncul</small>
-                </div>
-                <div class="legend-cell">
-                    <span class="legend-badge legend-bsh">BSH</span>
-                    <small>Berkembang Sesuai Harapan</small>
-                </div>
-                <div class="legend-cell">
-                    <span class="legend-badge legend-bsb">BSB</span>
-                    <small>Berkembang Sangat Baik</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Signature Section -->
-    <div class="signature-section">
-        <div class="signature-row">
-            <div class="signature-cell">
-                <p>Mengetahui,</p>
+        <!-- Footer with Signatures -->
+        <div class="footer">
+            <div class="signature-box">
                 <p><strong>Orang Tua/Wali</strong></p>
-                <div class="signature-line"></div>
-                <p>{{ $student->parent_name ?? '(...............................)' }}</p>
+                <br><br><br>
+                <p>(.............................)</p>
             </div>
-            <div class="signature-cell">
-                <p>{{ $classroom->location ?? 'Balikpapan' }}, {{ $current_date }}</p>
+            <div class="signature-box">
                 <p><strong>Guru Kelas</strong></p>
-                <div class="signature-line"></div>
-                <p>{{ $classroom->owner->name ?? '(...............................)' }}</p>
+                <br><br><br>
+                <p>(.............................)</p>
+            </div>
+            <div class="signature-box">
+                <p><strong>Kepala Sekolah</strong></p>
+                <br><br><br>
+                <p>(.............................)</p>
             </div>
         </div>
-    </div>
-
-    <!-- Footer -->
-    <div class="footer">
-        <p>Laporan ini dicetak pada {{ $current_date }} - {{ $classroom->name ?? 'PAUD KARTIKA' }}</p>
     </div>
 </body>
 </html>

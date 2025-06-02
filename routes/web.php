@@ -524,3 +524,18 @@ Route::get('/orangtua/session-check', function() {
         'timestamp' => now()->toISOString()
     ]);
 })->name('orangtua.session-check');
+
+// Parent Routes
+Route::middleware(['auth'])->group(function () {
+    // Parent report routes
+    Route::get('/parent/reports', [App\Http\Controllers\ParentReportController::class, 'index'])->name('parent.reports');
+    Route::get('/api/parent/reports', [App\Http\Controllers\ParentReportController::class, 'getReports'])->name('parent.reports.api');
+    Route::get('/parent/reports/{studentId}/{templateId}/view', [App\Http\Controllers\ParentReportController::class, 'viewReport'])->name('parent.reports.view');
+    Route::get('/parent/reports/{studentId}/{templateId}/pdf', [App\Http\Controllers\ParentReportController::class, 'downloadPDF'])->name('parent.reports.pdf');
+    
+    // Fix existing parent route
+    Route::get('/orangtua/anak/rapor', [App\Http\Controllers\ParentReportController::class, 'index'])->middleware('role:parent')->name('orangtua.rapor');
+    
+    // Debug route for testing
+    Route::get('/debug/parent-reports', [App\Http\Controllers\ParentReportController::class, 'debugReports'])->name('debug.parent.reports');
+});

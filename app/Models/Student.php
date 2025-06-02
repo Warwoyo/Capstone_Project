@@ -77,6 +77,22 @@ class Student extends Model
     }
 
     /**
+     * Relasi ke orang tua (parent user)
+     */
+    public function parent()
+    {
+        return $this->belongsTo(User::class, 'parent_id');
+    }
+
+    /**
+     * Relasi ke laporan siswa
+     */
+    public function reports()
+    {
+        return $this->hasMany(StudentReport::class, 'student_id');
+    }
+
+    /**
      * Get photo URL accessor
      */
     public function getPhotoUrlAttribute()

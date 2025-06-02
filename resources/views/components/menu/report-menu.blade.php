@@ -389,6 +389,95 @@ function raporApp(classId){
             this.mode='preview';
         },
         
+        // Method to edit a template
+        editTemplate(template) {
+            // Load template data into form
+            this.newTemplateForm = {
+                id: template.id,
+                title: template.title || '',
+                description: template.description || '',
+                semester_type: template.semester_type || '',
+                themes: template.themes ? JSON.parse(JSON.stringify(template.themes)) : []
+            };
+            
+            // Ensure themes have the correct structure
+            this.newTemplateForm.themes = this.newTemplateForm.themes.map(theme => ({
+                ...theme,
+                subThemes: this.getSubThemes(theme)
+            }));
+            
+            this.mode = 'edit';
+        },
+        
+        // Method to save edited template
+        async saveEditedTemplate() {
+            const f = this.newTemplateForm;
+            if (!f.title.trim() || !f.semester_type) {
+                window.dispatchEvent(new CustomEvent('open-success', {
+                    detail: { message: 'Isi judul & semester', isError: true }
+                }));
+                return;
+            }
+            
+            for (const [ti, t] of f.themes.entries()) {
+                if (!t.code.trim() || !t.name.trim()) {
+                    window.dispatchEvent(new CustomEvent('open-success', {
+                        detail: { message: `Tema ${ti + 1} belum lengkap`, isError: true }
+                    }));
+                    return;
+                }
+                for (const [si, s] of t.subThemes.entries()) {
+                    if (!s.code.trim() || !s.name.trim()) {
+                        window.dispatchEvent(new CustomEvent('open-success', {
+                            detail: { message: `Subtema ${si + 1} Tema ${ti + 1} belum lengkap`, isError: true }
+                        }));
+                        return;
+                    }
+                }
+            }
+            
+            try {
+                const updatedTemplate = await this.req(`/rapor/templates/${f.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        title: f.title,
+                        description: f.description,
+                        semester_type: f.semester_type,
+                        themes: f.themes
+                    }),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                // Update template in the list
+                if (updatedTemplate) {
+                    const cleanTemplate = this.getTemplateData(updatedTemplate);
+                    if (cleanTemplate && cleanTemplate.title && cleanTemplate.semester_type) {
+                        // Find and replace the template in the array
+                        const templateIndex = this.templates.findIndex(t => t.id === f.id);
+                        if (templateIndex !== -1) {
+                            this.templates[templateIndex] = cleanTemplate;
+                        }
+                        
+                        // Also update in assignedTemplates if it exists there
+                        const assignedIndex = this.assignedTemplates.findIndex(t => t.id === f.id);
+                        if (assignedIndex !== -1) {
+                            this.assignedTemplates[assignedIndex] = cleanTemplate;
+                        }
+                    }
+                }
+                
+                this.mode = 'view';
+                this.resetForm();
+                window.dispatchEvent(new CustomEvent('open-success', {
+                    detail: { message: 'Template berhasil diperbarui' }
+                }));
+            } catch (e) {
+                window.dispatchEvent(new CustomEvent('open-success', {
+                    detail: { message: 'Gagal memperbarui template', isError: true }
+                }));
+            }
+        },
+        
         cancelPreview(){
             this.selectedTemplate=null;
             this.currentTemplate=null;
@@ -415,9 +504,13 @@ function raporApp(classId){
                 this.currentTemplate = null;
                 this.mode = 'view';
                 
-                alert('Template berhasil ditetapkan');
+                window.dispatchEvent(new CustomEvent('open-success', {
+                    detail: { message: 'Template berhasil ditetapkan' }
+                }));
             } catch (e) {
-                alert('Gagal menetapkan template');
+                window.dispatchEvent(new CustomEvent('open-success', {
+                    detail: { message: 'Gagal menetapkan template', isError: true }
+                }));
             }
         },
         
@@ -434,7 +527,12 @@ function raporApp(classId){
         },
         
         async openReportForm(){
-          if(!this.selectedTemplate) return alert('Pilih template terlebih dahulu');
+          if(!this.selectedTemplate) {
+              window.dispatchEvent(new CustomEvent('open-success', {
+                  detail: { message: 'Pilih template terlebih dahulu', isError: true }
+              }));
+              return;
+          }
           await this.loadStudents();
           
           // Force refresh template data to ensure we have the latest themes and sub-themes
@@ -473,44 +571,91 @@ function raporApp(classId){
         },
         
         async deleteTemplate(id){
-            if(!confirm('Yakin hapus?'))return;
-            try {
-                await this.req(`/rapor/templates/${id}`,{method:'DELETE'});
-                
-                // Remove from templates array
-                this.templates = this.templates.filter(t => t.id !== id);
-                
-                // Close detail if it was open for this template
-                if (this.detailId === id) {
-                    this.detailId = null;
+            // Create confirmation handler
+            const confirmHandler = {
+                submit: async () => {
+                    try {
+                        await this.req(`/rapor/templates/${id}`,{method:'DELETE'});
+                        
+                        // Remove from templates array
+                        this.templates = this.templates.filter(t => t.id !== id);
+                        
+                        // Also remove from assigned templates if it exists there
+                        this.assignedTemplates = this.assignedTemplates.filter(t => t.id !== id);
+                        
+                        // Close detail if it was open for this template
+                        if (this.detailId === id) {
+                            this.detailId = null;
+                        }
+                        
+                        // Close confirmation dialog by dispatching close event
+                        window.dispatchEvent(new CustomEvent('close-confirmation'));
+                        
+                        // Show success message
+                        window.dispatchEvent(new CustomEvent('open-success', {
+                            detail: { message: 'Template berhasil dihapus' }
+                        }));
+                    } catch (e) {
+                        // Close confirmation dialog even on error
+                        window.dispatchEvent(new CustomEvent('close-confirmation'));
+                        
+                        window.dispatchEvent(new CustomEvent('open-success', {
+                            detail: { message: 'Gagal menghapus template', isError: true }
+                        }));
+                    }
                 }
-                
-                alert('Template berhasil dihapus');
-            } catch (e) {
-                alert('Gagal menghapus template');
-            }
+            };
+            
+            window.dispatchEvent(new CustomEvent('open-confirmation', {
+                detail: {
+                    label: 'template ini',
+                    action: 'menghapus',
+                    target: confirmHandler
+                }
+            }));
         },
 
         // Method to remove assigned template
         async removeAssignedTemplate(templateId) {
-            if (!confirm('Yakin hapus template yang ditetapkan?')) return;
-            
-            try {
-                await this.req(`/rapor/classes/${this.classId}/assigned-template/${templateId}`, {
-                    method: 'DELETE'
-                });
-                
-                // Move template back to available templates
-                const removedTemplate = this.assignedTemplates.find(t => t.id === templateId);
-                if (removedTemplate) {
-                    this.assignedTemplates = this.assignedTemplates.filter(t => t.id !== templateId);
-                    this.templates = this.dedup([...this.templates, removedTemplate]);
+            // Create confirmation handler
+            const confirmHandler = {
+                submit: async () => {
+                    try {
+                        await this.req(`/rapor/classes/${this.classId}/assigned-template/${templateId}`, {
+                            method: 'DELETE'
+                        });
+                        
+                        // Move template back to available templates
+                        const removedTemplate = this.assignedTemplates.find(t => t.id === templateId);
+                        if (removedTemplate) {
+                            this.assignedTemplates = this.assignedTemplates.filter(t => t.id !== templateId);
+                            this.templates = this.dedup([...this.templates, removedTemplate]);
+                        }
+                        
+                        // Close confirmation dialog
+                        window.dispatchEvent(new CustomEvent('close-confirmation'));
+                        
+                        window.dispatchEvent(new CustomEvent('open-success', {
+                            detail: { message: 'Template berhasil dihapus dari kelas' }
+                        }));
+                    } catch (e) {
+                        // Close confirmation dialog even on error
+                        window.dispatchEvent(new CustomEvent('close-confirmation'));
+                        
+                        window.dispatchEvent(new CustomEvent('open-success', {
+                            detail: { message: 'Gagal menghapus template', isError: true }
+                        }));
+                    }
                 }
-                
-                alert('Template berhasil dihapus dari kelas');
-            } catch (e) {
-                alert('Gagal menghapus template');
-            }
+            };
+            
+            window.dispatchEvent(new CustomEvent('open-confirmation', {
+                detail: {
+                    label: 'template yang ditetapkan ini',
+                    action: 'menghapus',
+                    target: confirmHandler
+                }
+            }));
         },
 
         // ---------- form ----------
@@ -530,11 +675,27 @@ function raporApp(classId){
         
         async saveNewTemplate(){
             const f=this.newTemplateForm;
-            if(!f.title.trim()||!f.semester_type) return alert('Isi judul & semester');
+            if(!f.title.trim()||!f.semester_type) {
+                window.dispatchEvent(new CustomEvent('open-success', {
+                    detail: { message: 'Isi judul & semester', isError: true }
+                }));
+                return;
+            }
+            
             for(const [ti,t] of f.themes.entries()){
-                if(!t.code.trim()||!t.name.trim()) return alert(`Tema ${ti+1} belum lengkap`);
+                if(!t.code.trim()||!t.name.trim()) {
+                    window.dispatchEvent(new CustomEvent('open-success', {
+                        detail: { message: `Tema ${ti+1} belum lengkap`, isError: true }
+                    }));
+                    return;
+                }
                 for(const [si,s] of t.subThemes.entries()) {
-                    if(!s.code.trim()||!s.name.trim()) return alert(`Subtema ${si+1} Tema ${ti+1} belum lengkap`);
+                    if(!s.code.trim()||!s.name.trim()) {
+                        window.dispatchEvent(new CustomEvent('open-success', {
+                            detail: { message: `Subtema ${si+1} Tema ${ti+1} belum lengkap`, isError: true }
+                        }));
+                        return;
+                    }
                 }
             }
             
@@ -555,9 +716,13 @@ function raporApp(classId){
                 
                 this.mode='view';
                 this.resetForm();
-                alert('Template ditambahkan');
+                window.dispatchEvent(new CustomEvent('open-success', {
+                    detail: { message: 'Template berhasil ditambahkan' }
+                }));
             } catch (e) {
-                alert('Gagal menyimpan template');
+                window.dispatchEvent(new CustomEvent('open-success', {
+                    detail: { message: 'Gagal menyimpan template', isError: true }
+                }));
             }
         },
         
@@ -574,12 +739,16 @@ function raporApp(classId){
                   })
                 }
               );
-              alert('Rapor tersimpan');
+              window.dispatchEvent(new CustomEvent('open-success', {
+                  detail: { message: 'Rapor berhasil disimpan' }
+              }));
               this.mode = 'view';
               this.selectedTemplate = null;
               this.currentTemplate = null;
           } catch (e) {
-              alert('Gagal menyimpan rapor');
+              window.dispatchEvent(new CustomEvent('open-success', {
+                  detail: { message: 'Gagal menyimpan rapor', isError: true }
+              }));
           }
         },
 
@@ -734,46 +903,73 @@ function raporApp(classId){
                     }
                 );
                 
-                alert('Penilaian berhasil disimpan');
+                window.dispatchEvent(new CustomEvent('open-success', {
+                    detail: { message: 'Penilaian berhasil disimpan' }
+                }));
                 this.selectedStudent = null;
             } catch (e) {
-                alert('Gagal menyimpan penilaian');
+                window.dispatchEvent(new CustomEvent('open-success', {
+                    detail: { message: 'Gagal menyimpan penilaian', isError: true }
+                }));
             }
         },
         
         deleteStudentScore(studentId) {
-            if (!confirm('Yakin hapus nilai siswa ini?')) return;
+            // Create confirmation handler
+            const confirmHandler = {
+                submit: async () => {
+                    try {
+                        // Remove all related data for this student
+                        delete this.scores[studentId];
+                        delete this.teacherComments[studentId];
+                        delete this.parentComments[studentId];
+                        delete this.physicalData[studentId];
+                        delete this.attendanceData[studentId];
+                        
+                        // Remove theme comments
+                        this.selectedTemplate.themes.forEach(theme => {
+                            const commentKey = studentId + '_' + theme.id;
+                            delete this.themeComments[commentKey];
+                            
+                            // Remove sub-theme comments
+                            this.getSubThemes(theme).forEach(subTheme => {
+                                const subCommentKey = studentId + '_' + subTheme.id;
+                                delete this.subThemeComments[subCommentKey];
+                            });
+                        });
+                        
+                        // Close confirmation dialog
+                        window.dispatchEvent(new CustomEvent('close-confirmation'));
+                        
+                        window.dispatchEvent(new CustomEvent('open-success', {
+                            detail: { message: 'Nilai siswa berhasil dihapus' }
+                        }));
+                    } catch (e) {
+                        // Close confirmation dialog even on error
+                        window.dispatchEvent(new CustomEvent('close-confirmation'));
+                        
+                        window.dispatchEvent(new CustomEvent('open-success', {
+                            detail: { message: 'Gagal menghapus nilai siswa', isError: true }
+                        }));
+                    }
+                }
+            };
             
-            try {
-                // Remove all related data for this student
-                delete this.scores[studentId];
-                delete this.teacherComments[studentId];
-                delete this.parentComments[studentId];
-                delete this.physicalData[studentId];
-                delete this.attendanceData[studentId];
-                
-                // Remove theme comments
-                this.selectedTemplate.themes.forEach(theme => {
-                    const commentKey = studentId + '_' + theme.id;
-                    delete this.themeComments[commentKey];
-                    
-                    // Remove sub-theme comments
-                    this.getSubThemes(theme).forEach(subTheme => {
-                        const subCommentKey = studentId + '_' + subTheme.id;
-                        delete this.subThemeComments[subCommentKey];
-                    });
-                });
-                
-                alert('Nilai siswa berhasil dihapus');
-            } catch (e) {
-                alert('Gagal menghapus nilai siswa');
-            }
+            window.dispatchEvent(new CustomEvent('open-confirmation', {
+                detail: {
+                    label: 'nilai siswa ini',
+                    action: 'menghapus',
+                    target: confirmHandler
+                }
+            }));
         },
 
         // Method to view a completed report
         async viewStudentReport(student) {
             if (!this.hasStudentReport(student.id)) {
-                alert('Siswa belum memiliki rapor');
+                window.dispatchEvent(new CustomEvent('open-success', {
+                    detail: { message: 'Siswa belum memiliki rapor', isError: true }
+                }));
                 return;
             }
             
@@ -788,10 +984,14 @@ function raporApp(classId){
                     };
                     this.mode = 'view-report';
                 } else {
-                    alert('Gagal memuat data rapor');
+                    window.dispatchEvent(new CustomEvent('open-success', {
+                        detail: { message: 'Gagal memuat data rapor', isError: true }
+                    }));
                 }
             } catch (e) {
-                alert('Gagal memuat rapor');
+                window.dispatchEvent(new CustomEvent('open-success', {
+                    detail: { message: 'Gagal memuat rapor', isError: true }
+                }));
             }
         },
 
@@ -810,7 +1010,9 @@ function raporApp(classId){
         // Method to download PDF report
         async downloadReportPDF() {
             if (!this.viewingReport) {
-                alert('Tidak ada laporan yang sedang dilihat');
+                window.dispatchEvent(new CustomEvent('open-success', {
+                    detail: { message: 'Tidak ada laporan yang sedang dilihat', isError: true }
+                }));
                 return;
             }
             
@@ -821,7 +1023,9 @@ function raporApp(classId){
                 // Open the print-ready page in a new tab
                 window.open(pdfUrl, '_blank');
             } catch (e) {
-                alert('Gagal membuka halaman cetak');
+                window.dispatchEvent(new CustomEvent('open-success', {
+                    detail: { message: 'Gagal membuka halaman cetak', isError: true }
+                }));
             }
         },
 
@@ -963,7 +1167,10 @@ function raporApp(classId){
                 </div>
                 
                 <div class="flex justify-end gap-3 mt-3 text-xs">
-                    <button class="text-red-600" @click.stop="deleteTemplate(templateItem.id)">Hapus</button>
+                    <button class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700" 
+                            @click.stop="editTemplate(templateItem)">Edit</button>
+                    <button class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700" 
+                            @click.stop="deleteTemplate(templateItem.id)">Hapus</button>
                 </div>
             </div>
         </article>
@@ -1064,15 +1271,27 @@ function raporApp(classId){
             </div>
 
             {{-- Action Buttons --}}
-            <div class="flex justify-end gap-3 pt-4 border-t">
-                <button class="bg-red-500 text-white px-4 py-2 rounded-full text-sm" 
-                        @click="cancelPreview()">
-                    Batal
-                </button>
-                <button class="px-6 py-2 bg-sky-600 text-white rounded-full hover:bg-sky-700" 
-                        @click="confirmAssignTemplate()">
-                    Gunakan Template Ini
-                </button>
+            <div class="flex justify-between gap-3 pt-4 border-t">
+                <div class="flex gap-2">
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700" 
+                            @click="editTemplate(selectedTemplate)">
+                        Edit Template
+                    </button>
+                    <button class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700" 
+                            @click="deleteTemplate(selectedTemplate.id)">
+                        Hapus Template
+                    </button>
+                </div>
+                <div class="flex gap-2">
+                    <button class="bg-gray-500 text-white px-4 py-2 rounded-md text-sm" 
+                            @click="cancelPreview()">
+                        Batal
+                    </button>
+                    <button class="px-6 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700" 
+                            @click="confirmAssignTemplate()">
+                        Gunakan Template Ini
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1741,4 +1960,160 @@ function raporApp(classId){
             </div>
         </div>
     </div>
+
+    {{-- ===================== EDIT TEMPLATE FORM ===================== --}}
+    <div x-show="!loading && !error && mode==='edit'" x-cloak class="space-y-4">
+        <div class="flex justify-between items-center">
+            <h1 class="text-lg font-semibold text-sky-700">Edit Template Rapor</h1>
+        </div>
+        
+        <div class="bg-white border border-sky-200 rounded-lg p-6 space-y-6">
+            {{-- Title Field --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Judul Template <span class="text-red-500">*</span></label>
+                <input type="text" 
+                       x-model="newTemplateForm.title"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                       placeholder="Masukkan judul template">
+            </div>
+
+            {{-- Description Field --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Deskripsi</label>
+                <textarea x-model="newTemplateForm.description"
+                          rows="3"
+                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                          placeholder="Masukkan deskripsi template (opsional)"></textarea>
+            </div>
+
+            {{-- Semester Type Field --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Jenis Semester <span class="text-red-500">*</span></label>
+                <div class="flex gap-4">
+                    <label class="flex items-center">
+                        <input type="radio" x-model="newTemplateForm.semester_type" value="ganjil" class="mr-2">
+                        <span>Ganjil</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" x-model="newTemplateForm.semester_type" value="genap" class="mr-2">
+                        <span>Genap</span>
+                    </label>
+                </div>
+            </div>
+
+            {{-- Themes Section --}}
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <label class="block text-sm font-medium text-gray-700">Tema Penilaian <span class="text-red-500">*</span></label>
+                    <button type="button" 
+                            @click="addTheme()"
+                            class="flex items-center gap-1 bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">
+                        <svg width="16" height="16" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20 10V30" stroke="white" stroke-width="4" stroke-linecap="round" />
+                            <path d="M10 20H30" stroke="white" stroke-width="4" stroke-linecap="round" />
+                        </svg>
+                        Tambah Tema
+                    </button>
+                </div>
+
+                {{-- Themes Container --}}
+                <div class="space-y-4">
+                    <template x-for="(theme, themeIndex) in newTemplateForm.themes" :key="'edit-theme-form-' + themeIndex">
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            {{-- Theme Header --}}
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="font-medium text-gray-800" x-text="`Tema ${themeIndex + 1}`"></h4>
+                                <button type="button" 
+                                        @click="removeTheme(themeIndex)"
+                                        x-show="newTemplateForm.themes.length > 1"
+                                        class="text-red-600 hover:text-red-800 text-sm">
+                                    Hapus Tema
+                                </button>
+                            </div>
+
+                            {{-- Theme Fields --}}
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Kode Tema <span class="text-red-500">*</span></label>
+                                    <input type="text" 
+                                           x-model="theme.code"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                                           placeholder="Contoh: T01">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Tema <span class="text-red-500">*</span></label>
+                                    <input type="text" 
+                                           x-model="theme.name"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                                           placeholder="Masukkan nama tema">
+                                </div>
+                            </div>
+
+                            {{-- Sub-themes Section --}}
+                            <div>
+                                <div class="flex justify-between items-center mb-3">
+                                    <h5 class="text-sm font-medium text-gray-700">Sub-tema Penilaian <span class="text-red-500">*</span></h5>
+                                    <button type="button" 
+                                            @click="addSubTheme(themeIndex)"
+                                            class="flex items-center gap-1 bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700">
+                                        <svg width="12" height="12" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M20 10V30" stroke="white" stroke-width="4" stroke-linecap="round" />
+                                            <path d="M10 20H30" stroke="white" stroke-width="4" stroke-linecap="round" />
+                                        </svg>
+                                        Tambah Sub-tema
+                                    </button>
+                                </div>
+
+                                {{-- Sub-themes Container --}}
+                                <div class="space-y-2">
+                                    <template x-for="(subTheme, subThemeIndex) in theme.subThemes" :key="'edit-subtheme-form-' + themeIndex + '-' + subThemeIndex">
+                                        <div class="bg-gray-50 border border-gray-200 rounded p-3">
+                                            <div class="flex justify-between items-center mb-2">
+                                                <span class="text-sm font-medium text-gray-600" x-text="`Sub-tema ${subThemeIndex + 1}`"></span>
+                                                <button type="button" 
+                                                        @click="removeSubTheme(themeIndex, subThemeIndex)"
+                                                        x-show="theme.subThemes.length > 1"
+                                                        class="text-red-600 hover:text-red-800 text-xs">
+                                                    Hapus
+                                                </button>
+                                            </div>
+                                            <div class="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-700 mb-1">Kode Sub-tema <span class="text-red-500">*</span></label>
+                                                    <input type="text" 
+                                                           x-model="subTheme.code"
+                                                           class="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500"
+                                                           placeholder="Contoh: ST01">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-700 mb-1">Nama Sub-tema <span class="text-red-500">*</span></label>
+                                                    <input type="text" 
+                                                           x-model="subTheme.name"
+                                                           class="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500"
+                                                           placeholder="Masukkan nama sub-tema">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            {{-- Action Buttons --}}
+            <div class="flex justify-end gap-2 pt-4">
+                <button class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400" 
+                        @click="mode='view'">Batal</button>
+                <button class="px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700" 
+                        @click="saveEditedTemplate()">Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
 </div>
+
+{{-- Custom Alert Components --}}
+<x-alert.success-alert />
+<x-alert.confirmation-alert />
+

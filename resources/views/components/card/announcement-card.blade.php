@@ -49,6 +49,17 @@
                             {{ $announcement->title }}
                         </h4>
 
+                        {{-- Gambar Pengumuman (jika ada) --}}
+                        @if($announcement->image)
+                        <div class="my-2">
+                            <img 
+                                src="{{ asset('storage/' . $announcement->image) }}" 
+                                alt="{{ $announcement->title }}"
+                                class="w-full max-h-48 object-cover rounded-lg border border-gray-300"
+                            />
+                        </div>
+                        @endif
+
                         <p 
                             x-ref="desc"
                             class="text-xs text-justify text-black transition-all duration-300 ease-in-out line-clamp-2"

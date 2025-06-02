@@ -28,18 +28,62 @@
                 <!-- Upload Gambar (opsional) -->
                 <div class="flex flex-col gap-1.5">
                     <label class="text-xs text-slate-600">Gambar (opsional)</label>
-                    <label class="cursor-pointer">
-                        <div class="flex items-center px-2 h-10 text-xs font-medium text-gray-400
-                                    bg-white rounded-3xl border border-sky-600 border-dashed w-full">
-                            <svg width="24" height="24" viewBox="0 0 25 24" fill="none"
-                                 xmlns="http://www.w3.org/2000/svg" class="mr-2">
-                                <path d="M8.5 12h8M9.5 8H6.5a4 4 0 0 0 0 8h3M15.5 8h3a4 4 0 0 1 0 8h-3"
-                                      stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                            <span>Klik / seret gambar</span>
+                    <div x-data="{ 
+                        previewUrl: null,
+                        fileName: '',
+                        dragOver: false,
+                        handleFileSelect(event) {
+                            const file = event.target.files[0];
+                            this.handleFile(file);
+                        },
+                        handleFile(file) {
+                            if (file && file.type.startsWith('image/')) {
+                                this.fileName = file.name;
+                                const reader = new FileReader();
+                                reader.onload = (e) => {
+                                    this.previewUrl = e.target.result;
+                                };
+                                reader.readAsDataURL(file);
+                            }
+                        },
+                        removeImage() {
+                            this.previewUrl = null;
+                            this.fileName = '';
+                            $refs.fileInput.value = '';
+                        }
+                    }">
+                        <!-- Preview Image -->
+                        <div x-show="previewUrl" x-cloak class="relative mb-2">
+                            <img :src="previewUrl" alt="Preview" class="w-full h-32 object-cover rounded-lg border border-sky-600">
+                            <button type="button" @click="removeImage()" 
+                                    class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600">
+                                ×
+                            </button>
+                            <p class="text-xs text-gray-600 mt-1" x-text="fileName"></p>
                         </div>
-                        <input type="file" name="photo" class="hidden">
-                    </label>
+
+                        <!-- Upload Area -->
+                        <label class="cursor-pointer" x-show="!previewUrl">
+                            <div class="flex items-center px-2 h-10 text-xs font-medium text-gray-400
+                                        bg-white rounded-3xl border border-sky-600 border-dashed w-full
+                                        hover:border-sky-700 transition-colors"
+                                 :class="{ 'border-sky-700 bg-sky-50': dragOver }"
+                                 @dragover.prevent="dragOver = true"
+                                 @dragleave.prevent="dragOver = false"
+                                 @drop.prevent="dragOver = false; handleFile($event.dataTransfer.files[0])">
+                                <svg width="24" height="24" viewBox="0 0 25 24" fill="none"
+                                     xmlns="http://www.w3.org/2000/svg" class="mr-2">
+                                    <path d="M21.5 12v7a2 2 0 0 1-2 2H5.5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"
+                                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <line x1="16.5" y1="5" x2="22.5" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    <line x1="19.5" y1="2" x2="19.5" y2="8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                                <span>Klik atau seret gambar disini</span>
+                            </div>
+                            <input type="file" name="photo" accept="image/*" class="hidden" 
+                                   x-ref="fileInput" @change="handleFileSelect($event)">
+                        </label>
+                    </div>
                 </div>
             </div>
 

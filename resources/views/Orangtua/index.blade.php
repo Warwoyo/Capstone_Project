@@ -23,12 +23,12 @@
         <div class="flex flex-col pb-1 md:pt-6 md:pl-8 md:pr-8">
             <div class="text-lg font-semibold text-sky-700 mb-2">Menu Anak</div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <x-card.parent-stat-card label="Data Anak" />
-                <x-card.parent-stat-card label="Jadwal" />
-                <x-card.parent-stat-card label="Presensi" />
-                <x-card.parent-stat-card label="Observasi" />
-                <x-card.parent-stat-card label="Silabus" />
-                <x-card.parent-stat-card label="Rapot" />
+                <x-card.parent-stat-card label="Data Anak" route="{{ route('orangtua.children') }}" />
+                <x-card.parent-stat-card label="Jadwal" route="{{ route('orangtua.schedule') }}" />
+                <x-card.parent-stat-card label="Presensi" route="{{ route('orangtua.attendance') }}" />
+                <x-card.parent-stat-card label="Observasi" route="{{ route('orangtua.observation') }}" />
+                <x-card.parent-stat-card label="Silabus" route="{{ route('orangtua.syllabus') }}" />
+                <x-card.parent-stat-card label="Rapot" route="{{ route('orangtua.rapor') }}" />
             </div>
         </div>
 
@@ -51,4 +51,63 @@
     <!-- Header Icons -->
     <x-header.icon-header />
 </main>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add CSRF token to meta if not present
+    if (!document.querySelector('meta[name="csrf-token"]')) {
+        const meta = document.createElement('meta');
+        meta.name = 'csrf-token';
+        meta.content = '{{ csrf_token() }}';
+        document.head.appendChild(meta);
+    }
+    
+    // Handle all orangtua navigation with session preservation
+    const orangtuaLinks = document.querySelectorAll('a[href*="orangtua"]');
+    
+    orangtuaLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Show loading state
+            this.style.opacity = '0.7';
+            this.style.pointerEvents = 'none';
+            
+            // Get the target route
+            const targetRoute = this.getAttribute('href');
+            
+            // Perform navigation with session check
+            fetch('/orangtua/session-check', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.authenticated && (data.user_role === 'orangtua' || data.user_role === 'parent')) {
+                    // Session is valid, proceed with navigation
+                    window.location.href = targetRoute;
+                } else {
+                    // Session invalid, redirect to login
+                    window.location.href = '{{ route("login") }}';
+                }
+            })
+            .catch(error => {
+                console.error('Navigation error:', error);
+                // Fallback to direct navigation
+                window.location.href = targetRoute;
+            })
+            .finally(() => {
+                this.style.opacity = '1';
+                this.style.pointerEvents = 'auto';
+            });
+        });
+    });
+});
+</script>
+@endpush
 @endsection

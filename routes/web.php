@@ -14,7 +14,8 @@ use App\Http\Controllers\{
     ObservationController,
     TemplateController,
     ReportController,
-    SyllabusController
+    SyllabusController,
+    ParentReportController
 };
 
 /*
@@ -117,6 +118,16 @@ Route::middleware('auth')->group(function () {
             Route::get('/anak/rapor', [ReportController::class, 'parentView'])->name('rapor');
             Route::get('/anak/rapor/{student}', [ReportController::class, 'parentViewDetail'])->name('rapor.detail');
             Route::get('/anak/rapor/{student}/download', [ReportController::class, 'parentDownloadReport'])->name('rapor.download');
+            
+            // New Rapot routes using ParentReportController
+            Route::prefix('anak')->name('anak.')->group(function () {
+                Route::prefix('rapot')->name('rapot.')->group(function () {
+                    Route::get('/', [ParentReportController::class, 'index'])->name('index');
+                    Route::get('/child/{child}', [ParentReportController::class, 'showChild'])->name('child');
+                    Route::get('/child/{child}/report/{report}', [ParentReportController::class, 'showReport'])->name('view');
+                    Route::get('/child/{child}/report/{report}/print', [ParentReportController::class, 'printReport'])->name('print');
+                });
+            });
             
             // Kelas anak (view classroom info)
             Route::get('/anak/kelas', [DashboardController::class, 'classroomParent'])->name('classroom');
@@ -504,3 +515,12 @@ Route::get('/debug/timestamp', function() {
     
     return response()->json($info, 200, [], JSON_PRETTY_PRINT);
 })->name('debug.timestamp');
+
+// Session check endpoint for safe navigation
+Route::get('/orangtua/session-check', function() {
+    return response()->json([
+        'authenticated' => auth()->check(),
+        'user_role' => auth()->check() ? auth()->user()->role : null,
+        'timestamp' => now()->toISOString()
+    ]);
+})->name('orangtua.session-check');

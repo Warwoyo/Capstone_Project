@@ -76,7 +76,8 @@
                                 <tr>
                                     <th class="text-center px-4 py-2">Tanggal</th>
                                     <th class="text-center px-4 py-2">Tema</th>
-                                    <th class="text-center px-4 py-2">Keterangan</th>
+                                    <th class="text-center px-4 py-2">Status</th>
+                                    <th class="text-center px-4 py-2">Deskripsi</th>
                                 </tr>
                             </thead>
 
@@ -88,10 +89,21 @@
                                             {{ \Carbon\Carbon::parse($record['date'])->translatedFormat('d F Y') }}
                                         </td>
                                         <td class="text-center px-4 py-2 whitespace-normal break-words">
-                                            {{ $record['theme'] }}
+                                            {{ $record['theme'] ?? '-' }}
                                         </td>
                                         <td class="text-center px-4 py-2 whitespace-nowrap">
-                                            {{ $record['status'] }}
+                                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
+                                                @if($record['status'] == 'hadir') bg-green-100 text-green-800
+                                                @elseif($record['status'] == 'sakit') bg-yellow-100 text-yellow-800
+                                                @elseif($record['status'] == 'izin') bg-blue-100 text-blue-800
+                                                @elseif($record['status'] == 'alpha') bg-red-100 text-red-800
+                                                @else bg-gray-100 text-gray-800
+                                                @endif">
+                                                {{ ucfirst($record['status']) }}
+                                            </span>
+                                        </td>
+                                        <td class="text-center px-4 py-2 whitespace-normal break-words">
+                                            {{ $record['description'] ?? $record['keterangan'] ?? $record['deskripsi'] ?? $record['catatan'] ?? $record['notes'] ?? 'No description available' }}
                                         </td>
                                     </tr>
                                 @endforeach

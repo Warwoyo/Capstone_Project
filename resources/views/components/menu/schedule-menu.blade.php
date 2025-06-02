@@ -1,7 +1,10 @@
-
 @props(['mode', 'scheduleList', 'class'])
 
 <meta name="csrf-token" content="{{ csrf_token() }}">
+
+<!-- Include confirmation alert component -->
+<x-alert.confirmation-alert />
+<x-alert.success-alert />
 
     <!-- View Data -->
     <div x-show="mode === 'view'" x-cloak class="flex-1 w-full">
@@ -131,8 +134,9 @@
                     Batal
                 </button>
                 <button 
-                    type="submit" 
+                    type="button" 
                     id="submitSchedule" 
+                    onclick="submitScheduleForm()"
                     class="px-4 py-2 bg-sky-600 text-white font-semibold rounded-full hover:bg-sky-700 transition-colors"
                 >
                     Simpan Jadwal
@@ -167,8 +171,9 @@
                     Batal
                 </button>
                 <button 
-                    type="submit" 
-                    id="submitSchedule" 
+                    type="button" 
+                    id="submitScheduleMobile"
+                    onclick="submitScheduleForm()"
                     class="px-4 py-2 bg-sky-600 text-white font-semibold rounded-full hover:bg-sky-700 transition-colors"
                 >
                     Simpan Jadwal
@@ -249,6 +254,12 @@ document.addEventListener('DOMContentLoaded', function() {
     initScheduleForm();
 });
 
+// Helper function to format dates
+function formatDate(dateString) {
+    const options = { day: 'numeric', month: 'short', year: 'numeric' };
+    return new Date(dateString).toLocaleDateString('id-ID', options);
+}
+
 function initScheduleForm() {
     const addButton = document.getElementById('addSubTheme');
     const container = document.getElementById('subThemesContainer');
@@ -290,7 +301,14 @@ function initScheduleForm() {
                 if (container.children.length > 1) {
                     this.closest('.sub-theme-item').remove();
                 } else {
-                    alert('Minimal harus ada satu sub tema');
+                    // Trigger custom alert instead of browser alert
+                    window.dispatchEvent(new CustomEvent('open-confirmation', {
+                        detail: {
+                            label: 'sub tema terakhir',
+                            action: 'menghapus',
+                            target: null // No action needed, just show message
+                        }
+                    }));
                 }
             });
         }
@@ -330,7 +348,11 @@ function toggleDetail(id, button) {
         detailElement.classList.remove('hidden');
         toggleText.textContent = 'Sembunyikan Detail';
         eyePath.setAttribute('d', 'M10 13.1429C12.9338 13.1429 15.5898 11.5357 17.0167 9C15.5898 6.46429 12.9338 4.85714 10 4.85714C7.06618 4.85714 4.41018 6.46429 2.98327 9C4.41018 11.5357 7.06618 13.1429 10 13.1429Z');
-        loadSubSchedules(scheduleId);
+        
+        // Load sub schedules dan scroll setelah data selesai load
+        loadSubSchedules(scheduleId, () => {
+            detailElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        });
     } else {
         detailElement.classList.add('hidden');
         toggleText.textContent = 'Lihat Detail';
@@ -428,7 +450,14 @@ function editSchedule(id) {
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Gagal memuat data jadwal: ' + error.message);
+            // Trigger custom alert for error message
+            window.dispatchEvent(new CustomEvent('open-confirmation', {
+                detail: {
+                    label: 'data jadwal',
+                    action: 'memuat',
+                    target: null // No action needed, just show error
+                }
+            }));
             if (window.Alpine) {
                 window.Alpine.store('mode', 'view');
             }
@@ -436,65 +465,49 @@ function editSchedule(id) {
 }
 
 function deleteSchedule(id) {
-    if (!confirm('Apakah Anda yakin ingin menghapus jadwal ini?')) {
-        return;
-    }
-
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
-    // Show loading state
-    const article = document.querySelector(`article[data-schedule-id="${id}"]`);
-    if (article) {
-        article.style.opacity = '0.5';
-    }
-
-    fetch(`/schedules/${id}`, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrfToken,
-            'Accept': 'application/json'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.json().then(error => {
-                throw new Error(error.message || `HTTP error! status: ${response.status}`);
-            });
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            // Remove the schedule item from DOM with animation
-            if (article) {
-                article.style.transition = 'all 0.3s ease';
-                article.style.opacity = '0';
-                article.style.transform = 'scale(0.95)';
-                setTimeout(() => article.remove(), 300);
+    window.dispatchEvent(new CustomEvent('open-confirmation', {
+        detail: {
+            label: 'jadwal',
+            action: 'menghapus',
+            target: {
+                submit: () => performDeleteSchedule(id)
             }
-            alert('Jadwal berhasil dihapus');
-        } else {
-            throw new Error(data.message || 'Gagal menghapus jadwal');
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert(`Error: ${error.message}`);
-        if (article) {
-            article.style.opacity = '1';
-        }
-    });
+    }));
 }
 
 function submitScheduleForm() {
     const form = document.getElementById('scheduleForm');
+    const scheduleId = form.querySelector('#scheduleId').value;
+    const actionText = scheduleId ? 'memperbarui' : 'menyimpan';
+    
+    // Show confirmation before saving
+    window.dispatchEvent(new CustomEvent('open-confirmation', {
+        detail: {
+            label: 'jadwal',
+            action: actionText,
+            target: {
+                submit: () => performSubmitSchedule()
+            }
+        }
+    }));
+}
+
+function performSubmitSchedule() {
+    const form = document.getElementById('scheduleForm');
     const submitBtn = document.getElementById('submitSchedule');
-    const originalText = submitBtn.textContent;
+    const submitBtnMobile = document.getElementById('submitScheduleMobile');
     const scheduleId = form.querySelector('#scheduleId').value;
     
-    submitBtn.textContent = 'Menyimpan...';
-    submitBtn.disabled = true;
+    // Handle both desktop and mobile buttons
+    if (submitBtn) {
+        submitBtn.textContent = 'Menyimpan...';
+        submitBtn.disabled = true;
+    }
+    if (submitBtnMobile) {
+        submitBtnMobile.textContent = 'Menyimpan...';
+        submitBtnMobile.disabled = true;
+    }
 
     // Get form data and convert to proper structure
     const formData = new FormData(form);
@@ -547,49 +560,118 @@ function submitScheduleForm() {
     })
     .then(data => {
         if (data.success) {
-            alert(scheduleId ? 'Jadwal berhasil diperbarui' : 'Jadwal berhasil disimpan');
-            window.location.reload();
+            // Show success alert
+            window.dispatchEvent(new CustomEvent('open-success', {
+                detail: {
+                    message: scheduleId ? 'Berhasil memperbarui jadwal' : 'Berhasil menyimpan jadwal'
+                }
+            }));
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
         } else {
             throw new Error(data.message || 'Gagal menyimpan jadwal');
         }
     })
     .catch(error => {
         console.error('Error details:', error);
-        alert(`Error: ${error.message}`);
+        // Show error alert
+        window.dispatchEvent(new CustomEvent('open-success', {
+            detail: {
+                message: 'Gagal menyimpan jadwal. Silakan coba lagi.',
+                isError: true
+            }
+        }));
     })
     .finally(() => {
-        submitBtn.textContent = originalText;
-        submitBtn.disabled = false;
+        // Reset button states
+        if (submitBtn) {
+            submitBtn.textContent = 'Simpan Jadwal';
+            submitBtn.disabled = false;
+        }
+        if (submitBtnMobile) {
+            submitBtnMobile.textContent = 'Simpan Jadwal';
+            submitBtnMobile.disabled = false;
+        }
     });
 }
 
-// Helper function to format dates
-function formatDate(dateString) {
-    const options = { day: 'numeric', month: 'short', year: 'numeric' };
-    return new Date(dateString).toLocaleDateString('id-ID', options);
+// Ensure performDeleteSchedule is globally available before DOMContentLoaded
+function performDeleteSchedule(id) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
+    const article = document.querySelector(`article[data-schedule-id="${id}"]`);
+    if (article) {
+        article.style.opacity = '0.5';
+        article.style.pointerEvents = 'none';
+    }
+
+    fetch(`/schedules/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(error => {
+                throw new Error(error.message || `HTTP error! status: ${response.status}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            if (article) {
+                article.style.transition = 'all 0.3s ease';
+                article.style.opacity = '0';
+                article.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    article.remove();
+                    // Close confirmation modal first
+                    window.dispatchEvent(new CustomEvent('close-confirmation'));
+                    // Then show success alert
+                    setTimeout(() => {
+                        window.dispatchEvent(new CustomEvent('open-success', {
+                            detail: {
+                                message: 'Berhasil menghapus jadwal'
+                            }
+                        }));
+                    }, 100);
+                }, 100);
+            }
+        } else {
+            throw new Error(data.message || 'Gagal menghapus jadwal');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (article) {
+            article.style.opacity = '1';
+            article.style.pointerEvents = 'auto';
+        }
+        // Close confirmation modal first
+        window.dispatchEvent(new CustomEvent('close-confirmation'));
+        // Then show error alert
+        setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('open-success', {
+                detail: {
+                    message: 'Gagal menghapus jadwal. Silakan coba lagi.',
+                    isError: true
+                }
+            }));
+        }, 100);
+    });
 }
 
-function toggleDetail(id, button) {
-    const detailElement = document.getElementById(id);
-    const toggleText = button.querySelector('.toggle-text');
-    const eyePath = button.querySelector('.eye-path');
-    const scheduleId = id.split('-')[1];
-    
-    if (detailElement.classList.contains('hidden')) {
-        detailElement.classList.remove('hidden');
-        toggleText.textContent = 'Sembunyikan Detail';
-        eyePath.setAttribute('d', 'M10 13.1429C12.9338 13.1429 15.5898 11.5357 17.0167 9C15.5898 6.46429 12.9338 4.85714 10 4.85714C7.06618 4.85714 4.41018 6.46429 2.98327 9C4.41018 11.5357 7.06618 13.1429 10 13.1429Z');
-        
-        // Load sub schedules dan scroll setelah data selesai load
-        loadSubSchedules(scheduleId, () => {
-            detailElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        });
-    } else {
-        detailElement.classList.add('hidden');
-        toggleText.textContent = 'Lihat Detail';
-        eyePath.setAttribute('d', 'M10 13.1429C12.9338 13.1429 15.5898 11.5357 17.0167 9C15.5898 6.46429 12.9338 4.85714 10 4.85714C7.06618 4.85714 4.41018 6.46429 2.98327 9C4.41018 11.5357 7.06618 13.1429 10 13.1429ZM10 4C13.4967 4 16.5251 6.03429 18 9C16.5251 11.9657 13.4967 14 10 14C6.50327 14 3.47491 11.9657 2 9C3.47491 6.03429 6.50327 4 10 4ZM10 11C10.5401 11 11.058 10.7893 11.4399 10.4142C11.8218 10.0391 12.0364 9.53043 12.0364 9C12.0364 8.46957 11.8218 7.96086 11.4399 7.58579C11.058 7.21071 10.5401 7 10 7C9.45992 7 8.94197 7.21071 8.56007 7.58579C8.17818 7.96086 7.96364 8.46957 7.96364 9C7.96364 9.53043 8.17818 10.0391 8.56007 10.4142C8.94197 10.7893 9.45992 11 10 11ZM10 11.8571C9.22846 11.8571 8.48852 11.5561 7.94296 11.0203C7.3974 10.4845 7.09091 9.75776 7.09091 9C7.09091 8.24224 7.3974 7.51551 7.94296 6.97969C8.48852 6.44388 9.22846 6.14286 10 6.14286C10.7715 6.14286 11.5115 6.44388 12.057 6.97969C12.6026 7.51551 12.9091 8.24224 12.9091 9C12.9091 9.75776 12.6026 10.4845 12.057 11.0203C11.5115 11.5561 10.7715 11.8571 10 11.8571Z');
-    }
-}
+// Make functions globally available immediately
+window.performDeleteSchedule = performDeleteSchedule;
+window.deleteSchedule = deleteSchedule;
+window.editSchedule = editSchedule;
+window.toggleDetail = toggleDetail;
+window.formatDate = formatDate;
 
 </script>
 

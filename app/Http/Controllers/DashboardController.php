@@ -3,13 +3,19 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Student;
-use App\Models\Alumni;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use App\Models\Announcement;
+
+use App\Models\Student;
+use App\Models\Classroom;
+use App\Models\Alumni;
+
 use App\Models\ParentProfile;
 use App\Models\Observation;
 use App\Models\Syllabus;
 use Illuminate\Support\Facades\DB;
+
 
 class DashboardController extends Controller
 {
@@ -163,12 +169,13 @@ class DashboardController extends Controller
             $firstStudent = $students->first();
             $primaryClassroom = $firstStudent->classrooms->first();
             
-            // Format data presensi
+            // Format data presensi dengan description
             $attendanceData = $firstStudent->attendances->map(function($record) {
                 return [
                     'date' => $record->attendance_date->format('Y-m-d'),
                     'theme' => $record->schedule->title ?? $record->description ?? 'Tidak ada tema',
-                    'status' => ucfirst($record->status)
+                    'status' => ucfirst($record->status),
+                    'description' => $record->description ?? 'Tidak ada deskripsi'
                 ];
             })->toArray();
             
@@ -323,6 +330,30 @@ class DashboardController extends Controller
             return 'Kurang (D)';
         } else {
             return 'Belum dinilai';
+        }
+    }
+
+    /**
+     * Parent Dashboard
+     */
+    public function parentDashboard()
+    {
+        try {
+            $user = Auth::user();
+            
+            // Get announcements for parent - simplified approach
+            $announcementList = Announcement::orderBy('created_at', 'desc')
+                ->take(5)
+                ->get();
+            
+            return view('Orangtua.index', compact('announcementList'));
+            
+        } catch (\Exception $e) {
+            Log::error('Error loading parent dashboard: ' . $e->getMessage());
+            
+            // Fallback with empty announcements
+            $announcementList = collect();
+            return view('Orangtua.index', compact('announcementList'));
         }
     }
 }

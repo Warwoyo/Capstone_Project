@@ -12,7 +12,8 @@ use App\Models\{
     Syllabus,
     Attendance,
     Announcement,
-    ObservationScore
+    ObservationScore,
+    TemplateController,
 };
 
 class ClassroomController extends Controller
@@ -405,12 +406,12 @@ public function showClassroomDetail(Request $r, Classroom $classroom, string $ta
                 ], 404);
             }
             
-            // Decode JSON fields
-            $report->scores = json_decode($report->scores, true) ?: [];
-            $report->physical_data = json_decode($report->physical_data, true) ?: [];
-            $report->attendance_data = json_decode($report->attendance_data, true) ?: [];
-            $report->theme_comments = json_decode($report->theme_comments, true) ?: [];
-            $report->sub_theme_comments = json_decode($report->sub_theme_comments, true) ?: [];
+            // Safely decode JSON fields - check if already decoded
+            $report->scores = is_string($report->scores) ? json_decode($report->scores, true) : ($report->scores ?: []);
+            $report->physical_data = is_string($report->physical_data) ? json_decode($report->physical_data, true) : ($report->physical_data ?: []);
+            $report->attendance_data = is_string($report->attendance_data) ? json_decode($report->attendance_data, true) : ($report->attendance_data ?: []);
+            $report->theme_comments = is_string($report->theme_comments) ? json_decode($report->theme_comments, true) : ($report->theme_comments ?: []);
+            $report->sub_theme_comments = is_string($report->sub_theme_comments) ? json_decode($report->sub_theme_comments, true) : ($report->sub_theme_comments ?: []);
             
             return response()->json([
                 'success' => true,
@@ -447,80 +448,102 @@ public function showClassroomDetail(Request $r, Classroom $classroom, string $ta
                 ], 404);
             }
             
-            // Decode JSON fields
-            $report->scores = json_decode($report->scores, true) ?: [];
-            $report->physical_data = json_decode($report->physical_data, true) ?: [];
-            $report->attendance_data = json_decode($report->attendance_data, true) ?: [];
-            $report->theme_comments = json_decode($report->theme_comments, true) ?: [];
-            $report->sub_theme_comments = json_decode($report->sub_theme_comments, true) ?: [];
+            // Safely decode JSON fields - check if already decoded
+            $report->scores = is_string($report->scores) ? json_decode($report->scores, true) : ($report->scores ?: []);
+            $report->physical_data = is_string($report->physical_data) ? json_decode($report->physical_data, true) : ($report->physical_data ?: []);
+            $report->attendance_data = is_string($report->attendance_data) ? json_decode($report->attendance_data, true) : ($report->attendance_data ?: []);
+            $report->theme_comments = is_string($report->theme_comments) ? json_decode($report->theme_comments, true) : ($report->theme_comments ?: []);
+            $report->sub_theme_comments = is_string($report->sub_theme_comments) ? json_decode($report->sub_theme_comments, true) : ($report->sub_theme_comments ?: []);
             
-            // Get template data (mock for now since we don't have template table)
-            $template = (object) [
-                'id' => $templateId,
-                'title' => 'Template Rapor PAUD Semester Ganjil',
-                'semester_type' => 'ganjil',
-                'themes' => [
-                    (object) [
-                        'id' => 1,
-                        'code' => 'T01',
-                        'name' => 'Nilai Agama dan Moral',
-                        'sub_themes' => [
-                            (object) ['id' => 1, 'name' => 'Mengenal Tuhan melalui ciptaan-Nya', 'description' => 'Anak mampu mengenal dan mengagumi ciptaan Tuhan'],
-                            (object) ['id' => 2, 'name' => 'Mengucapkan doa sebelum dan sesudah melakukan kegiatan', 'description' => 'Anak terbiasa berdoa sebelum dan sesudah kegiatan'],
-                            (object) ['id' => 3, 'name' => 'Mengenal perilaku baik/sopan dan buruk', 'description' => 'Anak dapat membedakan perilaku yang baik dan buruk']
-                        ]
-                    ],
-                    (object) [
-                        'id' => 2,
-                        'code' => 'T02',
-                        'name' => 'Fisik Motorik',
-                        'sub_themes' => [
-                            (object) ['id' => 4, 'name' => 'Motorik Kasar', 'description' => 'Kemampuan menggunakan otot-otot besar tubuh'],
-                            (object) ['id' => 5, 'name' => 'Motorik Halus', 'description' => 'Kemampuan menggunakan otot-otot kecil/halus'],
-                            (object) ['id' => 6, 'name' => 'Kesehatan dan Perilaku Keselamatan', 'description' => 'Kebiasaan hidup sehat dan awareness keselamatan']
-                        ]
-                    ],
-                    (object) [
-                        'id' => 3,
-                        'code' => 'T03',
-                        'name' => 'Kognitif',
-                        'sub_themes' => [
-                            (object) ['id' => 7, 'name' => 'Belajar dan Pemecahan Masalah', 'description' => 'Kemampuan menganalisis dan memecahkan masalah sederhana'],
-                            (object) ['id' => 8, 'name' => 'Berfikir Logis', 'description' => 'Kemampuan berpikir secara sistematis dan logis'],
-                            (object) ['id' => 9, 'name' => 'Berfikir Simbolik', 'description' => 'Kemampuan memahami dan menggunakan simbol']
-                        ]
-                    ],
-                    (object) [
-                        'id' => 4,
-                        'code' => 'T04',
-                        'name' => 'Bahasa',
-                        'sub_themes' => [
-                            (object) ['id' => 10, 'name' => 'Memahami Bahasa', 'description' => 'Kemampuan memahami bahasa yang didengar'],
-                            (object) ['id' => 11, 'name' => 'Mengungkapkan Bahasa', 'description' => 'Kemampuan menyampaikan maksud dengan bahasa'],
-                            (object) ['id' => 12, 'name' => 'Keaksaraan', 'description' => 'Kemampuan mengenal huruf dan membaca dasar']
-                        ]
-                    ],
-                    (object) [
-                        'id' => 5,
-                        'code' => 'T05',
-                        'name' => 'Sosial Emosional',
-                        'sub_themes' => [
-                            (object) ['id' => 13, 'name' => 'Kesadaran Diri', 'description' => 'Kemampuan mengenal diri sendiri dan perasaan'],
-                            (object) ['id' => 14, 'name' => 'Rasa Tanggung Jawab untuk Diri dan Orang Lain', 'description' => 'Kemampuan bertanggung jawab terhadap diri dan lingkungan'],
-                            (object) ['id' => 15, 'name' => 'Perilaku Prososial', 'description' => 'Kemampuan berinteraksi dan membantu orang lain']
-                        ]
-                    ],
-                    (object) [
-                        'id' => 6,
-                        'code' => 'T06',
-                        'name' => 'Seni',
-                        'sub_themes' => [
-                            (object) ['id' => 16, 'name' => 'Mengekspresikan diri melalui gerakan', 'description' => 'Kemampuan mengekspresikan perasaan melalui gerakan tubuh'],
-                            (object) ['id' => 17, 'name' => 'Mengekspresikan diri melalui karya seni', 'description' => 'Kemampuan mengekspresikan ide melalui karya seni']
-                        ]
-                    ]
-                ]
-            ];
+            // Get template data using the specific template_id from the report
+            $template = null;
+            
+            // First try to get template directly from database
+            try {
+                $templateData = \DB::table('report_templates')
+                    ->where('id', $templateId)
+                    ->where('is_active', true)
+                    ->first();
+                
+                if ($templateData) {
+                    // Get themes and sub-themes
+                    $themes = \DB::table('template_themes')
+                        ->where('template_id', $templateId)
+                        ->orderBy('order')
+                        ->get()
+                        ->map(function ($theme) {
+                            $subThemes = \DB::table('template_sub_themes')
+                                ->where('theme_id', $theme->id)
+                                ->orderBy('order')
+                                ->get();
+                            
+                            $theme->sub_themes = $subThemes;
+                            $theme->subThemes = $subThemes;
+                            
+                            return $theme;
+                        });
+                    
+                    $templateData->themes = $themes;
+                    $template = $templateData;
+                    
+                    \Log::info("Successfully loaded template {$templateId} from database");
+                } else {
+                    \Log::warning("Template {$templateId} not found in database or inactive");
+                }
+            } catch (\Exception $e) {
+                \Log::warning("Could not fetch template from database: " . $e->getMessage());
+                
+                // Fallback: try to get template from TemplateController
+                try {
+                    $templateController = app(\App\Http\Controllers\TemplateController::class);
+                    $templateResponse = $templateController->show($templateId);
+                    
+                    if ($templateResponse instanceof \Illuminate\Http\JsonResponse) {
+                        $templateData = json_decode($templateResponse->getContent(), true);
+                        
+                        // TemplateController::show() returns template data directly (not wrapped in success/data)
+                        if (isset($templateData['id'])) {
+                            $template = (object) $templateData;
+                            
+                            // Verify template ID matches
+                            if ($template->id != $templateId) {
+                                \Log::warning("Template ID mismatch: requested {$templateId}, got {$template->id}");
+                                $template = null;
+                            } else {
+                                \Log::info("Successfully loaded template {$templateId} from TemplateController");
+                            }
+                        }
+                    }
+                } catch (\Exception $e2) {
+                    \Log::warning("Could not fetch template from TemplateController: " . $e2->getMessage());
+                }
+            }
+            
+            // If template not found, show warning and return error
+            if (!$template) {
+                \Log::error("Template dengan ID {$templateId} tidak ditemukan");
+                
+                // Debug: Check what templates actually exist
+                try {
+                    $existingTemplates = \DB::table('report_templates')
+                        ->where('is_active', true)
+                        ->select('id', 'title', 'semester_type')
+                        ->get();
+                    \Log::info("Available active templates: " . json_encode($existingTemplates));
+                    
+                    $allTemplates = \DB::table('report_templates')
+                        ->select('id', 'title', 'semester_type', 'is_active')
+                        ->get();
+                    \Log::info("All templates in database: " . json_encode($allTemplates));
+                } catch (\Exception $e) {
+                    \Log::error("Error checking available templates: " . $e->getMessage());
+                }
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => "Template dengan ID {$templateId} tidak ditemukan. Pastikan template telah dibuat dan ditetapkan untuk kelas ini."
+                ], 404);
+            }
             
             // Prepare data for view
             $data = [

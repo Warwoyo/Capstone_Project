@@ -1018,10 +1018,49 @@ function raporApp(classId){
             
             try {
                 const { student, template } = this.viewingReport;
+                
+                // Pastikan template ID disertakan dalam URL
                 const pdfUrl = `/rapor/classes/${this.classId}/reports/${student.id}/${template.id}/pdf`;
                 
-                // Open the print-ready page in a new tab
-                window.open(pdfUrl, '_blank');
+                // Tambahkan parameter template untuk memastikan template yang benar digunakan
+                const urlWithParams = new URL(pdfUrl, window.location.origin);
+                urlWithParams.searchParams.set('template_id', template.id);
+                urlWithParams.searchParams.set('student_id', student.id);
+                urlWithParams.searchParams.set('class_id', this.classId);
+                
+                // Open the print-ready page in a new tab with template parameters
+                window.open(urlWithParams.toString(), '_blank');
+                
+            } catch (e) {
+                window.dispatchEvent(new CustomEvent('open-success', {
+                    detail: { message: 'Gagal membuka halaman cetak', isError: true }
+                }));
+            }
+        },
+
+        // Method to download PDF for currently selected student
+        async downloadCurrentStudentPDF() {
+            if (!this.selectedStudent || !this.selectedTemplate) {
+                window.dispatchEvent(new CustomEvent('open-success', {
+                    detail: { message: 'Pilih siswa dan template terlebih dahulu', isError: true }
+                }));
+                return;
+            }
+            
+            try {
+                // Construct PDF URL with proper template and student context
+                const pdfUrl = `/rapor/classes/${this.classId}/reports/${this.selectedStudent.id}/${this.selectedTemplate.id}/pdf`;
+                
+                // Add template verification parameters
+                const urlWithParams = new URL(pdfUrl, window.location.origin);
+                urlWithParams.searchParams.set('template_id', this.selectedTemplate.id);
+                urlWithParams.searchParams.set('student_id', this.selectedStudent.id);
+                urlWithParams.searchParams.set('class_id', this.classId);
+                urlWithParams.searchParams.set('template_title', encodeURIComponent(this.selectedTemplate.title));
+                
+                // Open PDF in new tab
+                window.open(urlWithParams.toString(), '_blank');
+                
             } catch (e) {
                 window.dispatchEvent(new CustomEvent('open-success', {
                     detail: { message: 'Gagal membuka halaman cetak', isError: true }

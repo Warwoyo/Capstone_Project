@@ -218,53 +218,52 @@ class ScheduleController extends Controller
             // Load schedule details with explicit relationship
             $schedule->load('scheduleDetails');
             
-            // Also try direct query to debug
+            // Get fresh instance from database to ensure we have latest data
+            $freshSchedule = Schedule::with('scheduleDetails')->find($schedule->id);
+            
+            // Also try direct query as fallback
+            $directSchedule = \DB::table('schedules')->where('id', $schedule->id)->first();
             $directDetails = \DB::table('schedule_details')
                 ->where('schedule_id', $schedule->id)
                 ->get();
             
-            // Debug logging
-            \Log::info('Edit schedule data:', [
-                'schedule_id' => $schedule->id,
-                'title' => $schedule->title,
-                'description' => $schedule->description,
-                'details_count' => $schedule->scheduleDetails->count(),
-                'direct_count' => $directDetails->count(),
-                'details' => $schedule->scheduleDetails->toArray(),
-                'direct_details' => $directDetails->toArray()
-            ]);
+            // Use fresh data
+            $title = $freshSchedule->title ?? $directSchedule->title ?? '';
+            $description = $freshSchedule->description ?? $directSchedule->description ?? '';
             
-            // Use direct query if relationship fails
-            $subThemes = $schedule->scheduleDetails->count() > 0 
-                ? $schedule->scheduleDetails 
-                : $directDetails;
+            // Use direct query if relationship fails, otherwise use relationship
+            $subThemes = $freshSchedule->scheduleDetails->count() > 0 
+                ? $freshSchedule->scheduleDetails 
+                : collect($directDetails);
+            
+            // Map the sub themes data
+            $mappedSubThemes = $subThemes->map(function($detail) {
+                // Handle both Eloquent model and stdClass from direct query
+                if (is_object($detail)) {
+                    return [
+                        'title' => $detail->title ?? '',
+                        'start_date' => $detail->start_date ? 
+                            (is_string($detail->start_date) ? $detail->start_date : $detail->start_date->format('Y-m-d')) : '',
+                        'end_date' => $detail->end_date ? 
+                            (is_string($detail->end_date) ? $detail->end_date : $detail->end_date->format('Y-m-d')) : '',
+                        'week' => $detail->week ?? ''
+                    ];
+                }
+                return [
+                    'title' => '',
+                    'start_date' => '',
+                    'end_date' => '',
+                    'week' => ''
+                ];
+            })->toArray();
             
             return response()->json([
                 'success' => true,
-                'title' => $schedule->title ?: 'Tema Pembelajaran',
-                'description' => $schedule->description ?: 'Deskripsi pembelajaran',
-                'sub_themes' => $subThemes->map(function($detail) {
-                    // Handle both Eloquent model and stdClass from direct query
-                    if (is_object($detail) && isset($detail->title)) {
-                        return [
-                            'title' => $detail->title ?: 'Sub Tema',
-                            'start_date' => $detail->start_date ? 
-                                (is_string($detail->start_date) ? $detail->start_date : $detail->start_date->format('Y-m-d')) : '',
-                            'end_date' => $detail->end_date ? 
-                                (is_string($detail->end_date) ? $detail->end_date : $detail->end_date->format('Y-m-d')) : '',
-                            'week' => $detail->week ?? ''
-                        ];
-                    }
-                    return [
-                        'title' => 'Sub Tema',
-                        'start_date' => '',
-                        'end_date' => '',
-                        'week' => ''
-                    ];
-                })->toArray()
+                'title' => $title,
+                'description' => $description,
+                'sub_themes' => $mappedSubThemes
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error in edit method:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal memuat data jadwal: ' . $e->getMessage()

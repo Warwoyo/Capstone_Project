@@ -583,8 +583,6 @@ function loadSubSchedules(scheduleId, callback) {
 
 
 function editSchedule(id) {
-    console.log('Edit button clicked for schedule:', id);
-    
     // Switch to edit mode using Alpine.js
     const component = document.querySelector('[x-data]');
     if (component && component._x_dataStack) {
@@ -599,98 +597,83 @@ function editSchedule(id) {
         }
     }
 
-    // First, let's test if sub-themes endpoint works
-    fetch(`/schedules/${id}/sub-themes`)
-        .then(response => response.json())
-        .then(subData => {
-            console.log('Sub-themes from sub-themes endpoint:', subData);
-        })
-        .catch(err => console.log('Sub-themes endpoint error:', err));
-
-    // Fetch schedule data and populate edit form
-    fetch(`/schedules/${id}/edit`)
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(error => {
-                    throw new Error(error.message || 'Network response was not ok');
+    // Use a Promise.all approach to get both edit data and sub-themes data
+    Promise.all([
+        fetch(`/schedules/${id}/edit`).then(response => response.json()),
+        fetch(`/schedules/${id}/sub-themes`).then(response => response.json())
+    ])
+    .then(([editData, subThemesData]) => {
+        // Populate main form fields
+        const titleInput = document.getElementById('editTitle');
+        const descInput = document.getElementById('editDescription');
+        const scheduleIdInput = document.getElementById('editScheduleId');
+        
+        // Get title/description from edit data or fallback to card display
+        let displayTitle = editData.title;
+        let displayDescription = editData.description;
+        
+        if (!displayTitle || !displayDescription) {
+            const scheduleCard = document.querySelector(`article[data-schedule-id="${id}"]`);
+            if (scheduleCard) {
+                if (!displayTitle) {
+                    const titleElement = scheduleCard.querySelector('h2');
+                    displayTitle = titleElement ? titleElement.textContent.trim() : '';
+                }
+                if (!displayDescription) {
+                    // Look for description in the detail section
+                    let detailSection = scheduleCard.querySelector(`#detail-${id}`);
+                    if (detailSection) {
+                        // Make sure detail section is visible to get the description
+                        if (detailSection.classList.contains('hidden')) {
+                            detailSection.classList.remove('hidden');
+                        }
+                        const descElement = detailSection.querySelector('div:first-child p');
+                        if (descElement && !descElement.textContent.includes('Tidak ada deskripsi')) {
+                            displayDescription = descElement.textContent.trim();
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (titleInput) {
+            titleInput.value = displayTitle || '';
+        }
+        if (descInput) {
+            descInput.value = displayDescription || '';
+        }
+        if (scheduleIdInput) {
+            scheduleIdInput.value = id;
+        }
+        
+        // Clear and populate sub-themes using sub-themes endpoint data (which is working)
+        const container = document.getElementById('editSubThemesContainer');
+        if (container) {
+            container.innerHTML = '';
+            
+            // Prioritize sub-themes endpoint data since it's working correctly
+            const subThemes = subThemesData.sub_themes || editData.sub_themes || [];
+            
+            if (subThemes && subThemes.length > 0) {
+                subThemes.forEach((sub, index) => {
+                    window.addSubThemeEdit(sub);
                 });
+            } else {
+                window.addSubThemeEdit();
             }
-            return response.json();
-        })
-        .then(data => {
-            if (!data.success) {
-                throw new Error(data.message || 'Failed to load schedule data');
+        }
+    })
+    .catch(error => {
+        console.error('Error loading schedule data:', error);
+        
+        // Show error alert
+        window.dispatchEvent(new CustomEvent('open-success', {
+            detail: {
+                message: 'Gagal memuat data jadwal: ' + error.message,
+                isError: true
             }
-
-            console.log('Populating edit form with data:', data);
-            console.log('Sub themes count:', data.sub_themes ? data.sub_themes.length : 0);
-            console.log('Sub themes data:', data.sub_themes);
-            
-            // Populate main form fields
-            const titleInput = document.getElementById('editTitle');
-            const descInput = document.getElementById('editDescription');
-            const scheduleIdInput = document.getElementById('editScheduleId');
-            
-            if (titleInput) {
-                titleInput.value = data.title || '';
-                console.log('Title set to:', titleInput.value);
-            }
-            if (descInput) {
-                descInput.value = data.description || '';
-                console.log('Description set to:', descInput.value);
-            }
-            if (scheduleIdInput) {
-                scheduleIdInput.value = id;
-            }
-            
-            // Clear and populate sub-themes for edit form
-            const container = document.getElementById('editSubThemesContainer');
-            if (container) {
-                container.innerHTML = '';
-                
-                if (data.sub_themes && data.sub_themes.length > 0) {
-                    console.log('Adding sub themes to edit form:', data.sub_themes);
-                    data.sub_themes.forEach((sub, index) => {
-                        console.log(`Adding sub theme ${index}:`, sub);
-                        window.addSubThemeEdit(sub);
-                    });
-                } else {
-                    console.log('No sub themes found, adding empty one to edit form');
-                    // Let's try to get sub-themes from the sub-themes endpoint instead
-                    fetch(`/schedules/${id}/sub-themes`)
-                        .then(response => response.json())
-                        .then(subData => {
-                            console.log('Trying to use sub-themes from endpoint:', subData);
-                            if (subData.sub_themes && subData.sub_themes.length > 0) {
-                                container.innerHTML = '';
-                                subData.sub_themes.forEach((sub, index) => {
-                                    console.log(`Adding sub theme from endpoint ${index}:`, sub);
-                                    window.addSubThemeEdit(sub);
-                                });
-                            } else {
-                                window.addSubThemeEdit();
-                            }
-                        })
-                        .catch(err => {
-                            console.log('Failed to load from sub-themes endpoint:', err);
-                            window.addSubThemeEdit();
-                        });
-                }
-            }
-            
-            console.log('Edit form successfully populated for schedule:', id);
-        })
-        .catch(error => {
-            console.error('Error loading schedule data:', error);
-            
-            // Show error alert
-            window.dispatchEvent(new CustomEvent('open-success', {
-                detail: {
-                    message: 'Gagal memuat data jadwal: ' + error.message,
-                    isError: true
-                }
-            }));
-        });
+        }));
+    });
 }
 
 function deleteSchedule(id) {

@@ -87,7 +87,7 @@
 
         {{-- ③ Tabel siswa --}}
         <template x-if="hasDate">
-            <div class="w-full overflow-x-auto hide-scrollbar max-h-[55vh] md:max-h-[44vh]">
+            <div class="w-full overflow-x-auto hide-scrollbar max-h-[60vh] md:max-h-[55vh]">
                 <section class="min-w-[100%] mx-auto my-2 rounded-lg border bg-white">
                     <header class="flex font-medium text-sky-800 bg-sky-200 text-sm">
                         <h3 class="flex-1 p-2.5 text-center">Nama Lengkap</h3>

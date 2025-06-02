@@ -37,11 +37,11 @@ class ParentReportController extends Controller
             // Debug: Log current user info
             Log::info("Parent user ID: {$user->id}, Name: {$user->name}, Role: {$user->role}");
 
-            // Get children of current parent using email matching
+            // Get children of current parent - simplified approach for testing
             $children = collect();
             
             try {
-                // Method 1: Check if students table has parent_id column
+                // Check if students table has parent_id column
                 $hasParentIdColumn = \Schema::hasColumn('students', 'parent_id');
                 Log::info("Students table has parent_id column: " . ($hasParentIdColumn ? 'Yes' : 'No'));
                 
@@ -50,47 +50,22 @@ class ParentReportController extends Controller
                     Log::info("Found {$children->count()} children using parent_id column");
                 }
                 
-                // Method 2: Try using email from parent registration
+                // Check if students table has parent_email column
                 if ($children->isEmpty() && \Schema::hasColumn('students', 'parent_email')) {
                     $children = Student::where('parent_email', $user->email)->get();
                     Log::info("Found {$children->count()} children using parent_email column");
                 }
                 
-                // Method 3: Check contacts table for parent-child relationship
+                // For testing - get a few students (remove in production)
                 if ($children->isEmpty()) {
-                    try {
-                        $contacts = \DB::table('contacts')
-                            ->where('email', $user->email)
-                            ->orWhere('phone', $user->phone ?? '')
-                            ->get();
-                        
-                        if ($contacts->isNotEmpty()) {
-                            $contactIds = $contacts->pluck('id');
-                            $children = Student::whereIn('contact_id', $contactIds)->get();
-                            Log::info("Found {$children->count()} children using contacts table");
-                        }
-                    } catch (\Exception $e) {
-                        Log::warning("Could not check contacts table: " . $e->getMessage());
-                    }
-                }
-                
-                // Method 4: For testing - use students from classroom 1 (REMOVE IN PRODUCTION)
-                if ($children->isEmpty()) {
-                    Log::warning("No proper parent-child relationship found. Using students from classroom 1 for testing.");
-                    $children = Student::where('classroom_id', 1)->limit(5)->get();
-                    Log::info("Testing mode: Found {$children->count()} students from classroom 1");
+                    Log::warning("No proper parent-child relationship found. Using sample students for testing.");
+                    $children = Student::limit(3)->get();
+                    Log::info("Testing mode: Found {$children->count()} sample students");
                 }
                 
             } catch (\Exception $e) {
                 Log::error("Error getting children: " . $e->getMessage());
                 Log::error("Stack trace: " . $e->getTraceAsString());
-            }
-            
-            // For now, let's get all students for testing (you should implement proper parent-child relationship)
-            if ($children->isEmpty()) {
-                Log::warning("Using all students for testing. Please implement proper parent-child relationship.");
-                $children = Student::with('classroom')->get();
-                Log::info("Testing mode: Found {$children->count()} total students");
             }
 
             if ($children->isEmpty()) {
@@ -122,14 +97,30 @@ class ParentReportController extends Controller
             // Get reports for all children with direct DB query
             $reports = \DB::table('student_reports')
                 ->join('students', 'student_reports.student_id', '=', 'students.id')
-                ->leftJoin('classrooms', 'student_reports.classroom_id', '=', 'classrooms.id')
+                ->leftJoin('classrooms', function($join) {
+                    // Check if students table has classroom_id column
+                    if (\Schema::hasColumn('students', 'classroom_id')) {
+                        $join->on('students.classroom_id', '=', 'classrooms.id');
+                    } else {
+                        // If no classroom_id in students table, use from student_reports
+                        $join->on('student_reports.classroom_id', '=', 'classrooms.id');
+                    }
+                })
                 ->join('report_templates', 'student_reports.template_id', '=', 'report_templates.id')
                 ->whereIn('student_reports.student_id', $childrenIds)
                 ->where('report_templates.is_active', 1)
+                ->whereNotNull('student_reports.scores') // Only get reports that have scores
+                ->where('student_reports.scores', '!=', '{}') // Exclude empty scores
+                ->where('student_reports.scores', '!=', '') // Exclude empty strings
                 ->select(
                     'student_reports.id',
                     'student_reports.created_at',
                     'student_reports.updated_at',
+                    'student_reports.classroom_id as report_classroom_id',
+                    'student_reports.scores',
+                    'student_reports.teacher_comment',
+                    'student_reports.physical_data',
+                    'student_reports.attendance_data',
                     'students.id as student_id',
                     'students.name as student_name',
                     'classrooms.id as classroom_id',
@@ -142,6 +133,13 @@ class ParentReportController extends Controller
                 ->get();
 
             Log::info("Found {$reports->count()} reports after JOIN");
+            
+            // Debug: Log some sample scores data
+            if ($reports->isNotEmpty()) {
+                $sampleReport = $reports->first();
+                Log::info("Sample scores data: " . ($sampleReport->scores ?? 'NULL'));
+                Log::info("Sample teacher comment: " . ($sampleReport->teacher_comment ?? 'NULL'));
+            }
             
             // If no reports found with JOIN, try simpler query for debugging
             if ($reports->isEmpty()) {
@@ -166,7 +164,32 @@ class ParentReportController extends Controller
             Log::info("Table counts - Students: {$studentsCount}, Classrooms: {$classroomsCount}, Active Templates: {$templatesCount}");
 
             // Transform data to match frontend expectations
-            $transformedReports = $reports->map(function ($report) {
+            $transformedReports = $reports->filter(function ($report) {
+                // Additional filtering - ensure the report has meaningful data
+                $scores = is_string($report->scores) ? json_decode($report->scores, true) : $report->scores;
+                
+                // Check if scores is not empty and has actual values
+                if (empty($scores) || !is_array($scores)) {
+                    return false;
+                }
+                
+                // Check if there are any non-null, non-empty scores
+                $hasValidScores = false;
+                foreach ($scores as $score) {
+                    if (!empty($score) && $score !== null && $score !== '') {
+                        $hasValidScores = true;
+                        break;
+                    }
+                }
+                
+                return $hasValidScores;
+            })->map(function ($report) {
+                // Parse scores to get count of assessed items
+                $scores = is_string($report->scores) ? json_decode($report->scores, true) : $report->scores;
+                $assessedItemsCount = is_array($scores) ? count(array_filter($scores, function($score) {
+                    return !empty($score) && $score !== null && $score !== '';
+                })) : 0;
+                
                 return [
                     'id' => $report->id,
                     'student' => [
@@ -174,7 +197,7 @@ class ParentReportController extends Controller
                         'name' => $report->student_name,
                     ],
                     'classroom' => [
-                        'id' => $report->classroom_id ?: 0,
+                        'id' => $report->classroom_id ?: $report->report_classroom_id ?: 0,
                         'name' => $report->classroom_name ?: 'Belum ada kelas',
                     ],
                     'template' => [
@@ -185,8 +208,10 @@ class ParentReportController extends Controller
                     'issued_at' => $report->created_at, // Using created_at as issued_at
                     'created_at' => $report->created_at,
                     'updated_at' => $report->updated_at,
+                    'assessed_items' => $assessedItemsCount, // For debugging
+                    'has_teacher_comment' => !empty($report->teacher_comment),
                 ];
-            });
+            })->values(); // Reset array keys after filtering
 
             Log::info("Found {$transformedReports->count()} reports for parent {$user->id}");
             
@@ -404,12 +429,26 @@ class ParentReportController extends Controller
         
         // Get all students for debugging
         try {
-            $allStudents = Student::with('classroom')->limit(10)->get();
+            $allStudents = \DB::table('students')
+                ->leftJoin('classrooms', function($join) {
+                    if (\Schema::hasColumn('students', 'classroom_id')) {
+                        $join->on('students.classroom_id', '=', 'classrooms.id');
+                    }
+                })
+                ->select(
+                    'students.id',
+                    'students.name',
+                    'students.classroom_id',
+                    'classrooms.name as classroom_name'
+                )
+                ->limit(10)
+                ->get();
+                
             $debug['students']['all_students'] = $allStudents->map(function($student) {
                 return [
                     'id' => $student->id,
                     'name' => $student->name,
-                    'classroom' => $student->classroom ? $student->classroom->name : 'No classroom',
+                    'classroom' => $student->classroom_name ?: 'No classroom',
                     'classroom_id' => $student->classroom_id,
                     'parent_id' => $student->parent_id ?? 'NULL',
                     'contact_id' => $student->contact_id ?? 'NULL'

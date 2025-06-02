@@ -1,103 +1,128 @@
-@extends('layouts.app')
-
-@section('title', 'Raport Siswa')
+@extends('layouts.dashboard')
 
 @section('content')
-<div class="container mx-auto px-4 py-6" x-data="parentReportApp()">
-    <!-- Header -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h1 class="text-2xl font-bold text-gray-800 mb-2">Raport Siswa</h1>
-        <p class="text-gray-600">Lihat dan unduh raport untuk anak Anda</p>
-    </div>
+<meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <!-- Loading State -->
-    <div x-show="loading" class="flex justify-center items-center py-12">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span class="ml-2 text-gray-600">Memuat data raport...</span>
-    </div>
+<!-- ini dashboard orang tua -->
+<main class="flex mx-auto w-full max-w-full h-screen bg-white">
 
-    <!-- Error State -->
-    <div x-show="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-        <span x-text="error"></span>
-    </div>
+    <!-- Main Content -->
+    <div class="flex-1 p-5 max-md:p-2.5 max-sm:p-2.5 overflow-y-auto hide-scrollbar max-h-[100vh] md:max-h-[100vh]" x-data="parentReportApp()">
 
-    <!-- No Reports State -->
-    <div x-show="!loading && !error && reports.length === 0" class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
-        <div class="text-center py-8">
-            <svg class="mx-auto h-16 w-16 text-yellow-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-            <h3 class="text-lg font-medium text-yellow-800 mb-2">Belum Ada Raport</h3>
-            <p class="text-yellow-700">Raport untuk anak Anda belum tersedia. Silakan hubungi guru atau sekolah untuk informasi lebih lanjut.</p>
+        {{-- Header Logo --}}
+        <header class="flex gap-3 items-center flex-wrap mt-11 md:mt-0">
+            <img 
+                src="https://cdn.builder.io/api/v1/image/assets/TEMP/7c611c0665bddb8f69e3b35c80f5477a6f0b559e?placeholderIfAbsent=true" 
+                alt="PAUD Logo" 
+                class="h-12 w-auto max-w-[60px]"
+            />
+            <div class="flex flex-col">
+                <h1 class="text-[24px] md:text-2xl font-bold text-sky-600">PAUD Kartika Pradana</h1>
+                <p class="text-[8px] text-sky-800">
+                    Taman Penitipan Anak, Kelompok Bermain, dan Taman Kanak-Kanak
+                </p>
+            </div>
+        </header>
+
+        <x-header.parent-breadcrump-header label="Raport" />
+        
+        <div class="mb-4">
+            <a href="{{ url('/dashboard') }}" 
+               class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 transition-colors duration-200">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                Kembali ke Dashboard
+            </a>
         </div>
-    </div>
 
-    <!-- Reports Grid -->
-    <div x-show="!loading && !error && reports.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <template x-for="report in reports" :key="report.id">
-            <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer border-l-4 border-blue-500"
-                 @click="viewReport(report)">
-                <!-- Card Header -->
-                <div class="p-6">
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="flex-1">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-1" x-text="report.template.title"></h3>
-                            <p class="text-sm text-gray-600" x-text="'Semester ' + (report.template.semester_type === 'ganjil' ? 'Ganjil' : 'Genap')"></p>
-                        </div>
-                        <div class="flex-shrink-0">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                Tersedia
-                            </span>
-                        </div>
-                    </div>
+        <!-- Container Utama -->
+        <div class="flex-1 w-full md:px-10 pt-2">
 
-                    <!-- Student Info -->
-                    <div class="border-t pt-4">
-                        <div class="flex items-center mb-2">
-                            <svg class="h-4 w-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                            </svg>
-                            <span class="text-sm text-gray-700" x-text="report.student.name"></span>
-                        </div>
-                        <div class="flex items-center mb-2">
-                            <svg class="h-4 w-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-6 0H3m2 0h4M9 3v18m6-18v18"></path>
-                            </svg>
-                            <span class="text-sm text-gray-700" x-text="report.classroom.name"></span>
-                        </div>
-                        <div class="flex items-center">
-                            <svg class="h-4 w-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a4 4 0 118 0v4m-4 9v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path>
-                            </svg>
-                            <span class="text-sm text-gray-700" x-text="formatDate(report.issued_at)"></span>
-                        </div>
-                    </div>
+            <!-- Loading State -->
+            <div x-show="loading" class="flex justify-center items-center py-12">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600"></div>
+                <span class="ml-2 text-gray-600">Memuat data raport...</span>
+            </div>
 
-                    <!-- Action Buttons -->
-                    <div class="mt-4 pt-4 border-t">
-                        <div class="flex space-x-2">
-                            <button @click.stop="viewReport(report)" 
-                                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-3 rounded-md transition-colors duration-200">
-                                <svg class="h-4 w-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                </svg>
-                                Lihat
-                            </button>
-                            <button @click.stop="downloadPDF(report)" 
-                                    class="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 px-3 rounded-md transition-colors duration-200">
-                                <svg class="h-4 w-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>
-                                PDF
-                            </button>
-                        </div>
+            <!-- Error State -->
+            <div x-show="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <span x-text="error"></span>
+                <div class="mt-2 space-x-2">
+                    <button @click="loadReports()" class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">
+                        Coba Lagi
+                    </button>
+                    <button @click="debugInfo()" class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
+                        Debug Info
+                    </button>
+                </div>
+            </div>
+
+            <!-- No Reports State -->
+            <div x-show="!loading && !error && reports.length === 0" class="text-center py-12">
+                <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <h3 class="text-lg font-medium text-gray-700 mb-2">Belum Ada Raport</h3>
+                <p class="text-gray-500">Raport untuk anak Anda belum tersedia. Silakan hubungi guru atau sekolah untuk informasi lebih lanjut.</p>
+            </div>
+
+            <!-- Reports Grid -->
+            <div x-show="!loading && !error && reports.length > 0" class="w-full overflow-x-auto">
+                <div class="inline-block min-w-full align-middle">
+                    <div class="overflow-y-auto max-h-[500px] md:max-h-[400px] rounded-lg border border-gray-200 shadow-sm">
+                        <table class="min-w-full table-auto text-sm text-slate-600">
+                            <!-- Header -->
+                            <thead class="bg-sky-200 text-sky-800 font-medium">
+                                <tr>
+                                    <th class="text-center px-4 py-2">Semester</th>
+                                    <th class="text-center px-4 py-2">Nama Anak</th>
+                                    <th class="text-center px-4 py-2">Kelas</th>
+                                    <th class="text-center px-4 py-2">Status</th>
+                                    <th class="text-center px-4 py-2">Tanggal Terbit</th>
+                                    <th class="text-center px-4 py-2">Aksi</th>
+                                </tr>
+                            </thead>
+
+                            <!-- Body -->
+                            <tbody>
+                                <template x-for="report in reports" :key="report.id">
+                                    <tr class="border-t border-gray-200 hover:bg-gray-50">
+                                        <td class="text-center px-4 py-2">
+                                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800" 
+                                                  x-text="'Semester ' + (report.template.semester_type === 'ganjil' ? 'Ganjil' : 'Genap')">
+                                            </span>
+                                        </td>
+                                        <td class="text-center px-4 py-2 font-medium text-sky-700" x-text="report.student.name"></td>
+                                        <td class="text-center px-4 py-2" x-text="report.classroom.name"></td>
+                                        <td class="text-center px-4 py-2">
+                                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                                Tersedia
+                                            </span>
+                                        </td>
+                                        <td class="text-center px-4 py-2 whitespace-nowrap" x-text="formatDate(report.issued_at)"></td>
+                                        <td class="text-center px-4 py-2">
+                                            <button @click="downloadPDF(report)" 
+                                                    class="bg-green-600 hover:bg-green-700 text-white text-xs font-medium py-1 px-3 rounded transition-colors duration-200">
+                                                <svg class="h-3 w-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                </svg>
+                                                PDF
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
-        </template>
+        </div>
+
+        <!-- Icon Header -->
+        <x-header.icon-header />
+
     </div>
-</div>
 
 <script>
 function parentReportApp() {
@@ -125,11 +150,30 @@ function parentReportApp() {
                     },
                 });
                 
+                console.log('Response status:', response.status);
+                console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+                
                 if (!response.ok) {
+                    // Try to get error details from response
+                    let errorMessage = `Error ${response.status}: ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        console.log('Error response data:', errorData);
+                        errorMessage = errorData.message || errorMessage;
+                    } catch (e) {
+                        console.log('Could not parse error response as JSON');
+                    }
+                    
                     if (response.status === 403) {
                         this.error = 'Akses ditolak. Anda harus login sebagai orang tua.';
+                    } else if (response.status === 404) {
+                        this.error = 'Endpoint API tidak ditemukan. Pastikan route /api/parent/reports sudah dibuat.';
+                    } else if (response.status === 500) {
+                        // For 500 errors, provide more detailed debugging info
+                        this.error = `Server Error 500: ${errorMessage}. Periksa log Laravel di storage/logs/laravel.log untuk detail error.`;
+                        console.error('Server Error Details:', errorMessage);
                     } else {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        this.error = errorMessage;
                     }
                     return;
                 }
@@ -158,11 +202,18 @@ function parentReportApp() {
                     }
                 } else {
                     this.error = data.message || 'Gagal memuat data raport';
+                    console.error('API returned success: false with message:', data.message);
                 }
                 
             } catch (error) {
                 console.error('Error loading reports:', error);
-                this.error = 'Gagal memuat data raport. Silakan coba lagi.';
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    this.error = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
+                } else if (error.name === 'SyntaxError') {
+                    this.error = 'Respons server tidak valid. Silakan hubungi administrator.';
+                } else {
+                    this.error = `Gagal memuat data raport: ${error.message}`;
+                }
             } finally {
                 this.loading = false;
             }
@@ -175,9 +226,27 @@ function parentReportApp() {
         },
         
         downloadPDF(report) {
-            // Redirect to PDF generation endpoint
-            const url = `/parent/reports/${report.student.id}/${report.template.id}/pdf`;
-            window.open(url, '_blank');
+            try {
+                // Use the same PDF generation approach as teacher/admin
+                const pdfUrl = `/rapor/classes/${report.classroom.id}/reports/${report.student.id}/${report.template.id}/pdf`;
+                
+                // Add template verification parameters
+                const urlWithParams = new URL(pdfUrl, window.location.origin);
+                urlWithParams.searchParams.set('template_id', report.template.id);
+                urlWithParams.searchParams.set('student_id', report.student.id);
+                urlWithParams.searchParams.set('class_id', report.classroom.id);
+                urlWithParams.searchParams.set('template_title', encodeURIComponent(report.template.title));
+                urlWithParams.searchParams.set('for_parent', 'true'); // Special flag for parent access
+                
+                // Open PDF in new tab
+                window.open(urlWithParams.toString(), '_blank');
+                
+            } catch (e) {
+                console.error('Error downloading PDF:', e);
+                // Fallback to old method
+                const fallbackUrl = `/parent/reports/${report.student.id}/${report.template.id}/pdf`;
+                window.open(fallbackUrl, '_blank');
+            }
         },
         
         formatDate(dateString) {
@@ -192,6 +261,31 @@ function parentReportApp() {
             };
             
             return date.toLocaleDateString('id-ID', options);
+        },
+        
+        async debugInfo() {
+            try {
+                const response = await fetch('/api/parent/reports/debug', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                    },
+                });
+                
+                if (response.ok) {
+                    const debugData = await response.json();
+                    console.log('Debug Data:', debugData);
+                    alert('Debug info logged to console. Check browser console for details.');
+                } else {
+                    console.error('Debug request failed:', response.status, response.statusText);
+                    alert('Debug request failed. Check console for details.');
+                }
+            } catch (error) {
+                console.error('Debug error:', error);
+                alert('Debug error. Check console for details.');
+            }
         }
     }
 }

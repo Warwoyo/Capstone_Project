@@ -58,5 +58,8 @@ class UserSeeder extends Seeder
                 'address' => 'Jl. Melati No. 9',
             ]);
         });
+        $this->call([
+            StudentAndParentSeeder::class
+        ]);
     }
 }

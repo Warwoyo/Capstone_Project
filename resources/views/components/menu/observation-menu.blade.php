@@ -88,7 +88,7 @@
 
   </div>
 
-        <div class="overflow-y-auto hide-scrollbar max-h-[52vh] md:max-h-[45vh]">
+        <div class="overflow-y-auto hide-scrollbar max-h-[57vh] md:max-h-[53vh]">
             <div id="studentsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
                 <!-- Students will be loaded here -->
                 <div class="animate-pulse">

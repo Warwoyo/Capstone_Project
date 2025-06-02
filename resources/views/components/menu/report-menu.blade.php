@@ -1094,7 +1094,7 @@ function raporApp(classId){
     </div>
 
  {{-- ===================== MAIN VIEW ===================== --}}
-    <div x-show="!loading && !error && mode==='view'" x-cloak class="space-y-3 overflow-y-auto max-h-[60vh] md:max-h-[55vh] hide-scrollbar">
+    <div x-show="!loading && !error && mode==='view'" x-cloak class="space-y-3 overflow-y-auto max-h-[67vh] md:max-h-[62vh] hide-scrollbar">
         {{-- Header --}}
         <div class="flex justify-between items-center">
             <h1 class="text-lg font-semibold text-sky-700">Template Rapor Kelas</h1>
@@ -1103,20 +1103,20 @@ function raporApp(classId){
             <div class="flex gap-2">
                 <button class="flex items-center gap-2 bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700" 
                         @click="newTemplate()">
-                    <svg width="20" height="20" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- <svg width="20" height="20" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M20 10V30" stroke="white" stroke-width="4" stroke-linecap="round" />
                         <path d="M10 20H30" stroke="white" stroke-width="4" stroke-linecap="round" />
-                    </svg>
+                    </svg> -->
                     Tambah Template
                 </button>
                 
                 <button x-show="assignedTemplates.length > 0"
                         class="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700" 
                         @click="showTemplateSelection()">
-                    <svg width="20" height="20" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- <svg width="20" height="20" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M20 10V30" stroke="white" stroke-width="4" stroke-linecap="round" />
                         <path d="M10 20H30" stroke="white" stroke-width="4" stroke-linecap="round" />
-                    </svg>
+                    </svg> -->
                     Tambah Rapor
                 </button>
             </div>
@@ -1153,7 +1153,7 @@ function raporApp(classId){
         </div>
 
         {{-- Available Templates Section --}}
-      <div x-show="templates.length > 0" class="space-y-3 overflow-y-auto max-h-[60vh] md:max-h-[47vh] hide-scrollbar">
+      <div x-show="templates.length > 0" class="space-y-3 overflow-y-auto max-h-[70vh] md:max-h-[50vh] hide-scrollbar">
             <h3 class="text-sm font-medium text-gray-700">Template Tersedia:</h3>
             
             {{-- Templates Grid --}}
@@ -1181,7 +1181,7 @@ function raporApp(classId){
                  x-transition:leave="transition ease-in duration-150"
                  x-transition:leave-start="opacity-100 transform scale-100"
                  x-transition:leave-end="opacity-0 transform scale-95"
-                 class="mt-3 border-t pt-3 text-sm text-gray-700">
+                 class="mt-3 border pt-3 text-sm text-gray-700">
                 <p x-text="templateItem.description || 'Tidak ada deskripsi.'"></p>
                 
                 {{-- Show themes and sub-themes in detail --}}
@@ -1261,7 +1261,7 @@ function raporApp(classId){
     </div>
 
     {{-- ===================== TEMPLATE PREVIEW ===================== --}}
-    <div x-show="!loading && !error && mode==='preview'" x-cloak class="space-y-3 overflow-y-auto max-h-[60vh] md:max-h-[55vh] hide-scrollbar">
+    <div x-show="!loading && !error && mode==='preview'" x-cloak class="space-y-3 overflow-y-auto max-h-[66vh] md:max-h-[59vh] hide-scrollbar">
         <div class="flex justify-between items-center">
             <h1 class="text-lg font-semibold text-sky-700">Preview Template</h1>
             <button class="text-gray-600 hover:text-gray-800" @click="cancelPreview()">
@@ -1310,7 +1310,7 @@ function raporApp(classId){
             </div>
 
             {{-- Action Buttons --}}
-            <div class="flex justify-between gap-3 pt-4 border-t">
+            <div class="flex flex-col justify-between gap-3 pt-4 border">
                 <div class="flex gap-2">
                     <button class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700" 
                             @click="editTemplate(selectedTemplate)">
@@ -1322,7 +1322,7 @@ function raporApp(classId){
                     </button>
                 </div>
                 <div class="flex gap-2">
-                    <button class="bg-gray-500 text-white px-4 py-2 rounded-md text-sm" 
+                    <button class="bg-red-600 text-white px-4 py-2 rounded-md text-sm" 
                             @click="cancelPreview()">
                         Batal
                     </button>
@@ -1336,7 +1336,7 @@ function raporApp(classId){
     </div>
 
     {{-- ===================== SCORING VIEW ===================== --}}
-    <div x-show="!loading && !error && mode==='score'" x-cloak class="space-y-3 overflow-y-auto max-h-[60vh] md:max-h-[55vh] hide-scrollbar">>
+    <div x-show="!loading && !error && mode==='score'" x-cloak class="space-y-3 overflow-y-auto max-h-[67vh] md:max-h-[62vh] hide-scrollbar">>
         <div class="flex justify-between items-center">
             <h1 class="text-lg font-semibold text-sky-700">
                 Penilaian Siswa - <span x-text="selectedTemplate?.title"></span>
@@ -1630,7 +1630,7 @@ function raporApp(classId){
 
             {{-- Action Buttons --}}
             <div class="flex justify-end gap-3 pt-4 bg-white border border-sky-200 rounded-lg p-4">
-                <button class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400" 
+                <button class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-gray-400" 
                         @click="selectedStudent = null">
                     Batal
                 </button>
@@ -1649,7 +1649,7 @@ function raporApp(classId){
     </div>
 
     {{-- ===================== VIEW REPORT MODE ===================== --}}
-    <div x-show="!loading && !error && mode==='view-report'" x-cloak class="space-y-4">
+    <div x-show="!loading && !error && mode==='view-report'" x-cloak class="space-y-3 overflow-y-auto max-h-[67vh] md:max-h-[62vh] hide-scrollbar">
         <div class="flex justify-between items-center">
             <h1 class="text-lg font-semibold text-sky-700">
                 Laporan Penilaian - <span x-text="viewingReport?.student?.name"></span>
@@ -1850,7 +1850,7 @@ function raporApp(classId){
     </div>
 
     {{-- ===================== ADD TEMPLATE FORM ===================== --}}
-    <div x-show="!loading && !error && mode==='add'" x-cloak class="space-y-4">
+    <div x-show="!loading && !error && mode==='add'" x-cloak class="space-y-3 overflow-y-auto max-h-[67vh] md:max-h-[62vh] hide-scrollbar">
         <div class="flex justify-between items-center">
             <h1 class="text-lg font-semibold text-sky-700">Tambah Template Rapor</h1>
         </div>
@@ -1992,16 +1992,16 @@ function raporApp(classId){
 
             {{-- Action Buttons --}}
             <div class="flex justify-end gap-2 pt-4">
-                <button class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400" 
+                <button class="px-4 py-2 bg-red-600 text-white rounded-full hover:bg-gray-400" 
                         @click="mode='view'">Batal</button>
-                <button class="px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700" 
+                <button class="px-4 py-2 bg-sky-600 text-white rounded-full hover:bg-sky-700" 
                         @click="saveNewTemplate()">Simpan</button>
             </div>
         </div>
     </div>
 
     {{-- ===================== EDIT TEMPLATE FORM ===================== --}}
-    <div x-show="!loading && !error && mode==='edit'" x-cloak class="space-y-4">
+    <div x-show="!loading && !error && mode==='edit'" x-cloak class="space-y-3 overflow-y-auto max-h-[67vh] md:max-h-[62vh] hide-scrollbar">
         <div class="flex justify-between items-center">
             <h1 class="text-lg font-semibold text-sky-700">Edit Template Rapor</h1>
         </div>
@@ -2143,7 +2143,7 @@ function raporApp(classId){
 
             {{-- Action Buttons --}}
             <div class="flex justify-end gap-2 pt-4">
-                <button class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400" 
+                <button class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-gray-400" 
                         @click="mode='view'">Batal</button>
                 <button class="px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700" 
                         @click="saveEditedTemplate()">Simpan Perubahan</button>

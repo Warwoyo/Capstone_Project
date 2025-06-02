@@ -29,7 +29,7 @@
     {{-- Header / Search --}}
     <div class="flex items-center justify-between gap-5 p-1">
     @if (in_array(strtolower($tab), ['jadwal', 'peserta']))
-        <x-search.search-search />
+        <x-search.search-search isHidden='hidden'/>
    {{--@else
         <h2 class="text-lg font-medium text-sky-800 max-sm:text-sm">
             {{ ucfirst($tab) }}

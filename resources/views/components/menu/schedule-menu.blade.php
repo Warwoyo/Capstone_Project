@@ -314,6 +314,12 @@ function initScheduleForm() {
         }
 
         container.appendChild(clone);
+
+        // Scroll ke sub tema terakhir yang baru ditambahkan
+        const lastSubTheme = container.lastElementChild;
+        if (lastSubTheme) {
+            lastSubTheme.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
     };
 
     // Add first sub-theme by default if container is empty

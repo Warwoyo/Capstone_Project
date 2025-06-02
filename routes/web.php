@@ -136,10 +136,16 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/orangtua', [AdminController::class, 'fetchParentList'])->name('Admin.index');
         Route::post('/admin/orangtua/{parent}/reset-token', [AdminController::class, 'resetParentToken'])->name('admin.parents.reset-token');
         Route::post('/admin/orangtua/generate-token', [AdminController::class, 'generateNewToken'])->name('admin.parents.generate-token');
-        Route::delete('/admin/orangtua/token/{token}/delete', [AdminController::class, 'deleteUnusedToken'])->name('admin.parents.delete-token');
+        Route::delete('/admin/orangtua/delete-token/{token}', [AdminController::class, 'deleteUnusedToken'])->name('admin.parents.delete-token');
+        
+        // User management
+        Route::post('/admin/users', [AdminController::class, 'createUser'])->name('admin.users.create');
+        Route::put('/admin/users/{user}', [AdminController::class, 'updateUser'])->name('admin.users.update');
+        Route::delete('/admin/users/{user}', [AdminController::class, 'deleteUser'])->name('admin.users.delete');
         
         // Teacher password reset
-        Route::post('/admin/guru/{teacher}/reset-password', [AdminController::class, 'resetTeacherPassword'])->name('admin.teachers.reset-password');
+        Route::post('/admin/users/{user}/reset-password', [AdminController::class, 'resetTeacherPassword'])->name('admin.users.reset-password');
+        Route::post('/admin/users/{user}/generate-temp-password', [AdminController::class, 'generateTempPassword'])->name('admin.users.generate-temp-password');
         
         // System settings
         Route::get('/admin/settings', [AdminController::class, 'settings'])->name('admin.settings');

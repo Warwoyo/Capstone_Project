@@ -187,12 +187,17 @@
                                     </button>
                                 @else
                                     <button
-                                        class="w-20 text-xs font-medium bg-transparent rounded-lg border border-sky-300 text-slate-600 h-[25px]"
-                                        @click="editTeacher({{ $teacher['id'] }}); mode = 'edit'">
+                                        class="w-16 text-xs font-medium bg-transparent rounded-lg border border-sky-300 text-slate-600 h-[25px]"
+                                        @click="editTeacher({{ json_encode($teacher) }}); mode = 'edit'">
                                         Edit
                                     </button>
                                     <button
-                                        class="w-20 text-xs font-medium text-white bg-red-500 rounded-lg border border-red-300 h-[25px]"
+                                        class="w-16 text-xs font-medium bg-yellow-500 text-white rounded-lg border border-yellow-300 h-[25px] hover:bg-yellow-600"
+                                        onclick="generateTempPassword({{ $teacher['id'] }})">
+                                        Reset
+                                    </button>
+                                    <button
+                                        class="w-16 text-xs font-medium text-white bg-red-500 rounded-lg border border-red-300 h-[25px]"
                                         onclick="deleteTeacher({{ $teacher['id'] }})">
                                         Hapus
                                     </button>
@@ -259,22 +264,61 @@
       {{-- Password --}}
       <div>
         <label for="password" class="block text-sm text-gray-600">Kata Sandi</label>
-        <input
-          type="password"
-          name="password"
-          id="password"
-          placeholder="Masukkan Kata Sandi"
-          class="w-full px-4 py-2 mt-2 border border-sky-500 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500"
-          required
-        >
+        <div class="relative">
+          <input
+            type="password"
+            name="password"
+            id="password"
+            placeholder="Masukkan Kata Sandi"
+            class="w-full px-4 py-2 mt-2 pr-12 border border-sky-500 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500"
+            required
+            minlength="8"
+          >
+          <button type="button" onclick="togglePassword('password')" class="absolute right-3 top-1/2 transform -translate-y-1/2 mt-1">
+            <svg id="eye-password" class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+            </svg>
+            <svg id="eye-slash-password" class="w-5 h-5 text-gray-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L8.464 8.464m1.414 1.414l-1.414 1.414m4.242 4.242l1.414 1.414M12 2.252A10.05 10.05 0 0118.7 5.25M12 2.252v16.496"></path>
+            </svg>
+          </button>
+        </div>
         @error('password')
             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
         @enderror
       </div>
 
+      {{-- Konfirmasi Password --}}
+      <div>
+        <label for="password_confirmation" class="block text-sm text-gray-600">Konfirmasi Kata Sandi</label>
+        <div class="relative">
+          <input
+            type="password"
+            name="password_confirmation"
+            id="password_confirmation"
+            placeholder="Konfirmasi Kata Sandi"
+            class="w-full px-4 py-2 mt-2 pr-12 border border-sky-500 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500"
+            required
+            minlength="8"
+          >
+          <button type="button" onclick="togglePassword('password_confirmation')" class="absolute right-3 top-1/2 transform -translate-y-1/2 mt-1">
+            <svg id="eye-password_confirmation" class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+            </svg>
+            <svg id="eye-slash-password_confirmation" class="w-5 h-5 text-gray-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L8.464 8.464m1.414 1.414l-1.414 1.414m4.242 4.242l1.414 1.414M12 2.252A10.05 10.05 0 0118.7 5.25M12 2.252v16.496"></path>
+            </svg>
+          </button>
+        </div>
+        <div id="password-error" class="text-red-500 text-xs mt-1 hidden"></div>
+      </div>
+
       {{-- Tombol Simpan --}}
       <div class="flex gap-4 pt-4">
         <button type="submit"
+          onclick="return validatePasswords()"
           class="flex-1 px-4 py-2 bg-sky-600 text-white font-medium rounded-lg hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
           Simpan Guru
         </button>
@@ -329,6 +373,18 @@
         >
       </div>
 
+      {{-- Reset Password Section --}}
+      <div class="p-4 bg-gray-50 rounded-lg">
+        <h3 class="text-sm font-semibold text-gray-700 mb-2">Reset Password</h3>
+        <p class="text-xs text-gray-600 mb-3">Generate password sementara untuk guru ini</p>
+        <button
+          type="button"
+          onclick="generateTempPasswordForEdit()"
+          class="px-4 py-2 bg-yellow-500 text-white text-sm rounded-lg hover:bg-yellow-600">
+          Generate Password Sementara
+        </button>
+      </div>
+
       {{-- Tombol Simpan --}}
       <div class="flex gap-4 pt-4">
         <button type="submit"
@@ -347,121 +403,281 @@
     <!-- Header Icons -->
     <x-header.icon-header />
 
+    <!-- Custom Confirmation Alert -->
+    <x-alert.confirmation-alert />
+
 </main>
 
 <script>
 let editingTeacher = null;
 
 function resetParentToken(parentId) {
-    if (confirm('Reset token akan menghapus akun orang tua dari sistem. Apakah Anda yakin?')) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/admin/orangtua/${parentId}/reset-token`;
-        
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = '_token';
-        csrfInput.value = '{{ csrf_token() }}';
-        
-        form.appendChild(csrfInput);
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
-
-function deleteTeacher(teacherId) {
-    if (confirm('Apakah Anda yakin ingin menghapus guru ini?')) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/admin/users/${teacherId}`;
-        
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = '_token';
-        csrfInput.value = '{{ csrf_token() }}';
-        
-        const methodInput = document.createElement('input');
-        methodInput.type = 'hidden';
-        methodInput.name = '_method';
-        methodInput.value = 'DELETE';
-        
-        form.appendChild(csrfInput);
-        form.appendChild(methodInput);
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
-
-function editTeacher(teacherId) {
-    // Find teacher data from the current page data
-    const teachers = @json($teachers ?? []);
-    const teacher = teachers.find(t => t.id == teacherId);
+    // Create hidden form
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/admin/orangtua/${parentId}/reset-token`;
+    form.style.display = 'none';
     
-    if (teacher) {
-        // Set the global editingTeacher variable
-        editingTeacher = teacherId;
-        
-        // Populate the form fields immediately
-        document.getElementById('edit_name').value = teacher.nama;
-        document.getElementById('edit_email').value = teacher.email;
-    }
-}
-
-function generateNewToken() {
-    if (confirm('Generate token baru untuk registrasi orang tua?')) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/admin/orangtua/generate-token';
-        
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = '_token';
-        csrfInput.value = '{{ csrf_token() }}';
-        
-        form.appendChild(csrfInput);
-        document.body.appendChild(form);
-        form.submit();
-    }
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = '_token';
+    csrfInput.value = '{{ csrf_token() }}';
+    
+    form.appendChild(csrfInput);
+    document.body.appendChild(form);
+    
+    // Show custom confirmation
+    window.dispatchEvent(new CustomEvent('open-confirmation', {
+        detail: {
+            label: 'token orang tua',
+            action: 'mereset',
+            target: form
+        }
+    }));
 }
 
 function deleteUnusedToken(token) {
-    if (confirm('Apakah Anda yakin ingin menghapus token yang belum digunakan ini?')) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/admin/orangtua/token/${token}/delete`;
-        
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = '_token';
-        csrfInput.value = '{{ csrf_token() }}';
-        
-        const methodInput = document.createElement('input');
-        methodInput.type = 'hidden';
-        methodInput.name = '_method';
-        methodInput.value = 'DELETE';
-        
-        form.appendChild(csrfInput);
-        form.appendChild(methodInput);
-        document.body.appendChild(form);
-        form.submit();
-    }
+    // Create hidden form
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/admin/orangtua/delete-token/${token}`;
+    form.style.display = 'none';
+    
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = '_token';
+    csrfInput.value = '{{ csrf_token() }}';
+    
+    const methodInput = document.createElement('input');
+    methodInput.type = 'hidden';
+    methodInput.name = '_method';
+    methodInput.value = 'DELETE';
+    
+    form.appendChild(csrfInput);
+    form.appendChild(methodInput);
+    document.body.appendChild(form);
+    
+    // Show custom confirmation
+    window.dispatchEvent(new CustomEvent('open-confirmation', {
+        detail: {
+            label: 'token yang belum digunakan',
+            action: 'menghapus',
+            target: form
+        }
+    }));
+}
+
+function deleteTeacher(teacherId) {
+    // Create hidden form
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/admin/users/${teacherId}`;
+    form.style.display = 'none';
+    
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = '_token';
+    csrfInput.value = '{{ csrf_token() }}';
+    
+    const methodInput = document.createElement('input');
+    methodInput.type = 'hidden';
+    methodInput.name = '_method';
+    methodInput.value = 'DELETE';
+    
+    form.appendChild(csrfInput);
+    form.appendChild(methodInput);
+    document.body.appendChild(form);
+    
+    // Show custom confirmation
+    window.dispatchEvent(new CustomEvent('open-confirmation', {
+        detail: {
+            label: 'data guru',
+            action: 'menghapus',
+            target: form
+        }
+    }));
 }
 
 function resetTeacherPassword(teacherId) {
-    if (confirm('Reset password guru dan hapus semua percobaan login yang gagal?')) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/admin/guru/${teacherId}/reset-password`;
+    // Create hidden form
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/admin/users/${teacherId}/reset-password`;
+    form.style.display = 'none';
+    
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = '_token';
+    csrfInput.value = '{{ csrf_token() }}';
+    
+    form.appendChild(csrfInput);
+    document.body.appendChild(form);
+    
+    // Show custom confirmation
+    window.dispatchEvent(new CustomEvent('open-confirmation', {
+        detail: {
+            label: 'password guru',
+            action: 'mereset',
+            target: form
+        }
+    }));
+}
+
+function generateNewToken() {
+    // Create hidden form
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/admin/orangtua/generate-token';
+    form.style.display = 'none';
+    
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = '_token';
+    csrfInput.value = '{{ csrf_token() }}';
+    
+    form.appendChild(csrfInput);
+    document.body.appendChild(form);
+    
+    // Show custom confirmation
+    window.dispatchEvent(new CustomEvent('open-confirmation', {
+        detail: {
+            label: 'token baru',
+            action: 'membuat',
+            target: form
+        }
+    }));
+}
+
+function editTeacher(teacher) {
+    console.log('Editing teacher:', teacher);
+    
+    // Set the global editingTeacher variable
+    editingTeacher = teacher.id;
+    
+    // Wait for Alpine.js to switch to edit mode, then populate the form
+    setTimeout(() => {
+        const nameField = document.getElementById('edit_name');
+        const emailField = document.getElementById('edit_email');
         
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = '_token';
-        csrfInput.value = '{{ csrf_token() }}';
+        console.log('Looking for form fields...');
+        console.log('Name field found:', !!nameField);
+        console.log('Email field found:', !!emailField);
         
-        form.appendChild(csrfInput);
-        document.body.appendChild(form);
-        form.submit();
+        if (nameField && emailField) {
+            nameField.value = teacher.nama || '';
+            emailField.value = teacher.email || '';
+            console.log('Fields populated successfully');
+            console.log('Name:', teacher.nama);
+            console.log('Email:', teacher.email);
+        } else {
+            console.error('Form fields not found, retrying...');
+            // Retry after another delay
+            setTimeout(() => {
+                const retryNameField = document.getElementById('edit_name');
+                const retryEmailField = document.getElementById('edit_email');
+                
+                if (retryNameField && retryEmailField) {
+                    retryNameField.value = teacher.nama || '';
+                    retryEmailField.value = teacher.email || '';
+                    console.log('Fields populated on retry');
+                } else {
+                    console.error('Failed to find form fields after retry');
+                }
+            }, 200);
+        }
+    }, 200);
+}
+
+function generateTempPassword(teacherId) {
+    // Create hidden form
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/admin/users/${teacherId}/generate-temp-password`;
+    form.style.display = 'none';
+    
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = '_token';
+    csrfInput.value = '{{ csrf_token() }}';
+    
+    form.appendChild(csrfInput);
+    document.body.appendChild(form);
+    
+    // Show custom confirmation
+    window.dispatchEvent(new CustomEvent('open-confirmation', {
+        detail: {
+            label: 'password sementara untuk guru',
+            action: 'membuat',
+            target: form
+        }
+    }));
+}
+
+function generateTempPasswordForEdit() {
+    if (!editingTeacher) {
+        alert('Tidak ada guru yang sedang diedit');
+        return;
     }
+    
+    // Create hidden form
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/admin/users/${editingTeacher}/generate-temp-password`;
+    form.style.display = 'none';
+    
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = '_token';
+    csrfInput.value = '{{ csrf_token() }}';
+    
+    form.appendChild(csrfInput);
+    document.body.appendChild(form);
+    
+    // Show custom confirmation
+    window.dispatchEvent(new CustomEvent('open-confirmation', {
+        detail: {
+            label: 'password sementara untuk guru yang sedang diedit',
+            action: 'membuat',
+            target: form
+        }
+    }));
+}
+
+function togglePassword(fieldId) {
+    const passwordField = document.getElementById(fieldId);
+    const eyeIcon = document.getElementById(`eye-${fieldId}`);
+    const eyeSlashIcon = document.getElementById(`eye-slash-${fieldId}`);
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        eyeIcon.classList.add('hidden');
+        eyeSlashIcon.classList.remove('hidden');
+    } else {
+        passwordField.type = 'password';
+        eyeIcon.classList.remove('hidden');
+        eyeSlashIcon.classList.add('hidden');
+    }
+}
+
+function validatePasswords() {
+    const password = document.getElementById('password').value;
+    const passwordConfirmation = document.getElementById('password_confirmation').value;
+    const errorDiv = document.getElementById('password-error');
+    
+    if (password !== passwordConfirmation) {
+        errorDiv.textContent = 'Password dan konfirmasi password tidak cocok';
+        errorDiv.classList.remove('hidden');
+        return false;
+    }
+    
+    if (password.length < 8) {
+        errorDiv.textContent = 'Password minimal 8 karakter';
+        errorDiv.classList.remove('hidden');
+        return false;
+    }
+    
+    errorDiv.classList.add('hidden');
+    return true;
 }
 </script>
 

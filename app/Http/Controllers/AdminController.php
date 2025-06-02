@@ -177,32 +177,45 @@ class AdminController extends Controller
             'email_verified_at' => now(),
         ]);
 
-        return redirect()->route('admin.users')->with('success', 'User created successfully');
+        return redirect()->route('Admin.index')->with('success', 'User created successfully');
     }
 
-    public function updateUser(Request $request, User $user)
+    public function updateUser(Request $request, $userId)
     {
+        // Find the user by ID
+        $user = User::find($userId);
+        
+        if (!$user) {
+            return redirect()->route('Admin.index')->with('error', 'User not found');
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:100',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'role' => 'required|in:admin,teacher,parent',
         ]);
 
         $user->update($validated);
 
-        return redirect()->route('admin.users')->with('success', 'User updated successfully');
+        return redirect()->route('Admin.index')->with('success', 'User updated successfully');
     }
 
-    public function deleteUser(User $user)
+    public function deleteUser($userId)
     {
+        // Find the user by ID
+        $user = User::find($userId);
+        
+        if (!$user) {
+            return redirect()->route('Admin.index')->with('error', 'User not found');
+        }
+
         // Prevent admin from deleting themselves
         if ($user->id === auth()->id()) {
-            return redirect()->route('admin.users')->with('error', 'You cannot delete your own account');
+            return redirect()->route('Admin.index')->with('error', 'You cannot delete your own account');
         }
 
         $user->delete();
 
-        return redirect()->route('admin.users')->with('success', 'User deleted successfully');
+        return redirect()->route('Admin.index')->with('success', 'User deleted successfully');
     }
 
     public function approveParent(ParentProfile $parent)
@@ -351,8 +364,15 @@ class AdminController extends Controller
         return redirect()->route('Admin.index')->with('success', 'Token yang belum digunakan berhasil dihapus.');
     }
 
-    public function resetTeacherPassword(User $teacher)
+    public function resetTeacherPassword($teacherId)
     {
+        // Find the user by ID
+        $teacher = User::find($teacherId);
+        
+        if (!$teacher) {
+            return redirect()->route('Admin.index')->with('error', 'Teacher not found');
+        }
+
         // Verify this is a teacher user
         if ($teacher->role !== 'teacher') {
             return redirect()->route('Admin.index')->with('error', 'User is not a teacher');
@@ -373,5 +393,36 @@ class AdminController extends Controller
         ]);
 
         return redirect()->route('Admin.index')->with('success', 'Teacher password has been reset and temp password is now visible in status column.');
+    }
+
+    public function generateTempPassword($teacherId)
+    {
+        // Find the user by ID
+        $teacher = User::find($teacherId);
+        
+        if (!$teacher) {
+            return redirect()->route('Admin.index')->with('error', 'Teacher not found');
+        }
+
+        // Verify this is a teacher user
+        if ($teacher->role !== 'teacher') {
+            return redirect()->route('Admin.index')->with('error', 'User is not a teacher');
+        }
+
+        // Generate a new temporary password
+        $tempPassword = 'temp' . rand(1000, 9999);
+        
+        // Clear failed login attempts for this teacher
+        $clearedAttempts = FailedLoginAttempt::where('identifier', $teacher->email)->count();
+        FailedLoginAttempt::where('identifier', $teacher->email)->delete();
+
+        // Update teacher with temp password
+        $teacher->update([
+            'password' => bcrypt($tempPassword),
+            'temp_password' => $tempPassword, // Store temp password to show in status
+            'password_changed_at' => null,
+        ]);
+
+        return redirect()->route('Admin.index')->with('success', "Temporary password generated for {$teacher->name}: {$tempPassword}");
     }
 }

@@ -40,8 +40,18 @@
         </div>
     </header>
 
-    <x-header.parent-breadcrump-header label="Presensi" />
+    
 
+    <x-header.parent-breadcrump-header label="Presensi" />
+<div class="mb-4">
+    <a href="{{ url('/dashboard') }}" 
+       class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 transition-colors duration-200">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Kembali ke Dashboard
+    </a>
+</div>
    <!-- Container Utama -->
 <div class="flex-1 w-full md:px-10 pt-2">
     @if($selectedStudent)

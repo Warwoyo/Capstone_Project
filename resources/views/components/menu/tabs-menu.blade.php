@@ -30,10 +30,10 @@
     <div class="flex items-center justify-between gap-5 p-1">
     @if (in_array(strtolower($tab), ['jadwal', 'peserta']))
         <x-search.search-search />
-    @else
+   {{--@else
         <h2 class="text-lg font-medium text-sky-800 max-sm:text-sm">
             {{ ucfirst($tab) }}
-        </h2>
+        </h2>--}} 
     @endif
 
     @php

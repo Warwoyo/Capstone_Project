@@ -15,6 +15,12 @@
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
   <style>
     [x-cloak] { display: none !important; }
+
+    #eye-open, #eye-closed {
+  transition: opacity 0.2s;
+}
+
+
 </style>
 </head>
 

@@ -48,7 +48,7 @@
 </div>
 {{-- Announcement Card --}}
     <x-card.announcement-card 
-    :announcementList="$announcementList"
+    :announcementList="$announcementList" maxHeight="max-h-[43vh] md:max-h-[50vh]"
     />
 </div>
     <!-- Header Icons -->

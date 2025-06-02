@@ -26,16 +26,15 @@
             class="absolute -left-8 bg-sky-200 rounded-full h-[151px] top-[-38px] w-[151px] z-0"
           ></div>
           <a href="{{ route('classroom.tab', [$class['id'], 'pengumuman']) }}"
-            class="block p-4 bg-white shadow rounded-lg">
-          <div class="flex flex-col gap-1 justify-center items-start z-10 relative">
-            
-            <h2 class="text-base font-bold text-sky-800 max-md:text-base max-sm:text-sm">
-              Kelas {{$class->name}} — {{$class->owner->name ?? 'Tidak diketahui'}}
-            </h2>
-            <p class="text-sm text-gray-500 max-md:text-sm max-sm:text-xs">
-              {{ $class['description'] }}
-            </p>
-          </div>
+  class="block p-4 bg-white shadow rounded-lg w-full mr-3 h-[100px]  overflow-hidden break-words flex flex-col justify-between">
+  <div class="flex flex-col gap-1 justify-center items-start z-10 relative">
+    <h2 class="text-base font-bold text-sky-800 max-md:text-base max-sm:text-sm">
+      Kelas {{$class->name}} — {{$class->owner->name ?? 'Tidak diketahui'}}
+    </h2>
+    <p class="text-sm text-gray-500 max-md:text-sm max-sm:text-xs">
+      {{ $class['description'] }}
+    </p>
+  </div>
 </a>
 <a
     href="{{ route('classroom.tab', ['classroom' => $class['id'], 'tab' => 'pengumuman']) }}"

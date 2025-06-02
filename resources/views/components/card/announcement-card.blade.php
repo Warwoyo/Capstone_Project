@@ -1,11 +1,12 @@
 
 @props([
     'announcementList',
-    'maxHeight' => 'max-h-[44vh] md:max-h-[50vh]'
+    'maxHeight' => '',
+    'isHidden'=> ''
 ])
 
 <section class="mt-5 max-md:mt-2.5">
-    <h2 class="text-xl font-medium text-sky-800 mb-2">Pengumuman Kelas</h2>
+    <h2 class="text-xl {{ $isHidden }} font-medium text-sky-800 mb-2">Pengumuman Kelas</h2>
 
     <div class="overflow-y-auto hide-scrollbar {{ $maxHeight }}">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
